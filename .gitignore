@@ -1,0 +1,45 @@
+# Dependencies & build output
+node_modules/
+.pnpm-store/
+dist/
+out/
+release/
+.next/
+.turbo/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Env & secrets — never commit (document vars in .env.example instead)
+.env
+.env.*
+!.env.example
+
+# Logs & OS
+*.log
+.DS_Store
+
+# Test artefacts
+playwright-report/
+test-results/
+
+# Expo (native projects are generated with `expo prebuild`)
+apps/mobile/.expo/
+apps/mobile/android/
+apps/mobile/ios/
+
+# Python
+__pycache__/
+.venv/
+.pytest_cache/
+
+# Legacy Laravel + Next.js apps: contain production secrets and a 456 MB
+# installer zip. Kept on disk for reference only, never committed here.
+/lms.kodemapa.com/
+/lmsweb.kodemapa.com/
+
+# Local upload storage (development)
+apps/api/.storage/
+
+# Media tools downloaded by tools/install-media-tools.sh
+tools/bin/

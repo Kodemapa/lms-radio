@@ -1,0 +1,105 @@
+@import 'tailwindcss';
+
+/* Scan the shared UI package for class names. */
+@source '../../../../packages/ui/src';
+
+/*
+ * Palette carried over from the previous eLMS website (lmsweb):
+ * purple primary, near-black secondary, soft grey borders and sections.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #010211;
+  --card: #ffffff;
+  --card-foreground: #010211;
+  --muted: #f2f5f7;
+  --muted-foreground: #6b6b76;
+  --border: #d8e0e6;
+  --primary: #5a5bb5;
+  --primary-hover: #4d4e9b;
+  --primary-foreground: #ffffff;
+  --primary-light: #eeeef8;
+  --secondary: #1b2a41;
+  --secondary-foreground: #ffffff;
+  --success: #83b807;
+  --rating: #db9305;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --ring: #5a5bb5;
+  --section: #f2f5f7;
+  --footer: #010211;
+  --footer-panel: #2a2a37;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0d0e1a;
+    --foreground: #eef0f6;
+    --card: #161728;
+    --card-foreground: #eef0f6;
+    --muted: #1f2033;
+    --muted-foreground: #a3a5b8;
+    --border: #2c2e46;
+    --primary: #8b8ce0;
+    --primary-hover: #a1a2ea;
+    --primary-foreground: #0d0e1a;
+    --primary-light: #24254a;
+    --secondary: #e7e9f3;
+    --secondary-foreground: #0d0e1a;
+    --success: #9ccf2a;
+    --ring: #8b8ce0;
+    --section: #121323;
+    --footer: #07070f;
+    --footer-panel: #1c1c2b;
+  }
+}
+
+@theme inline {
+  --font-sans: var(--font-geist), var(--font-devanagari), system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-success: var(--success);
+  --color-rating: var(--rating);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring: var(--ring);
+  --color-section: var(--section);
+  --color-footer: var(--footer);
+  --color-footer-panel: var(--footer-panel);
+}
+
+/* Same container widths as the previous site. */
+@utility container {
+  margin-inline: auto;
+  width: 100%;
+  padding-inline: 1rem;
+  max-width: 1320px;
+}
+
+@utility section-title {
+  @apply text-xl font-semibold md:text-2xl lg:text-[28px];
+}
+
+@utility section-gap {
+  @apply py-10 md:py-16 lg:py-20;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

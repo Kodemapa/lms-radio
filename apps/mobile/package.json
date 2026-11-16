@@ -1,0 +1,29 @@
+{
+  "name": "@obgyn/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "React Native (Expo dev-client) app with global capture blocking",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "prebuild": "expo prebuild",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "expo": "54.0.38",
+    "expo-dev-client": "6.0.21",
+    "expo-screen-capture": "8.0.10",
+    "expo-status-bar": "3.0.9",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  },
+  "devDependencies": {
+    "@obgyn/config": "workspace:*",
+    "@types/react": "19.1.17",
+    "eslint": "9.39.5",
+    "typescript": "5.9.3"
+  }
+}

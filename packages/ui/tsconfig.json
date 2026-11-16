@@ -1,0 +1,4 @@
+{
+  "extends": "@obgyn/config/tsconfig/react-library.json",
+  "include": ["src", "vitest.config.ts", "vitest.setup.ts"]
+}

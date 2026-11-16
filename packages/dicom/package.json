@@ -1,0 +1,35 @@
+{
+  "name": "@obgyn/dicom",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DICOM helpers shared by web and API: fetal measurement concepts, geometry, de-identification and DICOM SR (TID 1500) read/write",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "dcmjs": "0.52.2",
+    "@obgyn/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@obgyn/config": "workspace:*",
+    "@types/node": "22.20.5",
+    "eslint": "9.39.5",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7"
+  }
+}

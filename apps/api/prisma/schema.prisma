@@ -1,0 +1,702 @@
+// ObGyn e-LMS data model.
+//
+// PC-PNDT (CLAUDE.md rule 1): no model may carry a field that identifies fetal
+// sex. Imported case data is passed through stripFetalSexFields() from
+// @obgyn/types before it is stored, and course text is screened on submission.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// FACULTY is shown as "Instructor" in the UI.
+enum Role {
+  LEARNER
+  FACULTY
+  ADMIN
+}
+
+enum LearnerType {
+  MBBS_STUDENT
+  OBG_RESIDENT
+  SONOLOGIST
+  NURSE_MIDWIFE
+  FACULTY
+  OTHER
+}
+
+enum OtpChannel {
+  SMS
+  EMAIL
+}
+
+/// DRAFT → IN_REVIEW → PUBLISHED; a rejected course goes back to DRAFT with a review note.
+enum ContentStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  RETIRED
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum LessonKind {
+  VIDEO
+  PDF
+  SIMULATOR
+  LIVE_CLASS
+  QUIZ
+  ASSIGNMENT
+  /// A DICOM case: measure, report findings, submit a DICOM SR; auto-graded.
+  IMAGING
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+  PDF
+  DICOM
+  SIM_VOLUME
+}
+
+enum MediaStatus {
+  PENDING
+  READY
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id          String       @id @default(uuid()) @db.Uuid
+  phone       String?      @unique
+  email       String?      @unique
+  displayName String
+  /// Shown on instructor profiles, e.g. "MS (OBG), Fetal Medicine Consultant".
+  headline    String?
+  bio         String?
+  role        Role         @default(LEARNER)
+  learnerType LearnerType?
+  locale      String       @default("en")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  devices               Device[]
+  sessions              Session[]
+  enrollments           Enrollment[]
+  auditLogs             AuditLog[]
+  courses               Course[]                @relation("CourseInstructor")
+  mediaAssets           MediaAsset[]
+  instructorApplication InstructorApplication?  @relation("Applicant")
+  reviewedApplications  InstructorApplication[] @relation("ApplicationReviewer")
+  lessonProgress        LessonProgress[]
+  quizAttempts          QuizAttempt[]
+  submissions           AssignmentSubmission[]  @relation("Submitter")
+  reviewedSubmissions   AssignmentSubmission[]  @relation("SubmissionReviewer")
+  certificates          Certificate[]
+  reviews               CourseReview[]
+  wishlist              WishlistItem[]
+  entranceAttempts      EntranceAttempt[]
+  checkpointAnswers     CheckpointAnswer[]
+  imagingAttempts       ImagingAttempt[]
+  /// Set when the account is deleted; personal fields are erased (DPDP Act).
+  deletedAt             DateTime?
+}
+
+/// A physical install of the app/browser. Users may bind at most MAX_DEVICES_PER_USER.
+model Device {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @db.Uuid
+  clientDeviceId String    @db.Uuid
+  label          String?
+  createdAt      DateTime  @default(now())
+  lastSeenAt     DateTime  @default(now())
+  revokedAt      DateTime?
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions Session[]
+
+  @@unique([userId, clientDeviceId])
+}
+
+/// One login on one device. Refresh tokens rotate on every use; presenting the
+/// previous token again (outside a short grace window) revokes the session.
+model Session {
+  id                       String    @id @default(uuid()) @db.Uuid
+  userId                   String    @db.Uuid
+  deviceId                 String    @db.Uuid
+  refreshTokenHash         String
+  previousRefreshTokenHash String?
+  rotatedAt                DateTime?
+  expiresAt                DateTime
+  revokedAt                DateTime?
+  revokedReason            String?
+  ip                       String?
+  userAgent                String?
+  createdAt                DateTime  @default(now())
+  lastUsedAt               DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model OtpChallenge {
+  id         String     @id @db.Uuid
+  channel    OtpChannel
+  target     String
+  codeHash   String
+  attempts   Int        @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@index([target, createdAt])
+}
+
+model InstructorApplication {
+  id                 String            @id @default(uuid()) @db.Uuid
+  userId             String            @unique @db.Uuid
+  headline           String
+  bio                String
+  qualifications     String
+  experienceYears    Int
+  /// NMC / State Medical Council / Nursing Council registration number.
+  registrationNumber String?
+  status             ApplicationStatus @default(PENDING)
+  reviewNote         String?
+  reviewedById       String?           @db.Uuid
+  reviewedAt         DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  user       User  @relation("Applicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("ApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
+model Category {
+  id          String  @id @default(uuid()) @db.Uuid
+  slug        String  @unique
+  name        String
+  description String?
+  parentId    String? @db.Uuid
+  position    Int     @default(0)
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
+  courses  Course[]
+}
+
+model Course {
+  id                    String        @id @default(uuid()) @db.Uuid
+  slug                  String        @unique
+  title                 String
+  shortDescription      String        @default("")
+  description           String        @default("")
+  level                 CourseLevel   @default(BEGINNER)
+  /// BCP-47 code of the teaching language, e.g. "en", "hi".
+  language              String        @default("en")
+  tags                  String[]      @default([])
+  learnings             String[]      @default([])
+  requirements          String[]      @default([])
+  metaTitle             String?
+  metaDescription       String?
+  metaKeywords          String?
+  status                ContentStatus @default(DRAFT)
+  reviewNote            String?
+  sequentialAccess      Boolean       @default(false)
+  /// Prices are stored in paise (₹1 = 100 paise) to avoid float rounding.
+  isFree                Boolean       @default(true)
+  pricePaise            Int           @default(0)
+  discountPricePaise    Int?
+  certificateEnabled    Boolean       @default(false)
+  /// Only for free courses: an optional fee to receive the certificate.
+  certificateFeePaise   Int?
+  categoryId            String?       @db.Uuid
+  instructorId          String?       @db.Uuid
+  thumbnailAssetId      String?       @db.Uuid
+  previewAssetId        String?       @db.Uuid
+  /// Entrance test: learners must pass before they can enrol.
+  entranceTestEnabled   Boolean       @default(false)
+  /// Questions drawn at random from the bank for each attempt.
+  entranceQuestionCount Int           @default(10)
+  entrancePassPercent   Int           @default(60)
+  /// null = unlimited attempts.
+  entranceMaxAttempts   Int?
+  /// Only bank questions with this topic are drawn (null = whole bank).
+  entranceTopic         String?
+  submittedAt           DateTime?
+  publishedAt           DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  category            Category?              @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  instructor          User?                  @relation("CourseInstructor", fields: [instructorId], references: [id], onDelete: SetNull)
+  thumbnail           MediaAsset?            @relation("CourseThumbnail", fields: [thumbnailAssetId], references: [id], onDelete: SetNull)
+  previewVideo        MediaAsset?            @relation("CoursePreview", fields: [previewAssetId], references: [id], onDelete: SetNull)
+  chapters            Chapter[]
+  lessons             Lesson[]
+  enrollments         Enrollment[]
+  progress            LessonProgress[]
+  certificates        Certificate[]
+  reviews             CourseReview[]
+  wishlistedBy        WishlistItem[]
+  submissions         AssignmentSubmission[]
+  bankQuestions       BankQuestion[]
+  entranceAttempts    EntranceAttempt[]
+  annotationTerms     AnnotationTerm[]
+  certificateTemplate CertificateTemplate?
+
+  @@index([status, publishedAt])
+  @@index([instructorId])
+}
+
+model Chapter {
+  id          String  @id @default(uuid()) @db.Uuid
+  courseId    String  @db.Uuid
+  position    Int
+  title       String
+  description String?
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@index([courseId, position])
+}
+
+model Lesson {
+  id              String      @id @default(uuid()) @db.Uuid
+  /// Denormalised from the chapter so access checks need one lookup.
+  courseId        String      @db.Uuid
+  chapterId       String      @db.Uuid
+  position        Int
+  title           String
+  description     String?
+  kind            LessonKind
+  /// Free preview: any signed-in user may open it without enrolling.
+  isPreview       Boolean     @default(false)
+  durationSec     Int?
+  mediaAssetId    String?     @db.Uuid
+  /// QUIZ and ASSIGNMENT: learners may skip it and still complete the course.
+  skippable       Boolean     @default(false)
+  /// QUIZ: minimum score (0–100) to pass.
+  passPercent     Int?
+  /// ASSIGNMENT: what the learner must do.
+  instructions    String?
+  /// ASSIGNMENT: points awarded on approval.
+  points          Int?
+  /// ASSIGNMENT: file kinds learners may attach (IMAGE, PDF).
+  submissionKinds MediaKind[] @default([])
+
+  course          Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  chapter         Chapter                @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  mediaAsset      MediaAsset?            @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
+  questions       QuizQuestion[]
+  progress        LessonProgress[]
+  attempts        QuizAttempt[]
+  submissions     AssignmentSubmission[]
+  imagingCase     ImagingCase?
+  imagingImages   ImagingImage[]
+  imagingAttempts ImagingAttempt[]
+
+  @@index([chapterId, position])
+  @@index([courseId])
+}
+
+/// Uploaded files. `storageKey` is never sent to clients. Videos, PDFs and
+/// DICOM are only reachable through short-lived signed URLs bound to a
+/// session (CLAUDE.md rule 2); IMAGE assets (thumbnails) are public.
+model MediaAsset {
+  id           String      @id @default(uuid()) @db.Uuid
+  kind         MediaKind
+  status       MediaStatus @default(PENDING)
+  storageKey   String      @unique
+  mimeType     String
+  sizeBytes    Int?
+  originalName String?
+  durationSec  Int?
+  /// Must be true before any clinical image/video is published (CLAUDE.md rule 6).
+  deidentified Boolean     @default(false)
+  /// Only instructor-uploaded images (thumbnails) are public; everything else needs a signed URL.
+  isPublic     Boolean     @default(false)
+  /// DICOM images: header facts recorded after server-side de-identification.
+  dicomMeta    Json?
+  ownerId      String?     @db.Uuid
+  createdAt    DateTime    @default(now())
+
+  owner            User?                  @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  lessons          Lesson[]
+  courseThumbnails Course[]               @relation("CourseThumbnail")
+  coursePreviews   Course[]               @relation("CoursePreview")
+  submissions      AssignmentSubmission[]
+  drmPackage       DrmPackage?
+  imagingImages    ImagingImage[]
+  imagingAttempts  ImagingAttempt[]
+  referenceFor     ImagingCase[]
+}
+
+/// An IMAGING lesson's answer key. Clinical values (reference drawings,
+/// tolerances, findings) are faculty content, never code (CLAUDE.md rule 5).
+model ImagingCase {
+  lessonId           String   @id @db.Uuid
+  instructions       String   @default("")
+  /// { measurements: [...with referenceMm], findings: [...], reportFields: [...] } — see InstructorImagingCaseSchema.
+  key                Json
+  /// DICOM SR generated from the key, for faculty to download/verify.
+  referenceSrAssetId String?  @db.Uuid
+  updatedAt          DateTime @updatedAt
+
+  lesson      Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  referenceSr MediaAsset? @relation(fields: [referenceSrAssetId], references: [id], onDelete: SetNull)
+}
+
+model ImagingImage {
+  id       String @id @default(uuid()) @db.Uuid
+  lessonId String @db.Uuid
+  assetId  String @db.Uuid
+  position Int
+  label    String
+
+  lesson Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  asset  MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, assetId])
+}
+
+/// A learner's submitted DICOM SR and its grade.
+model ImagingAttempt {
+  id           String   @id @default(uuid()) @db.Uuid
+  lessonId     String   @db.Uuid
+  userId       String   @db.Uuid
+  srAssetId    String   @db.Uuid
+  scorePercent Int
+  passed       Boolean
+  /// ImagingResultItem[]
+  result       Json
+  createdAt    DateTime @default(now())
+
+  lesson Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  srFile MediaAsset @relation(fields: [srAssetId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lessonId, createdAt])
+}
+
+enum DrmPackageStatus {
+  QUEUED
+  PACKAGING
+  READY
+  FAILED
+}
+
+/// Encrypted CMAF rendition of a video: one set of segments served as DASH and HLS.
+/// The content key is wrapped (AES-256-GCM) with DRM_KEY_ENCRYPTION_KEY and is
+/// only ever released to a licence server, never to a page.
+model DrmPackage {
+  assetId       String           @id @db.Uuid
+  status        DrmPackageStatus @default(QUEUED)
+  /// `cbcs` (one package for Widevine, PlayReady and FairPlay) or `cenc`.
+  scheme        String
+  /// 32 hex characters.
+  keyId         String           @unique
+  keyCiphertext String
+  storagePrefix String
+  attempts      Int              @default(0)
+  error         String?
+  packagedAt    DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  asset MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+/// Per-learner lesson state. completedAt is also set when a skippable lesson is skipped.
+model LessonProgress {
+  userId      String    @db.Uuid
+  lessonId    String    @db.Uuid
+  courseId    String    @db.Uuid
+  positionSec Int       @default(0)
+  completedAt DateTime?
+  skipped     Boolean   @default(false)
+  updatedAt   DateTime  @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([userId, lessonId])
+  @@index([userId, courseId])
+}
+
+/// Quiz content is faculty-authored content, stored like any other course content (CLAUDE.md rule 5).
+model QuizQuestion {
+  id             String  @id @default(uuid()) @db.Uuid
+  lessonId       String  @db.Uuid
+  position       Int
+  text           String
+  explanation    String?
+  allowMultiple  Boolean @default(false)
+  /// VIDEO lessons only: the question pops up at this second and playback
+  /// past it stays locked until it is answered correctly.
+  atSec          Int?
+  /// Set when the question was added from the course question bank.
+  bankQuestionId String? @db.Uuid
+
+  lesson            Lesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  options           QuizOption[]
+  checkpointAnswers CheckpointAnswer[]
+
+  @@index([lessonId, position])
+}
+
+model QuizOption {
+  id         String  @id @default(uuid()) @db.Uuid
+  questionId String  @db.Uuid
+  position   Int
+  text       String
+  isCorrect  Boolean @default(false)
+
+  question QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+/// An in-video question the learner has answered (correctly, or still trying).
+model CheckpointAnswer {
+  userId     String    @db.Uuid
+  questionId String    @db.Uuid
+  lessonId   String    @db.Uuid
+  attempts   Int       @default(0)
+  passedAt   DateTime?
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, questionId])
+  @@index([userId, lessonId])
+}
+
+/// Reusable questions for a course: bulk-imported once, then picked into
+/// quizzes, in-video questions and the entrance test.
+model BankQuestion {
+  id            String   @id @default(uuid()) @db.Uuid
+  courseId      String   @db.Uuid
+  /// Free-text grouping, e.g. "Module 3" or "Entrance".
+  topic         String?
+  text          String
+  explanation   String?
+  allowMultiple Boolean  @default(false)
+  /// [{ text, isCorrect }]
+  options       Json
+  createdAt     DateTime @default(now())
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId, topic])
+}
+
+/// One sitting of the entrance test. The drawn questions and option order are
+/// stored so grading uses exactly what the learner saw.
+model EntranceAttempt {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  courseId     String    @db.Uuid
+  /// [{ questionId, optionOrder: number[] }]
+  paper        Json
+  answers      Json?
+  scorePercent Int?
+  passed       Boolean?
+  startedAt    DateTime  @default(now())
+  submittedAt  DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([userId, courseId, startedAt])
+}
+
+/// How the course's certificate looks. Text may use {learnerName},
+/// {courseTitle}, {issuedDate} and {serial}.
+model CertificateTemplate {
+  courseId      String   @id @db.Uuid
+  heading       String   @default("Certificate of Completion")
+  preamble      String   @default("This is to certify that")
+  body          String   @default("has successfully completed the course")
+  issuerName    String?
+  issuerTagline String?
+  logoAssetId   String?  @db.Uuid
+  accentColor   String   @default("#5a5bb5")
+  /// [{ name, designation, signatureAssetId }]
+  signatories   Json     @default("[]")
+  footerNote    String?
+  updatedAt     DateTime @updatedAt
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model QuizAttempt {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  lessonId     String   @db.Uuid
+  /// { [questionId]: optionId[] }
+  answers      Json
+  scorePercent Int
+  passed       Boolean
+  createdAt    DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lessonId, createdAt])
+}
+
+/// One live submission per learner per assignment; resubmitting replaces it.
+model AssignmentSubmission {
+  id           String           @id @default(uuid()) @db.Uuid
+  userId       String           @db.Uuid
+  lessonId     String           @db.Uuid
+  courseId     String           @db.Uuid
+  text         String?
+  fileAssetId  String?          @db.Uuid
+  status       SubmissionStatus @default(SUBMITTED)
+  feedback     String?
+  reviewedById String?          @db.Uuid
+  reviewedAt   DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  user       User        @relation("Submitter", fields: [userId], references: [id], onDelete: Cascade)
+  lesson     Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  course     Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  file       MediaAsset? @relation(fields: [fileAssetId], references: [id], onDelete: SetNull)
+  reviewedBy User?       @relation("SubmissionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, lessonId])
+  @@index([courseId, status])
+}
+
+model Certificate {
+  id       String   @id @default(uuid()) @db.Uuid
+  /// Public, human-friendly id printed on the certificate, e.g. OBG-2026-7K3QX9.
+  serial   String   @unique
+  userId   String   @db.Uuid
+  courseId String   @db.Uuid
+  issuedAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+model CourseReview {
+  userId    String   @db.Uuid
+  courseId  String   @db.Uuid
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([userId, courseId])
+  @@index([courseId, createdAt])
+}
+
+model WishlistItem {
+  userId    String   @db.Uuid
+  courseId  String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([userId, courseId])
+}
+
+model Enrollment {
+  userId    String   @db.Uuid
+  courseId  String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([userId, courseId])
+}
+
+/// Versioned, faculty-reviewed clinical content: drug doses, protocols, CTG
+/// criteria, centile tables. UI code reads these; it never hard-codes them
+/// (CLAUDE.md rule 5).
+model ClinicalContent {
+  id           String        @id @default(uuid()) @db.Uuid
+  key          String
+  version      Int
+  body         Json
+  status       ContentStatus @default(DRAFT)
+  authoredById String?       @db.Uuid
+  reviewedById String?       @db.Uuid
+  reviewedAt   DateTime?
+  createdAt    DateTime      @default(now())
+
+  @@unique([key, version])
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  actorId    String?  @db.Uuid
+  action     String
+  resource   String
+  resourceId String?
+  ip         String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+}
+
+/// A course's annotation shorthand dictionary: which label learners use for what
+/// (e.g. CSP = cavum septi pellucidi). Learners may type any label; only
+/// dictionary abbreviations can match an answer key.
+model AnnotationTerm {
+  id          String   @id @default(uuid()) @db.Uuid
+  courseId    String   @db.Uuid
+  position    Int
+  abbr        String
+  /// Upper-cased, single-spaced abbr, for case-insensitive uniqueness and matching.
+  abbrKey     String
+  name        String
+  description String?
+  /// LOINC code for standard measurements (e.g. 11984-2 for HC).
+  loinc       String?
+  /// Suggested tools: POINT, BOX, POLYGON, LENGTH, ELLIPSE.
+  tools       String[] @default([])
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, abbrKey])
+  @@index([courseId, position])
+}

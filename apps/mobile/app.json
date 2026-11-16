@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "ObGyn e-LMS",
+    "slug": "obgyn-elms",
+    "version": "0.1.0",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.example.obgynelms",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.example.obgynelms"
+    },
+    "extra": {
+      "apiUrl": "http://localhost:4000"
+    }
+  }
+}

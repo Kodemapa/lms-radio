@@ -1,0 +1,140 @@
+# 02 · Architecture
+
+> The other `docs/` files that CLAUDE.md lists (PRD, content protection, data model, …)
+> don't exist yet. This file records what has actually been built.
+
+## Services
+
+```
+ Browser ──► apps/web (Next.js) ──BFF──► apps/api (NestJS) ──► PostgreSQL
+   │            │  httpOnly cookies         │  Prisma            Redis (planned: cache, BullMQ)
+   │            │                           ├─► S3 ap-south-1 / MinIO (media)
+   │            │                           └─► services/ai (FastAPI, planned)
+ Desktop (Electron) and Mobile (Expo) ──────┘
+```
+
+## Authentication
+
+1. `POST /auth/otp/request` sends a 6-digit OTP (HMAC-hashed at rest, 5-minute TTL,
+   5 attempts, 5 requests per 10 min per target).
+2. `POST /auth/otp/verify` finds or creates the user, **binds the device** (at most
+   `MAX_DEVICES_PER_USER`, default 2), creates a `Session` and returns:
+   - an access JWT (15 min) with `sub`, `sid`, `role`
+   - a refresh token `<sessionId>.<secret>`; only a SHA-256 of the secret is stored
+3. `POST /auth/refresh` rotates the refresh token. It only works with the device id it
+   was issued to. Replaying the previous token after a 10-second grace window revokes
+   the session (theft detection).
+4. `JwtAuthGuard` checks the JWT **and** that the session is live, so logout and
+   device removal take effect immediately.
+
+On the web, tokens never reach page JavaScript: the BFF sets them as httpOnly,
+`SameSite=Strict` cookies, and middleware refreshes them for protected pages.
+
+## Protected media (CLAUDE.md rule 2)
+
+```
+player ─► GET /media/:id/url (JWT) ─► { url: /media/stream?a&s&e&sig, watermark }
+player ─► GET /media/stream?… ─► check HMAC, expiry ≤ 300 s, session live
+                                ─► 302 to a 60-second S3 presigned URL
+```
+
+The grant names the asset and session and is HMAC-signed, so it can't be moved to
+another asset or used after logout. The player fetches a new URL when one expires.
+
+## Course authoring (Phase 1)
+
+```
+Instructor ─► POST /instructor/courses ─► DRAFT
+           ─► details · chapters · lessons · pricing (PATCH/POST /instructor/...)
+           ─► POST /instructor/uploads ─► signed PUT URL ─► browser uploads file
+                                       ─► POST /instructor/uploads/:id/complete
+           ─► POST /instructor/courses/:id/submit ─► IN_REVIEW
+Admin      ─► POST /admin/courses/:id/publish ─► PUBLISHED (or /reject ─► DRAFT + note)
+```
+
+Submission is blocked until the shared checklist in `@obgyn/types` (`submissionProblems`)
+passes: title, short description, category, thumbnail, at least one learning outcome, at
+least one lesson, every video/PDF uploaded and de-identified, valid pricing, and **no text
+about determining fetal sex** (PC-PNDT). The web editor runs the same checklist.
+
+Learners become instructors by applying (`POST /instructor-applications`); an admin
+approves the application, which sets their role to `FACULTY`.
+
+## Learning area (Phase 2)
+
+- **Player** (`/learn/:slug/:lessonId`): outline with per-lesson progress, resume point and
+  sequential locks (`GET /learn/courses/:slug`); lesson detail with prev/next
+  (`GET /learn/lessons/:id`). Videos save their position about every 15 s and complete
+  automatically at 90% watched; PDFs, simulators and live classes are marked complete by hand.
+- **Quizzes** are marked on the server. Correct answers are never sent before an attempt; a
+  question counts only if exactly the correct options are picked. Passing completes the lesson.
+- **Assignments**: one live submission per learner (resubmitting replaces it). Submitting
+  completes the lesson; if the instructor requests changes, the lesson is reopened.
+- **Certificates** are issued once every lesson is complete (skipped lessons count). The
+  public page `/certificates/:serial` is both the printable certificate and its verification link.
+- **Learner uploads** (`POST /uploads`) are images/PDFs up to 20 MB, always private and
+  always need the de-identification confirmation. Only instructor-uploaded images are public.
+
+## In-video questions
+
+Video lessons can have questions pinned to a time (`QuizQuestion.atSec`). The player pauses
+at the first unanswered one and won't seek past it; only an exactly-correct answer unlocks
+the next part. The server enforces the same rule (`unlockedUntilSec` in `@obgyn/types`): saved
+positions are clamped to the lock point and the lesson can't be completed until every
+question is passed. Wrong answers never reveal the solution. Instructors add them from
+**Curriculum → In-video questions** on any video lesson.
+
+## Question bank, entrance test, certificate design
+
+- **Question bank** (`BankQuestion`, per course): instructors paste many questions at once
+  (`parseQuestionBank` in `@obgyn/types` accepts `*`/`-` markers or `a) b) … Answer: b`, with
+  `# Topic` headers), then pick them into quizzes or in-video questions. Picking **copies** the
+  question (`QuizQuestion.bankQuestionId` remembers the source), so editing the bank never
+  silently changes a live quiz.
+- **Entrance test**: when enabled, each attempt draws `entranceQuestionCount` random bank
+  questions (optionally from one topic) and shuffles their options. The drawn paper is stored
+  on `EntranceAttempt`, so marking uses exactly what the learner saw, and an unfinished attempt
+  resumes instead of re-drawing. Passing enrols the learner (free courses); enrolment and
+  auto-enrolment are refused until then. Staff skip it.
+- **Certificate design** (`CertificateTemplate`): heading, wording with `{learnerName}`,
+  `{courseTitle}`, `{issuedDate}`, `{serial}`, issuer, logo, up to 3 signatories, accent colour.
+  The same `CertificateView` component renders the instructor's live preview and the public
+  certificate.
+
+## Decisions log
+
+| Date | Decision | Why |
+|---|---|---|
+| 2026-11-15 | Pinned stable majors: Next 15.5, NestJS 11, Prisma 6, TypeScript 5.9, Zod 3, Expo SDK 54, Electron 38 | Newer majors (TS 7, Prisma 7/8, Nest 12, Zod 4) are too recent to trust their tooling together; upgrade one at a time |
+| 2026-11-15 | Web uses a BFF with httpOnly cookies, not tokens in browser storage | XSS can't steal tokens |
+| 2026-11-15 | Media served through an API gateway that redirects to 60-second storage URLs | Lets URLs be bound to a session (S3 presigning can't do that alone) |
+| 2026-11-15 | Progressive MP4 for now; Shaka Player + multi-DRM later | DRM licence provider not chosen (paid service, rule 10) |
+| 2026-11-15 | OTP delivery logs to the console in development; production refuses to send | The SMS/email provider is a paid service, so it needs sign-off (rule 10) |
+| 2026-11-15 | Enrolment is free for now (`POST /courses/:slug/enroll`) | Payments not specified yet |
+| 2026-11-15 | Legacy Laravel/Next.js folders are git-ignored and untouched | They contain production secrets; used as reference only |
+| 2026-11-15 | Bundle ids and app ids are placeholders (`com.example.obgynelms`) | Real ids depend on the publishing organisation |
+| 2026-11-15 | Web UI ported from the previous lmsweb site (palette, header/footer, course cards, course page, instructor dashboard) and rebuilt on NestJS | User chose "port UI, rebuild on NestJS" over reusing Laravel |
+| 2026-11-15 | Phased delivery: 1) look + public pages + course creation, 2) student learning area, 3) cart & payments, 4) live classes & help desk | Each phase is usable on its own |
+| 2026-11-15 | YouTube lessons from the old course builder are **not** supported | YouTube can't do signed URLs or watermarking (CLAUDE.md rules 2–3) |
+| 2026-11-15 | Instructors can edit PUBLISHED courses directly (audited); IN_REVIEW is locked until withdrawn | Matches the old site; a review step for edits to live clinical content should be added once docs/09-COMPLIANCE.md defines it |
+| 2026-11-15 | Uploading a video or PDF requires the uploader to confirm it is de-identified | CLAUDE.md rule 6; server-side DICOM/metadata scrubbing still to come |
+| 2026-11-15 | `STORAGE_DRIVER=local` stores uploads on disk in development; production must use `s3` (enforced at startup) | Development works without MinIO/Docker |
+| 2026-11-15 | Quizzes and assignments in the curriculum moved to Phase 2 | They need learner attempts and grading, which belong with the learning area |
+| 2026-11-15 | Paid courses return 402 on enrol until checkout exists | Phase 3 (cart & payments) |
+| 2026-11-15 | Rich-text course descriptions are plain text for now | Avoids pulling in an editor before the content model is agreed |
+| 2026-11-15 | Preview visitors can open the player; non-preview lessons show as locked | Lets free previews work in the same player without enrolling |
+| 2026-11-15 | Quiz pass mark defaults to 60% when the instructor leaves it empty | Matches the old builder's default |
+| 2026-11-15 | An assignment counts as complete on submission, and reopens if changes are requested | Learners aren't blocked waiting for review; rejections still have to be redone |
+| 2026-11-15 | Certificates are printable web pages (browser "Save as PDF"), not server-generated PDFs | No PDF dependency; the page doubles as public verification |
+| 2026-11-15 | Courses with a certificate fee return 402 when claiming, until checkout exists | Phase 3 (payments) |
+| 2026-11-15 | Account deletion erases personal fields, reviews and wishlist, and revokes all sessions/devices; progress stays, anonymised | DPDP Act right to erasure while keeping course statistics correct. Instructors with live courses are blocked until courses are handed over |
+| 2026-11-15 | PDFs are shown in the browser's viewer under the watermark for now | TODO: render with pdf.js to canvas so the browser's download button is never exposed |
+| 2026-11-15 | Course discussion (Q&A) moves to Phase 4 with the help desk | Same moderation and reporting needs |
+| 2026-11-15 | `DEV_FIXED_OTP` gives a fixed sign-in code in development; the API refuses to start with it in production | Easier manual testing |
+| 2026-11-15 | Demo catalogue replaced by the Certificate Course in Fetal Medicine (GIFS brochure): 10 modules, 120 classes, an MCQ test and a scan-image submission per module | Requested by the user |
+| 2026-11-15 | Test videos are openly licensed Wikimedia Commons clips (DW "The Placenta", CC BY-SA 4.0; CDC "Prenatal Radiation Exposure", public domain) played through our protected player, not YouTube embeds | YouTube can't do signed URLs or watermarking, and the "can't skip past an unanswered question" lock only holds on a player we control. Download with `apps/api/prisma/fetch-sample-media.sh` |
+| 2026-11-15 | In-video question locks are enforced on the client (no seeking) and the server (position clamp, completion refused); bytes past the lock aren't withheld | Progressive video can't be cut by time. HLS segment gating can come with the DRM work |
+| 2026-11-15 | The fetal medicine course is free for now | So it can be tested end to end before checkout (Phase 3) |
+| 2026-11-15 | Bank questions are copied into quizzes, not linked | A published quiz must not change because someone edited the bank |
+| 2026-11-15 | Entrance and bank payloads are validated with the shared zod schemas on the API (not class-validator) | Nested arrays of options; one schema for the import preview and the server |
+| 2026-11-15 | The fetal medicine course has an entrance test (5 random questions from a 15-question pool, 60% to pass, 3 attempts) | Brochure: "Selection by online MCQ-based entrance exam" |
