@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ResourceLinkSchema, ResourceLinksSchema } from './resources.js';
 
 // ---- Measurement concepts ---------------------------------------------------
 
@@ -295,16 +296,34 @@ export const ReportFieldKeySchema = z.object({
   label: text(200),
   unit: ReportUnitSchema,
   value: z.number().finite(),
-  /** Pass when |learner − value| ≤ tolerance. */
+  /** Pass when |learner − value| ≤ tolerance (the "buffer"). */
   tolerance: z.number().min(0),
   marks,
   teachingPoint,
+  /** A lesson resource (e.g. an online calculator) to work this value out with. */
+  resourceId: z.string().nullable().default(null),
 });
 export type ReportFieldKey = z.infer<typeof ReportFieldKeySchema>;
+
+/** Whether learners attach their working (explanation, photos of calculations). */
+export const WORKING_MODES = ['OFF', 'OPTIONAL', 'REQUIRED'] as const;
+export const WorkingSettingsSchema = z.object({
+  mode: z.enum(WORKING_MODES),
+  /** What to show learners, e.g. "Show how you calculated EFW and its centile". */
+  prompt: z.string().trim().max(1000).nullable().default(null),
+});
+export type WorkingSettings = z.infer<typeof WorkingSettingsSchema>;
+export const DEFAULT_WORKING: WorkingSettings = { mode: 'OPTIONAL', prompt: null };
+
+/** Learners may attach this many photos / PDFs of their working. */
+export const MAX_WORKING_FILES = 6;
 
 export const ImagingCaseInputSchema = z
   .object({
     instructions: z.string().trim().max(10_000),
+    /** Lesson links, e.g. calculators (stored on the lesson). */
+    resources: ResourceLinksSchema.default([]),
+    working: WorkingSettingsSchema.default(DEFAULT_WORKING),
     images: z.array(z.object({ assetId: z.string().uuid(), label: text(100) })).min(1).max(20),
     annotations: z.array(AnnotationKeySchema).max(60),
     findings: z.array(FindingKeySchema).max(30),
@@ -325,6 +344,12 @@ export const ImagingCaseInputSchema = z
         ctx.addIssue({ code: 'custom', path: ['annotations', index, 'assetId'], message: 'Annotation is on an image that is not in this case' });
       }
     });
+    const resourceIds = new Set(value.resources.map((r) => r.id));
+    value.reportFields.forEach((field, index) => {
+      if (field.resourceId && !resourceIds.has(field.resourceId)) {
+        ctx.addIssue({ code: 'custom', path: ['reportFields', index, 'resourceId'], message: `"${field.label}" points at a calculator that was removed` });
+      }
+    });
     value.findings.forEach((finding, index) =>
       finding.options.forEach((option) => {
         if (option.assetId && !assets.has(option.assetId)) {
@@ -342,6 +367,8 @@ export const InstructorImagingCaseSchema = z.object({
   annotations: z.array(AnnotationKeySchema.innerType().extend({ referenceMm: z.number().nullable() })),
   findings: z.array(FindingKeySchema.innerType()),
   reportFields: z.array(ReportFieldKeySchema),
+  resources: z.array(ResourceLinkSchema),
+  working: WorkingSettingsSchema,
   referenceSrAssetId: z.string().uuid().nullable(),
 });
 export type InstructorImagingCase = z.infer<typeof InstructorImagingCaseSchema>;
@@ -378,6 +405,30 @@ export const ImagingResultItemSchema = z.object({
 });
 export type ImagingResultItem = z.infer<typeof ImagingResultItemSchema>;
 
+export const WORKING_STATUSES = ['PENDING', 'VERIFIED', 'RETURNED'] as const;
+export const WorkingStatusSchema = z.enum(WORKING_STATUSES);
+export type WorkingStatus = z.infer<typeof WorkingStatusSchema>;
+
+/** A learner's working on one attempt, and the faculty check of it. */
+export const AttemptWorkingSchema = z.object({
+  explanation: z.string().nullable(),
+  files: z.array(z.object({ assetId: z.string().uuid(), name: z.string(), kind: z.enum(['IMAGE', 'PDF']) })),
+  status: WorkingStatusSchema,
+  feedback: z.string().nullable(),
+  reviewedAt: z.string().datetime().nullable(),
+  reviewedBy: z.string().nullable(),
+});
+export type AttemptWorking = z.infer<typeof AttemptWorkingSchema>;
+
+/** Faculty verdict on a learner's working. */
+export const WorkingReviewSchema = z
+  .object({
+    status: z.enum(['VERIFIED', 'RETURNED']),
+    feedback: z.string().trim().max(2000).nullable(),
+  })
+  .refine((v) => v.status === 'VERIFIED' || !!v.feedback, { message: 'Say what needs correcting', path: ['feedback'] });
+export type WorkingReview = z.infer<typeof WorkingReviewSchema>;
+
 export const ImagingResultSchema = z.object({
   attemptId: z.string().uuid(),
   scorePercent: z.number().int(),
@@ -387,6 +438,7 @@ export const ImagingResultSchema = z.object({
   /** The learner's DICOM SR, downloadable. */
   srAssetId: z.string().uuid(),
   items: z.array(ImagingResultItemSchema),
+  working: AttemptWorkingSchema.nullable().default(null),
 });
 export type ImagingResult = z.infer<typeof ImagingResultSchema>;
 
@@ -406,11 +458,20 @@ export const ImagingCasePublicSchema = z.object({
       options: z.array(z.object({ id: z.string(), label: z.string(), assetId: z.string().uuid().nullable() })),
     }),
   ),
-  reportFields: z.array(z.object({ id: z.string(), label: z.string(), unit: ReportUnitSchema })),
+  reportFields: z.array(
+    z.object({ id: z.string(), label: z.string(), unit: ReportUnitSchema, resourceId: z.string().nullable().default(null) }),
+  ),
+  working: WorkingSettingsSchema.default(DEFAULT_WORKING),
   lastResult: ImagingResultSchema.nullable(),
 });
 export type ImagingCasePublic = z.infer<typeof ImagingCasePublicSchema>;
 
 /** The learner's report: a DICOM SR built in the browser, base64-encoded. */
-export const ImagingSubmitSchema = z.object({ sr: z.string().min(100).max(4_000_000) });
+export const ImagingSubmitSchema = z.object({
+  sr: z.string().min(100).max(4_000_000),
+  /** Working: how the learner reached their values… */
+  explanation: z.string().trim().max(5000).nullable().default(null),
+  /** …and their uploaded photos / PDFs of handwritten calculations. */
+  workingAssetIds: z.array(z.string().uuid()).max(MAX_WORKING_FILES).default([]),
+});
 export type ImagingSubmit = z.infer<typeof ImagingSubmitSchema>;

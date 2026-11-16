@@ -4,6 +4,7 @@ import { buildMeasurementReport } from '@obgyn/dicom';
 import {
   dicomPseudonym,
   ImagingResultSchema,
+  MAX_WORKING_FILES,
   labelCode,
   normalizeLabel,
   SignedMediaUrlSchema,
@@ -12,12 +13,15 @@ import {
   type ImagingResult,
 } from '@obgyn/types';
 import { Button } from '@obgyn/ui';
-import { CheckCircle2, Circle, Download, Eye, EyeOff, Lightbulb, MinusCircle, XCircle } from 'lucide-react';
+import { Calculator, CheckCircle2, Circle, Download, Eye, EyeOff, Lightbulb, MinusCircle, X, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { ImagingWorkspace, termName, valueOf, type DrawnAnnotation } from '@/components/imaging/imaging-workspace';
+import { WorkingView } from '@/components/imaging/working-view';
 import { bffFetch } from '@/lib/client-fetch';
+import { FileUpload } from '../instructor/editor/file-upload';
+import { useResourcePanel } from './resources';
 import { api, ApiClientError } from '@/lib/instructor-api';
 
 function toBase64(bytes: ArrayBuffer): string {
@@ -60,10 +64,17 @@ export function ImagingLesson({
   enrolled: boolean;
 }) {
   const t = useTranslations('Imaging');
+  const tWorking = useTranslations('Working');
   const router = useRouter();
   const [annotations, setAnnotations] = useState<DrawnAnnotation[]>([]);
   const [findings, setFindings] = useState<Record<string, string[]>>({});
   const [fields, setFields] = useState<Record<string, string>>({});
+  const [explanation, setExplanation] = useState('');
+  const [workingFiles, setWorkingFiles] = useState<{ id: string; name: string }[]>([]);
+  /** Remounts the uploader after each file so several can be added. */
+  const [uploadKey, setUploadKey] = useState(0);
+  const { resources, open: openResource } = useResourcePanel();
+  const workingMode = imaging.working.mode;
   const [result, setResult] = useState<ImagingResult | null>(imaging.lastResult);
   const [showReference, setShowReference] = useState(false);
   const [lastSr, setLastSr] = useState<ArrayBuffer | null>(null);
@@ -113,6 +124,7 @@ export function ImagingLesson({
     setError(null);
     setJustGraded(null);
     if (annotations.some((a) => !a.label.trim())) return setError(t('labelAll'));
+    if (workingMode === 'REQUIRED' && !explanation.trim() && !workingFiles.length) return setError(tWorking('required'));
     const missing = imaging.tasks.filter((task) => !taskDone(task)).length;
     const unanswered =
       imaging.findings.filter((f) => !findings[f.id]?.length).length + imaging.reportFields.filter((f) => !fields[f.id]?.trim()).length;
@@ -121,7 +133,10 @@ export function ImagingLesson({
     try {
       const sr = buildReport();
       setLastSr(sr);
-      const graded = ImagingResultSchema.parse(await api('POST', `learn/lessons/${lessonId}/imaging/attempts`, { sr: toBase64(sr) }));
+      const graded = ImagingResultSchema.parse(await api('POST', `learn/lessons/${lessonId}/imaging/attempts`, {
+          sr: toBase64(sr),
+          ...(workingMode === 'OFF' ? {} : { explanation: explanation.trim() || null, workingAssetIds: workingFiles.map((f) => f.id) }),
+        }));
       setResult(graded);
       setJustGraded(graded);
       setShowReference(false);
@@ -227,6 +242,7 @@ export function ImagingLesson({
               </tbody>
             </table>
           </div>
+          {result.working ? <WorkingView working={result.working} /> : null}
         </section>
       ) : null}
 
@@ -311,10 +327,70 @@ export function ImagingLesson({
                     className="w-40 rounded-[4px] border border-border bg-background px-3 py-2"
                   />
                   {field.unit === 'none' ? null : <span className="text-muted-foreground">{field.unit}</span>}
+                  {field.resourceId && resources.some((r) => r.id === field.resourceId) ? (
+                    <button
+                      type="button"
+                      onClick={() => openResource(field.resourceId!)}
+                      className="flex items-center gap-1 rounded-[4px] border border-border px-2 py-1.5 text-xs font-medium text-primary hover:border-primary"
+                    >
+                      <Calculator aria-hidden className="size-3.5" />
+                      {t('calculateWith', { title: resources.find((r) => r.id === field.resourceId)!.title })}
+                    </button>
+                  ) : null}
                 </span>
               </label>
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {workingMode !== 'OFF' && enrolled ? (
+        <section aria-labelledby="working-heading" className="flex flex-col gap-3 rounded-xl border border-border p-4">
+          <div>
+            <h3 id="working-heading" className="font-semibold">
+              {tWorking('yourWorking')}{' '}
+              <span className="text-sm font-normal text-muted-foreground">({tWorking(workingMode === 'REQUIRED' ? 'requiredTag' : 'optionalTag')})</span>
+            </h3>
+            <p className="text-sm text-muted-foreground">{imaging.working.prompt ?? tWorking('defaultPrompt')}</p>
+          </div>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">{tWorking('explanation')}</span>
+            <textarea
+              rows={5}
+              maxLength={5000}
+              value={explanation}
+              onChange={(e) => setExplanation(e.target.value)}
+              placeholder={tWorking('explanationPlaceholder')}
+              className="rounded-[4px] border border-border bg-background px-3 py-2"
+            />
+          </label>
+          {workingFiles.length ? (
+            <ul className="flex flex-wrap gap-2" aria-label={tWorking('attached')}>
+              {workingFiles.map((f) => (
+                <li key={f.id} className="flex items-center gap-1 rounded-lg border border-border py-1 pe-1 ps-3 text-sm">
+                  <span className="max-w-48 truncate">{f.name}</span>
+                  <button type="button" aria-label={tWorking('removeFile', { name: f.name })} onClick={() => setWorkingFiles((cur) => cur.filter((x) => x.id !== f.id))} className="rounded p-1 text-muted-foreground hover:text-destructive">
+                    <X aria-hidden className="size-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {workingFiles.length < MAX_WORKING_FILES ? (
+            <FileUpload
+              key={uploadKey}
+              scope="learner"
+              kind="IMAGE"
+              accept={['image/jpeg', 'image/png', 'image/webp', 'application/pdf']}
+              label={tWorking('attach')}
+              hint={tWorking('attachHint', { max: MAX_WORKING_FILES })}
+              currentName={null}
+              onUploaded={({ assetId, fileName }) => {
+                setWorkingFiles((cur) => [...cur, { id: assetId, name: fileName }]);
+                setUploadKey((k) => k + 1);
+              }}
+            />
+          ) : null}
         </section>
       ) : null}
 

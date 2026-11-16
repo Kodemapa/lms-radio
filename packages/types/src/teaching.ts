@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AttemptWorkingSchema, WorkingStatusSchema } from './imaging.js';
 
 /**
  * Instructor tools: co-instructors, students, assessment reports, analytics,
@@ -61,6 +62,8 @@ export const CourseStudentSchema = z.object({
   totalLessons: z.number().int(),
   progressPercent: z.number().int(),
   lastActivityAt: z.string().datetime().nullable(),
+  /** The lesson the student was on most recently ("where they are"). */
+  currentLesson: z.object({ id: z.string().uuid(), title: z.string() }).nullable(),
   /** null when the course has no entrance test. */
   entrancePassed: z.boolean().nullable(),
   certificateSerial: z.string().nullable(),
@@ -114,6 +117,8 @@ export const LearnerAttemptsSchema = z.object({
   passed: z.boolean(),
   lastAttemptAt: z.string().datetime(),
   lastAttemptId: z.string().uuid(),
+  /** DICOM cases: the latest attempt's working check (null = no working). */
+  workingStatus: WorkingStatusSchema.nullable().default(null),
 });
 export type LearnerAttempts = z.infer<typeof LearnerAttemptsSchema>;
 
@@ -143,6 +148,8 @@ export const AttemptDetailSchema = z.object({
   createdAt: z.string().datetime(),
   scorePercent: z.number().int(),
   passed: z.boolean(),
+  /** DICOM cases: the learner's working and its faculty check. */
+  working: AttemptWorkingSchema.nullable().default(null),
   items: z.array(
     z.object({
       label: z.string(),

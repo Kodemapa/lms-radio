@@ -110,6 +110,7 @@ model User {
   entranceAttempts      EntranceAttempt[]
   checkpointAnswers     CheckpointAnswer[]
   imagingAttempts       ImagingAttempt[]
+  reviewedWorking       ImagingAttempt[]        @relation("WorkingReviewer")
   collaborations        CourseCollaborator[]    @relation("CourseCollaborations")
   /// Set when the account is deleted; personal fields are erased (DPDP Act).
   deletedAt             DateTime?
@@ -238,8 +239,8 @@ model Course {
   entrancePassPercent   Int           @default(60)
   /// null = unlimited attempts.
   entranceMaxAttempts   Int?
-  /// Only bank questions with this topic are drawn (null = whole bank).
-  entranceTopic         String?
+  /// Only bank questions in this topic are drawn (null = whole bank).
+  entranceTopicId       String?       @db.Uuid
   submittedAt           DateTime?
   publishedAt           DateTime?
   createdAt             DateTime      @default(now())
@@ -262,6 +263,8 @@ model Course {
   annotationTerms     AnnotationTerm[]
   collaborators       CourseCollaborator[]
   certificateTemplate CertificateTemplate?
+  questionTopics      QuestionTopic[]
+  entranceTopic       QuestionTopic?         @relation("EntranceTopic", fields: [entranceTopicId], references: [id], onDelete: SetNull)
 
   @@index([status, publishedAt])
   @@index([instructorId])
@@ -305,6 +308,8 @@ model Lesson {
   points          Int?
   /// ASSIGNMENT: file kinds learners may attach (IMAGE, PDF).
   submissionKinds MediaKind[] @default([])
+  /// Links for learners, e.g. online calculators: [{ id, title, url, note, embed }] (ResourceLinkSchema).
+  resources       Json        @default("[]")
   /// Soft delete (curriculum trash). Learner progress and attempts are kept.
   deletedAt       DateTime?
 
@@ -385,21 +390,39 @@ model ImagingImage {
 
 /// A learner's submitted DICOM SR and its grade.
 model ImagingAttempt {
-  id           String   @id @default(uuid()) @db.Uuid
-  lessonId     String   @db.Uuid
-  userId       String   @db.Uuid
-  srAssetId    String   @db.Uuid
-  scorePercent Int
-  passed       Boolean
+  id                  String         @id @default(uuid()) @db.Uuid
+  lessonId            String         @db.Uuid
+  userId              String         @db.Uuid
+  srAssetId           String         @db.Uuid
+  scorePercent        Int
+  passed              Boolean
   /// ImagingResultItem[]
-  result       Json
-  createdAt    DateTime @default(now())
+  result              Json
+  /// The learner's working: how they reached their values…
+  explanation         String?
+  /// …and photos / PDFs of handwritten calculations (their own IMAGE/PDF uploads).
+  workingAssetIds     String[]       @default([]) @db.Uuid
+  /// null = no working submitted.
+  workingStatus       WorkingStatus?
+  workingFeedback     String?
+  workingReviewedById String?        @db.Uuid
+  workingReviewedAt   DateTime?
+  createdAt           DateTime       @default(now())
 
-  lesson Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  srFile MediaAsset @relation(fields: [srAssetId], references: [id], onDelete: Cascade)
+  lesson            Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  srFile            MediaAsset @relation(fields: [srAssetId], references: [id], onDelete: Cascade)
+  workingReviewedBy User?      @relation("WorkingReviewer", fields: [workingReviewedById], references: [id], onDelete: SetNull)
 
   @@index([userId, lessonId, createdAt])
+  @@index([workingAssetIds], type: Gin)
+}
+
+/// Faculty check of a learner's written working on a DICOM case.
+enum WorkingStatus {
+  PENDING
+  VERIFIED
+  RETURNED
 }
 
 enum DrmPackageStatus {
@@ -442,6 +465,11 @@ model LessonProgress {
   lessonId    String    @db.Uuid
   courseId    String    @db.Uuid
   positionSec Int       @default(0)
+  /// VIDEO: furthest point reached, and seconds actually played (capped by real time).
+  furthestSec Int       @default(0)
+  watchedSec  Int       @default(0)
+  /// How many times the learner opened the lesson.
+  views       Int       @default(0)
   completedAt DateTime?
   skipped     Boolean   @default(false)
   updatedAt   DateTime  @updatedAt
@@ -467,12 +495,16 @@ model QuizQuestion {
   atSec          Int?
   /// Set when the question was added from the course question bank.
   bankQuestionId String? @db.Uuid
+  /// Topic used for strengths / weaknesses reports.
+  topicId        String? @db.Uuid
 
   lesson            Lesson             @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  topic             QuestionTopic?     @relation(fields: [topicId], references: [id], onDelete: SetNull)
   options           QuizOption[]
   checkpointAnswers CheckpointAnswer[]
 
   @@index([lessonId, position])
+  @@index([topicId])
 }
 
 model QuizOption {
@@ -505,8 +537,7 @@ model CheckpointAnswer {
 model BankQuestion {
   id            String   @id @default(uuid()) @db.Uuid
   courseId      String   @db.Uuid
-  /// Free-text grouping, e.g. "Module 3" or "Entrance".
-  topic         String?
+  topicId       String?  @db.Uuid
   text          String
   explanation   String?
   allowMultiple Boolean  @default(false)
@@ -514,9 +545,29 @@ model BankQuestion {
   options       Json
   createdAt     DateTime @default(now())
 
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  topic  QuestionTopic? @relation(fields: [topicId], references: [id], onDelete: SetNull)
 
-  @@index([courseId, topic])
+  @@index([courseId, topicId])
+}
+
+/// A course's question topic, e.g. "First-trimester screening". Bank and quiz
+/// questions are grouped by topic, and learner reports show strengths per topic.
+model QuestionTopic {
+  id          String   @id @default(uuid()) @db.Uuid
+  courseId    String   @db.Uuid
+  name        String
+  description String?
+  position    Int
+  createdAt   DateTime @default(now())
+
+  course          Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  bankQuestions   BankQuestion[]
+  quizQuestions   QuizQuestion[]
+  entranceCourses Course[]       @relation("EntranceTopic")
+
+  @@unique([courseId, name])
+  @@index([courseId, position])
 }
 
 /// One sitting of the entrance test. The drawn questions and option order are

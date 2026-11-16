@@ -204,7 +204,9 @@ export function ImagingWorkspace({
   const calibrated = !!image.calibration;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+    // Lays out by its own width (it may sit beside a calculator panel), not the screen's.
+    <div className="@container">
+    <div className="grid gap-4 @3xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex min-w-0 flex-col gap-2">
         {images.length > 1 ? (
           <div role="tablist" aria-label={t('images')} className="flex flex-wrap gap-1.5">
@@ -376,6 +378,7 @@ export function ImagingWorkspace({
           })}
         </ul>
       </aside>
+    </div>
     </div>
   );
 }

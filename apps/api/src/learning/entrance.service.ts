@@ -101,7 +101,7 @@ export class EntranceService {
     }
 
     const pool = await this.prisma.bankQuestion.findMany({
-      where: { courseId: course.id, ...(course.entranceTopic ? { topic: course.entranceTopic } : {}) },
+      where: { courseId: course.id, ...(course.entranceTopicId ? { topicId: course.entranceTopicId } : {}) },
       select: { id: true, options: true },
     });
     if (pool.length === 0) throw new ConflictException({ code: 'EMPTY_POOL' });

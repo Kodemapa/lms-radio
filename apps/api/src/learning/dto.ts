@@ -24,6 +24,11 @@ export class ProgressDto {
   @IsOptional()
   @IsBoolean()
   completed?: boolean;
+
+  /** Sent once when the learner opens the lesson; counts a view. */
+  @IsOptional()
+  @IsBoolean()
+  opened?: boolean;
 }
 
 export class CheckpointAnswerDto {

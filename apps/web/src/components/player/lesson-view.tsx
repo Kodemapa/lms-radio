@@ -1,18 +1,25 @@
 'use client';
 
 import { type PlayerLessonDetail } from '@obgyn/types';
-import { Button } from '@obgyn/ui';
+import { Button, Skeleton } from '@obgyn/ui';
 import { ArrowLeft, ArrowRight, CheckCircle2, SkipForward } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/instructor-api';
 import { AssignmentLesson } from './assignment-lesson';
 import { PdfLesson } from './pdf-lesson';
-import { ImagingLesson } from './imaging-lesson';
 import { QuizLesson } from './quiz-lesson';
+import { LessonResources, ResourcePanelProvider } from './resources';
 import { VideoLesson } from './video-lesson';
+
+// Cornerstone + dcmjs are megabytes; only DICOM lessons should pay for them.
+const ImagingLesson = dynamic(() => import('./imaging-lesson').then((m) => m.ImagingLesson), {
+  ssr: false,
+  loading: () => <Skeleton className="aspect-video w-full rounded-2xl" />,
+});
 
 const SELF_COMPLETE = new Set(['VIDEO', 'PDF', 'SIMULATOR', 'LIVE_CLASS']);
 /** A video counts as watched at 90%. */
@@ -29,10 +36,19 @@ export function LessonView({ lesson }: { lesson: PlayerLessonDetail }) {
   const autoCompleted = useRef(lesson.progress.completed);
   const slug = lesson.course.slug;
 
-  const save = async (body: { positionSec?: number; completed?: boolean }) => {
+  const save = async (body: { positionSec?: number; completed?: boolean; opened?: boolean }) => {
     if (!lesson.enrolled) return;
     await api('PUT', `learn/lessons/${lesson.id}/progress`, body);
   };
+
+  // Count a view each time the lesson is opened (for progress reports).
+  // The ref survives React's development double-mount, so a view counts once.
+  const counted = useRef<string | null>(null);
+  useEffect(() => {
+    if (!lesson.enrolled || counted.current === lesson.id) return;
+    counted.current = lesson.id;
+    void api('PUT', `learn/lessons/${lesson.id}/progress`, { opened: true }).catch(() => undefined);
+  }, [lesson.id, lesson.enrolled]);
 
   const setDone = async (done: boolean) => {
     setPending(true);
@@ -101,6 +117,7 @@ export function LessonView({ lesson }: { lesson: PlayerLessonDetail }) {
   }
 
   return (
+    <ResourcePanelProvider resources={lesson.resources}>
     <article className="mx-auto flex max-w-5xl flex-col gap-5">
       {!lesson.enrolled && lesson.isPreview ? (
         <p role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-primary-light p-3 text-sm text-primary">
@@ -119,6 +136,7 @@ export function LessonView({ lesson }: { lesson: PlayerLessonDetail }) {
       </div>
       {body}
       {lesson.description ? <p className="whitespace-pre-line text-muted-foreground">{lesson.description}</p> : null}
+      <LessonResources />
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
         {lesson.prevLessonId ? (
@@ -156,5 +174,6 @@ export function LessonView({ lesson }: { lesson: PlayerLessonDetail }) {
       </div>
       {error ? <p role="alert" className="text-sm text-destructive">{tCommon('genericError')}</p> : null}
     </article>
+    </ResourcePanelProvider>
   );
 }

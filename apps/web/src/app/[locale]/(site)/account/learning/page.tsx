@@ -1,6 +1,6 @@
 import { MyCourseSchema } from '@obgyn/types';
 import { Progress } from '@obgyn/ui';
-import { Award, CheckCircle2 } from 'lucide-react';
+import { Award, BarChart3, CheckCircle2 } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { z } from 'zod';
 import { CourseThumbnail } from '@/components/course/course-thumbnail';
@@ -53,6 +53,10 @@ export default async function MyLearningPage({ params }: { params: Promise<{ loc
                   {done && !certificateSerial ? (
                     <span className="flex items-center gap-1 text-sm text-success"><CheckCircle2 aria-hidden className="size-4" />{t('completedCourse')}</span>
                   ) : null}
+                  <Link href={`/account/learning/${course.slug}`} className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+                    <BarChart3 aria-hidden className="size-4" />
+                    {t('progressReport')}
+                  </Link>
                   {certificateSerial ? (
                     <Link href={`/certificates/${certificateSerial}`} className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
                       <Award aria-hidden className="size-4" />

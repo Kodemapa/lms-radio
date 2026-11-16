@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { type AnnotationTerm, type DicomImageMeta, type ImagingResult, type InstructorImagingCase } from '@obgyn/types';
+import { type AnnotationTerm, type DicomImageMeta, type ImagingResult, type InstructorImagingCase,
+  type AttemptWorking,
+} from '@obgyn/types';
 import { type AuthUser } from '../auth/auth-user';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -41,6 +43,12 @@ export class ImagingAuthoringController {
   @ApiOperation({ summary: 'Imaging case: images, reference measurements, tolerances, findings' })
   get(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string): Promise<InstructorImagingCase> {
     return this.imaging.instructorCase(user, id);
+  }
+
+  @Put('imaging-attempts/:id/working')
+  @ApiOperation({ summary: "Verify a learner's working on a DICOM case, or return it with feedback" })
+  reviewWorking(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string, @Body() body: unknown): Promise<AttemptWorking> {
+    return this.imaging.reviewWorking(user, id, body);
   }
 
   @Put('lessons/:id/imaging')

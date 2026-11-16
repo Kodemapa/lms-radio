@@ -11,3 +11,5 @@ export * from './teaching.js';
 export * from './roles.js';
 export * from './submission.js';
 export * from './user.js';
+export * from './progress.js';
+export * from './resources.js';

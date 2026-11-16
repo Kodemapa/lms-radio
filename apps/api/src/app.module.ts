@@ -16,6 +16,7 @@ import { InstructorsModule } from './instructors/instructors.module';
 import { LearningModule } from './learning/learning.module';
 import { MediaModule } from './media/media.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ReportsModule } from './reports/reports.module';
 import { StorageModule } from './storage/storage.module';
 import { TeachingModule } from './teaching/teaching.module';
 import { UploadsModule } from './uploads/uploads.module';
@@ -41,6 +42,7 @@ import { UsersModule } from './users/users.module';
     MediaModule,
     ImagingModule,
     TeachingModule,
+    ReportsModule,
     FilesModule,
     HealthModule,
   ],

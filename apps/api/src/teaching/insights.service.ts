@@ -18,6 +18,7 @@ import { type AuthUser } from '../auth/auth-user';
 import { LIVE_LESSON } from '../common/soft-delete';
 import { CoursePermissions } from '../courses/course-permissions';
 import { readKey } from '../imaging/grading';
+import { ImagingService } from '../imaging/imaging.service';
 import { DEFAULT_PASS_PERCENT } from '../learning/grading';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -47,7 +48,7 @@ export function toStudentsCsv(rows: CourseStudent[]): string {
     const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
     return `"${safe.replace(/"/g, '""')}"`;
   };
-  const header = ['Name', 'Email', 'Enrolled', 'Completed lessons', 'Total lessons', 'Progress %', 'Last activity', 'Entrance passed', 'Certificate'];
+  const header = ['Name', 'Email', 'Enrolled', 'Completed lessons', 'Total lessons', 'Progress %', 'Last activity', 'Current lesson', 'Entrance passed', 'Certificate'];
   const lines = rows.map((r) =>
     [
       r.displayName,
@@ -57,6 +58,7 @@ export function toStudentsCsv(rows: CourseStudent[]): string {
       r.totalLessons,
       r.progressPercent,
       r.lastActivityAt?.slice(0, 10) ?? null,
+      r.currentLesson?.title ?? null,
       r.entrancePassed === null ? null : r.entrancePassed ? 'yes' : 'no',
       r.certificateSerial,
     ]
@@ -90,6 +92,7 @@ export function summariseAttempts(attempts: RawAttempt[], names: Map<string, str
       passed: list.some((a) => a.passed),
       lastAttemptAt: last.createdAt.toISOString(),
       lastAttemptId: last.id,
+      workingStatus: null,
     };
   });
 }
@@ -128,6 +131,7 @@ export class InsightsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly permissions: CoursePermissions,
+    private readonly imaging: ImagingService,
   ) {}
 
   /**
@@ -171,14 +175,20 @@ export class InsightsService {
         where: { courseId, userId: { in: ids }, completedAt: { not: null }, lesson: LIVE_LESSON },
         _count: { _all: true },
       }),
-      this.prisma.lessonProgress.groupBy({ by: ['userId'], where: { courseId, userId: { in: ids } }, _max: { updatedAt: true } }),
+      // Most recent lesson per student ("where they are").
+      this.prisma.lessonProgress.findMany({
+        where: { courseId, userId: { in: ids }, lesson: LIVE_LESSON },
+        orderBy: { updatedAt: 'desc' },
+        distinct: ['userId'],
+        select: { userId: true, updatedAt: true, lesson: { select: { id: true, title: true } } },
+      }),
       this.prisma.certificate.findMany({ where: { courseId, userId: { in: ids } }, select: { userId: true, serial: true } }),
       full.entranceTestEnabled
         ? this.prisma.entranceAttempt.findMany({ where: { courseId, userId: { in: ids }, passed: true }, select: { userId: true } })
         : Promise.resolve(null),
     ]);
     const done = new Map(completed.map((r) => [r.userId, r._count._all]));
-    const last = new Map(activity.map((r) => [r.userId, r._max.updatedAt]));
+    const last = new Map(activity.map((r) => [r.userId, r]));
     const certs = new Map(certificates.map((c) => [c.userId, c.serial]));
     const passed = entrance ? new Set(entrance.map((e) => e.userId)) : null;
     return enrollments.map((e) => {
@@ -191,7 +201,8 @@ export class InsightsService {
         completedLessons,
         totalLessons,
         progressPercent: progressPercent(completedLessons, totalLessons),
-        lastActivityAt: last.get(e.userId)?.toISOString() ?? null,
+        lastActivityAt: last.get(e.userId)?.updatedAt.toISOString() ?? null,
+        currentLesson: last.get(e.userId)?.lesson ?? null,
         entrancePassed: passed ? passed.has(e.userId) : null,
         certificateSerial: certs.get(e.userId) ?? null,
       };
@@ -326,7 +337,11 @@ export class InsightsService {
       return { summary: summary('QUIZ', lessonId, lesson.title, passPercent, learners), learners, items };
     }
     const attempts = await this.prisma.imagingAttempt.findMany({ where: { lessonId, userId: { notIn: await this.teamIds(courseId) } }, orderBy: { createdAt: 'asc' } });
-    const learners = summariseAttempts(attempts, await this.names(attempts.map((a) => a.userId)));
+    const working = new Map(attempts.map((a) => [a.id, a.workingStatus]));
+    const learners = summariseAttempts(attempts, await this.names(attempts.map((a) => a.userId))).map((l) => ({
+      ...l,
+      workingStatus: working.get(l.lastAttemptId) ?? null,
+    }));
     const latest = attempts.filter((a) => learners.some((l) => l.lastAttemptId === a.id)).map((a) => a.result as unknown as ImagingResultItem[]);
     // Analyse the case's current answer key only (items from an edited-away key would mislead).
     const kase = await this.prisma.imagingCase.findUnique({ where: { lessonId }, select: { key: true } });
@@ -362,6 +377,7 @@ export class InsightsService {
         id: attempt.id,
         kind,
         title: attempt.lesson.title,
+        working: null,
         learner: attempt.user,
         createdAt: attempt.createdAt.toISOString(),
         scorePercent: attempt.scorePercent,
@@ -396,6 +412,7 @@ export class InsightsService {
         createdAt: attempt.createdAt.toISOString(),
         scorePercent: attempt.scorePercent,
         passed: attempt.passed,
+        working: await this.imaging.working(attempt),
         items: items.map((i) => ({ label: i.label, correct: i.passed, credit: i.marks ? i.earned / i.marks : 0, answer: i.actual, expected: i.expected })),
       };
     }
@@ -412,6 +429,7 @@ export class InsightsService {
       id: attempt.id,
       kind,
       title: 'Entrance test',
+      working: null,
       learner: attempt.user,
       createdAt: attempt.submittedAt.toISOString(),
       scorePercent: attempt.scorePercent ?? 0,

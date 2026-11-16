@@ -14,6 +14,10 @@ import {
   type ImagingCaseInput,
   type ImagingImage,
   type ReportFieldKey,
+  DEFAULT_WORKING,
+  WORKING_MODES,
+  type ResourceLink,
+  type WorkingSettings,
 } from '@obgyn/types';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Label, Textarea } from '@obgyn/ui';
 import { AlertTriangle, Download, Plus, Trash2 } from 'lucide-react';
@@ -24,6 +28,7 @@ import { bffFetch } from '@/lib/client-fetch';
 import { api, ApiClientError } from '@/lib/instructor-api';
 import { DictionaryEditor } from './dictionary-editor';
 import { FileUpload } from './file-upload';
+import { ResourceLinksEditor } from './resource-links-editor';
 
 interface Rule {
   valueToleranceMm: number | null;
@@ -115,6 +120,8 @@ export function ImagingCaseDialog({
   const [rules, setRules] = useState<Record<string, Rule>>({});
   const [findings, setFindings] = useState<FindingKey[]>([]);
   const [fields, setFields] = useState<ReportFieldKey[]>([]);
+  const [resources, setResources] = useState<ResourceLink[]>([]);
+  const [working, setWorking] = useState<WorkingSettings>(DEFAULT_WORKING);
   const [dictionary, setDictionary] = useState<AnnotationTerm[]>([]);
   const [referenceSr, setReferenceSr] = useState<string | null>(null);
   const [status, setStatus] = useState<{ kind: 'saving' | 'saved' } | { kind: 'error'; message: string } | null>(null);
@@ -143,6 +150,8 @@ export function ImagingCaseDialog({
     );
     setFindings(value.findings);
     setFields(value.reportFields);
+    setResources(value.resources);
+    setWorking(value.working);
     setReferenceSr(value.referenceSrAssetId);
   };
 
@@ -162,7 +171,10 @@ export function ImagingCaseDialog({
     images: images.map((i) => ({ assetId: i.assetId, label: i.label })),
     annotations: annotations.map((a) => ({ id: a.id, label: a.label.trim(), tool: a.tool, assetId: a.assetId, frame: a.frame, coords: a.coords, ...ruleOf(a) })),
     findings,
-    reportFields: fields,
+    // A calculator removed from the list is unlinked from its fields.
+    reportFields: fields.map((f) => (f.resourceId && !resources.some((r) => r.id === f.resourceId) ? { ...f, resourceId: null } : f)),
+    resources,
+    working,
   });
 
   const save = async () => {
@@ -494,19 +506,20 @@ export function ImagingCaseDialog({
                   variant="outline"
                   size="sm"
                   disabled={disabled}
-                  onClick={() => setFields((current) => [...current, { id: newId('r'), label: '', unit: 'mm', value: 0, tolerance: 0, marks: 1, teachingPoint: null }])}
+                  onClick={() => setFields((current) => [...current, { id: newId('r'), label: '', unit: 'mm', value: 0, tolerance: 0, marks: 1, teachingPoint: null, resourceId: null }])}
                 >
                   <Plus aria-hidden className="size-4" />
                   {t('addField')}
                 </Button>
               </div>
               {fields.length ? (
-                <div className="grid grid-cols-[minmax(0,2fr)_90px_110px_110px_70px_32px] items-end gap-2 text-xs">
+                <div className="grid grid-cols-[minmax(0,2fr)_80px_100px_100px_64px_minmax(0,1fr)_32px] items-end gap-2 text-xs">
                   <span>{t('fieldLabel')}</span>
                   <span>{t('unit')}</span>
                   <span>{t('referenceValue')}</span>
                   <span>{t('tolerance')}</span>
                   <span>{t('marks')}</span>
+                  <span>{t('calculator')}</span>
                   <span />
                   {fields.map((field, index) => (
                     <div key={field.id} className="contents">
@@ -521,12 +534,53 @@ export function ImagingCaseDialog({
                       <Input aria-label={t('referenceValue')} type="number" step="any" disabled={disabled} value={field.value} onChange={(e) => updateField(index, { value: Number(e.target.value) })} />
                       <Input aria-label={t('tolerance')} type="number" min={0} step="any" disabled={disabled} value={field.tolerance} onChange={(e) => updateField(index, { tolerance: Math.max(0, Number(e.target.value)) })} />
                       <Input aria-label={t('marks')} type="number" min={1} max={100} disabled={disabled} value={field.marks} onChange={(e) => updateField(index, { marks: clampMarks(e.target.value) })} />
+                      <select aria-label={t('calculator')} value={field.resourceId ?? ''} disabled={disabled || !resources.length} onChange={(e) => updateField(index, { resourceId: e.target.value || null })} className="h-9 min-w-0 rounded-[4px] border border-border bg-background px-2 text-sm">
+                        <option value="">{resources.length ? t('noCalculator') : t('addCalculatorFirst')}</option>
+                        {resources.map((r) => (
+                          <option key={r.id} value={r.id}>{r.title || r.url}</option>
+                        ))}
+                      </select>
                       <button type="button" aria-label={t('remove')} disabled={disabled} onClick={() => setFields((current) => current.filter((_, i) => i !== index))} className="rounded p-1 text-muted-foreground hover:text-destructive">
                         <Trash2 aria-hidden className="size-4" />
                       </button>
                     </div>
                   ))}
                 </div>
+              ) : null}
+              {fields.length ? <p className="text-xs text-muted-foreground">{t('toleranceHelp')}</p> : null}
+            </section>
+
+            <section className="flex flex-col gap-3">
+              <div>
+                <h3 className="font-semibold">{t('stepResources')}</h3>
+                <p className="text-sm text-muted-foreground">{t('resourcesHelp')}</p>
+              </div>
+              <ResourceLinksEditor value={resources} onChange={setResources} disabled={disabled} />
+            </section>
+
+            <section className="flex flex-col gap-3">
+              <div>
+                <h3 className="font-semibold">{t('stepWorking')}</h3>
+                <p className="text-sm text-muted-foreground">{t('workingHelp')}</p>
+              </div>
+              <div className="flex flex-wrap gap-4" role="radiogroup" aria-label={t('stepWorking')}>
+                {WORKING_MODES.map((mode) => (
+                  <label key={mode} className="flex items-center gap-2 text-sm">
+                    <input type="radio" name="working-mode" className="size-4 accent-[var(--primary)]" disabled={disabled} checked={working.mode === mode} onChange={() => setWorking({ ...working, mode })} />
+                    {t(`workingMode.${mode}`)}
+                  </label>
+                ))}
+              </div>
+              {working.mode !== 'OFF' ? (
+                <Textarea
+                  rows={2}
+                  maxLength={1000}
+                  disabled={disabled}
+                  aria-label={t('workingPrompt')}
+                  placeholder={t('workingPromptPlaceholder')}
+                  value={working.prompt ?? ''}
+                  onChange={(e) => setWorking({ ...working, prompt: e.target.value || null })}
+                />
               ) : null}
             </section>
 

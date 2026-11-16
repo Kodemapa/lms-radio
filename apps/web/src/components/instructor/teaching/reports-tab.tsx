@@ -4,17 +4,22 @@ import {
   AssessmentReportSchema,
   AssessmentSummarySchema,
   AttemptDetailSchema,
+  AttemptWorkingSchema,
+  WorkingReviewSchema,
   type AssessmentKind,
+  type AttemptWorking,
+  type WorkingStatus,
   type AssessmentReport,
   type AssessmentSummary,
   type AttemptDetail,
 } from '@obgyn/types';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@obgyn/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@obgyn/ui';
 import { ArrowLeft, CheckCircle2, MinusCircle, XCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { Meter } from '@/components/charts/day-bars';
+import { WorkingStatusBadge, WorkingView } from '@/components/imaging/working-view';
 import { api } from '@/lib/instructor-api';
 
 const KIND_PATH: Record<AssessmentKind, string> = { QUIZ: 'quiz', IMAGING: 'imaging', ENTRANCE: 'entrance' };
@@ -76,6 +81,7 @@ export function ReportsTab({ courseId }: { courseId: string }) {
 
 function Report({ courseId, summary, onBack }: { courseId: string; summary: AssessmentSummary; onBack: () => void }) {
   const t = useTranslations('Teaching');
+  const tWorking = useTranslations('Working');
   const tImg = useTranslations('Imaging');
   const locale = useLocale();
   const [report, setReport] = useState<AssessmentReport | null>(null);
@@ -161,9 +167,12 @@ function Report({ courseId, summary, onBack }: { courseId: string; summary: Asse
                           {l.passed ? <CheckCircle2 aria-hidden className="size-4" /> : <XCircle aria-hidden className="size-4" />}
                           {l.passed ? t('passed') : t('notPassed')}
                         </span>
+                        {l.workingStatus ? <span className="mt-1 block"><WorkingStatusBadge status={l.workingStatus} /></span> : null}
                       </td>
                       <td className="px-3 py-2 text-end">
-                        <Button variant="outline" size="sm" onClick={() => setAttemptId(l.lastAttemptId)}>{t('viewAttempt')}</Button>
+                        <Button variant={l.workingStatus === 'PENDING' ? 'default' : 'outline'} size="sm" onClick={() => setAttemptId(l.lastAttemptId)}>
+                          {l.workingStatus === 'PENDING' ? tWorking('checkWorking') : t('viewAttempt')}
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -173,13 +182,35 @@ function Report({ courseId, summary, onBack }: { courseId: string; summary: Asse
           </section>
         </>
       )}
-      {attemptId ? <AttemptDialog kind={summary.kind} attemptId={attemptId} onClose={() => setAttemptId(null)} /> : null}
+      {attemptId ? (
+        <AttemptDialog
+          kind={summary.kind}
+          attemptId={attemptId}
+          onClose={() => setAttemptId(null)}
+          onReviewed={(status) =>
+            setReport((current) =>
+              current ? { ...current, learners: current.learners.map((x) => (x.lastAttemptId === attemptId ? { ...x, workingStatus: status } : x)) } : current,
+            )
+          }
+        />
+      ) : null}
     </div>
   );
 }
 
-function AttemptDialog({ kind, attemptId, onClose }: { kind: AssessmentKind; attemptId: string; onClose: () => void }) {
+function AttemptDialog({
+  kind,
+  attemptId,
+  onClose,
+  onReviewed,
+}: {
+  kind: AssessmentKind;
+  attemptId: string;
+  onClose: () => void;
+  onReviewed: (status: WorkingStatus) => void;
+}) {
   const t = useTranslations('Teaching');
+  const tWorking = useTranslations('Working');
   const tCommon = useTranslations('Common');
   const locale = useLocale();
   const [detail, setDetail] = useState<AttemptDetail | null>(null);
@@ -223,9 +254,64 @@ function AttemptDialog({ kind, attemptId, onClose }: { kind: AssessmentKind; att
                 </li>
               ))}
             </ol>
+            {detail.working ? (
+              <>
+                <WorkingView working={detail.working} />
+                <WorkingReviewForm
+                  attemptId={detail.id}
+                  current={detail.working}
+                  onSaved={(working) => {
+                    setDetail({ ...detail, working });
+                    onReviewed(working.status);
+                  }}
+                />
+              </>
+            ) : kind === 'IMAGING' ? (
+              <p className="text-sm text-muted-foreground">{tWorking('noneSubmitted')}</p>
+            ) : null}
           </div>
         ) : null}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Verify the learner's working, or return it with what to correct. */
+function WorkingReviewForm({ attemptId, current, onSaved }: { attemptId: string; current: AttemptWorking; onSaved: (working: AttemptWorking) => void }) {
+  const t = useTranslations('Working');
+  const tCommon = useTranslations('Common');
+  const [feedback, setFeedback] = useState(current.feedback ?? '');
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const save = async (status: 'VERIFIED' | 'RETURNED') => {
+    const body = WorkingReviewSchema.safeParse({ status, feedback: feedback.trim() || null });
+    if (!body.success) return setError(t('feedbackNeeded'));
+    setPending(true);
+    setError(null);
+    try {
+      onSaved(AttemptWorkingSchema.parse(await api('PUT', `instructor/imaging-attempts/${attemptId}/working`, body.data)));
+    } catch {
+      setError(tCommon('genericError'));
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary-light/40 p-4">
+      <label htmlFor={`feedback-${attemptId}`} className="text-sm font-medium">{t('feedbackLabel')}</label>
+      <Textarea id={`feedback-${attemptId}`} rows={3} maxLength={2000} value={feedback} placeholder={t('feedbackPlaceholder')} onChange={(e) => setFeedback(e.target.value)} />
+      {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" disabled={pending} onClick={() => void save('VERIFIED')}>
+          <CheckCircle2 aria-hidden className="size-4" />
+          {t('verify')}
+        </Button>
+        <Button size="sm" variant="outline" disabled={pending} onClick={() => void save('RETURNED')}>
+          {t('return')}
+        </Button>
+      </div>
+    </div>
   );
 }

@@ -16,13 +16,16 @@ import {
 } from '@obgyn/ui';
 import { ArrowDown, ArrowUp, ClipboardList, FileText, HelpCircle, Info, ListChecks, Pencil, PlayCircle, Plus, ScanLine, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 import { useState, type FormEvent } from 'react';
 import { formatClock } from '@/lib/format';
 import { courseApi } from '@/lib/instructor-api';
 import { ConfirmDialog } from '../confirm-dialog';
 import { FileUpload } from './file-upload';
-import { ImagingCaseDialog } from './imaging-case-dialog';
 import { QuestionsDialog } from './questions-dialog';
+
+// Cornerstone + dcmjs are megabytes; load them only when a DICOM case is opened.
+const ImagingCaseDialog = dynamic(() => import('./imaging-case-dialog').then((m) => m.ImagingCaseDialog), { ssr: false });
 
 type ChapterEdit = { mode: 'add' } | { mode: 'edit'; chapter: InstructorChapter };
 type LessonEdit = { mode: 'add'; chapterId: string } | { mode: 'edit'; lesson: InstructorLesson };

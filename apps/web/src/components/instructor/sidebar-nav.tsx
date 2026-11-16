@@ -1,7 +1,14 @@
 'use client';
 
-import { ClipboardCheck, ClipboardList, LayoutDashboard, Library, MessageSquareText, PlusCircle, UserCheck } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, LayoutDashboard, Library, Loader2, MessageSquareText, PlusCircle, UserCheck } from 'lucide-react';
+import { useLinkStatus } from 'next/link';
 import { Link, usePathname } from '@/i18n/navigation';
+
+/** Spins on the link that was just clicked until its page arrives. */
+function PendingSpinner() {
+  const { pending } = useLinkStatus();
+  return pending ? <Loader2 aria-hidden className="ms-auto size-4 animate-spin" /> : null;
+}
 
 const ICONS = {
   dashboard: LayoutDashboard,
@@ -44,6 +51,7 @@ export function SidebarNav({
           >
             <Icon aria-hidden className="size-5" />
             {item.label}
+            <PendingSpinner />
           </Link>
         );
       })}

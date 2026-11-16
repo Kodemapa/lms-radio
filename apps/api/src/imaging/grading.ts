@@ -11,6 +11,9 @@ import {
   type FindingKey,
   type ImagingResultItem,
   type ReportFieldKey,
+  DEFAULT_WORKING,
+  WorkingSettingsSchema,
+  type WorkingSettings,
 } from '@obgyn/types';
 
 export type KeyAnnotation = AnnotationKey & { referenceMm: number | null };
@@ -19,6 +22,8 @@ export interface CaseKey {
   annotations: KeyAnnotation[];
   findings: FindingKey[];
   reportFields: ReportFieldKey[];
+  /** Whether learners attach their working; older keys default to optional. */
+  working: WorkingSettings;
 }
 
 export interface GradingImage {
@@ -66,9 +71,10 @@ export function readKey(json: unknown): CaseKey {
     }),
   );
   const reportFields = ((raw.reportFields ?? []) as Loose<ReportFieldKey>[]).map(
-    (f): ReportFieldKey => ({ ...(f as ReportFieldKey), teachingPoint: f.teachingPoint ?? null }),
+    (f): ReportFieldKey => ({ ...(f as ReportFieldKey), teachingPoint: f.teachingPoint ?? null, resourceId: f.resourceId ?? null }),
   );
-  return { annotations, findings, reportFields };
+  const working = WorkingSettingsSchema.safeParse(raw.working);
+  return { annotations, findings, reportFields, working: working.success ? working.data : DEFAULT_WORKING };
 }
 
 /** A reported value may differ from its own drawing by rounding only. */

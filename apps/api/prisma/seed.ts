@@ -610,7 +610,6 @@ async function main() {
       entranceQuestionCount: 5,
       entrancePassPercent: 60,
       entranceMaxAttempts: 3,
-      entranceTopic: 'Entrance',
       thumbnailAssetId: cover?.id ?? null,
       status: ContentStatus.PUBLISHED,
       publishedAt: new Date(),
@@ -618,15 +617,26 @@ async function main() {
   });
 
   // Question bank: entrance pool + every module's MCQs, so instructors can reuse them.
-  const toBank = (q: Question, topic: string) => ({
+  // Topics: the entrance pool, then one per module (named after it, so reports read naturally).
+  const entranceTopic = await prisma.questionTopic.create({
+    data: { courseId: course.id, name: 'Entrance test pool', description: 'Questions drawn at random for the entrance exam.', position: 1 },
+  });
+  const moduleTopics = await Promise.all(
+    MODULES.map((module, i) =>
+      prisma.questionTopic.create({ data: { courseId: course.id, name: module.title.slice(0, 80), position: i + 2 } }),
+    ),
+  );
+  await prisma.course.update({ where: { id: course.id }, data: { entranceTopicId: entranceTopic.id } });
+
+  const toBank = (q: Question, topicId: string) => ({
     courseId: course.id,
-    topic,
+    topicId,
     text: q.text,
     explanation: q.explanation ?? null,
     allowMultiple: q.options.filter(([, ok]) => ok).length > 1,
     options: q.options.map(([text, isCorrect]) => ({ text, isCorrect })),
   });
-  await prisma.bankQuestion.createMany({ data: ENTRANCE.map((q) => toBank(q, 'Entrance')) });
+  await prisma.bankQuestion.createMany({ data: ENTRANCE.map((q) => toBank(q, entranceTopic.id)) });
 
   await prisma.certificateTemplate.create({
     data: {
@@ -680,6 +690,7 @@ async function main() {
                   create: video.checkpoints.map((cp, i) => ({
                     position: i + 1,
                     atSec: cp.atSec,
+                    topicId: moduleTopics[moduleIndex]!.id,
                     text: cp.text,
                     explanation: cp.explanation ?? null,
                     allowMultiple: cp.options.filter(([, ok]) => ok).length > 1,
@@ -694,7 +705,7 @@ async function main() {
 
     // Each module ends with an MCQ test (built from the bank) and submission of the learner's own scan images.
     const bankRows: { id: string }[] = [];
-    for (const q of module.mcq) bankRows.push(await prisma.bankQuestion.create({ data: toBank(q, `Module ${moduleIndex + 1}`) }));
+    for (const q of module.mcq) bankRows.push(await prisma.bankQuestion.create({ data: toBank(q, moduleTopics[moduleIndex]!.id) }));
     await prisma.lesson.create({
       data: {
         courseId: course.id,
@@ -707,6 +718,7 @@ async function main() {
           create: module.mcq.map((q, qi) => ({
             position: qi + 1,
             bankQuestionId: bankRows[qi]!.id,
+            topicId: moduleTopics[moduleIndex]!.id,
             text: q.text,
             explanation: q.explanation ?? null,
             allowMultiple: q.options.filter(([, ok]) => ok).length > 1,
