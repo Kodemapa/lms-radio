@@ -9,6 +9,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./geometry": {
+      "types": "./dist/geometry.d.ts",
+      "default": "./dist/geometry.js"
+    },
+    "./image": {
+      "types": "./dist/image.d.ts",
+      "default": "./dist/image.js"
+    },
+    "./sr": {
+      "types": "./dist/sr.d.ts",
+      "default": "./dist/sr.js"
     }
   },
   "files": [
@@ -31,5 +43,6 @@
     "eslint": "9.39.5",
     "typescript": "5.9.3",
     "vitest": "3.2.7"
-  }
+  },
+  "sideEffects": false
 }

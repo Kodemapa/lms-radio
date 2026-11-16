@@ -2,6 +2,7 @@ import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundExce
 import { type Playback, type SignedMediaUrl, type WatermarkPayload } from '@obgyn/types';
 import { AuditService } from '../audit/audit.service';
 import { type AuthUser } from '../auth/auth-user';
+import { TtlCache } from '../common/ttl-cache';
 import { AppConfigService } from '../config/app-config.service';
 import { AccessService } from '../courses/access.service';
 import { DrmPackagerService } from '../drm/drm-packager.service';
@@ -15,9 +16,19 @@ import { StorageService, type ReadTarget } from '../storage/storage.service';
 
 export type PackageFile = ReadTarget | { type: 'buffer'; body: Buffer };
 
+/**
+ * Segment requests arrive every few seconds per player, so the two lookups
+ * behind them are remembered briefly. A logout or re-package therefore takes
+ * up to this long to reach segment requests; licences and new grants are
+ * always checked live.
+ */
+export const SEGMENT_CACHE_MS = 30_000;
+
 @Injectable()
 export class MediaService {
   private readonly logger = new Logger(MediaService.name);
+  private readonly liveSessions = new TtlCache<true>(SEGMENT_CACHE_MS);
+  private readonly readyPackages = new TtlCache<string>(SEGMENT_CACHE_MS);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -114,10 +125,16 @@ export class MediaService {
     if (!grant) throw new ForbiddenException();
     const relative = safePackagePath(parts);
     if (!relative) throw new NotFoundException();
-    await this.liveSession(grant);
-    const pkg = await this.prisma.drmPackage.findUnique({ where: { assetId: grant.assetId } });
-    if (!pkg || pkg.status !== 'READY') throw new NotFoundException();
-    const key = `${pkg.storagePrefix}/${relative}`;
+    await this.liveSessions.getOrLoad(grant.sessionId, async () => {
+      await this.liveSession(grant);
+      return true as const;
+    });
+    const storagePrefix = await this.readyPackages.getOrLoad(grant.assetId, async () => {
+      const pkg = await this.prisma.drmPackage.findUnique({ where: { assetId: grant.assetId } });
+      if (!pkg || pkg.status !== 'READY') throw new NotFoundException();
+      return pkg.storagePrefix;
+    });
+    const key = `${storagePrefix}/${relative}`;
     const contentType = packageContentType(relative);
     if (isManifest(relative)) {
       const body = await this.storage.readBuffer(key).catch(() => {

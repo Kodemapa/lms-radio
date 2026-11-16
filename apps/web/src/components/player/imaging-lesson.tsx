@@ -1,6 +1,5 @@
 'use client';
 
-import { buildMeasurementReport } from '@obgyn/dicom';
 import {
   dicomPseudonym,
   ImagingResultSchema,
@@ -95,7 +94,9 @@ export function ImagingLesson({
     return open.length === 1 ? open[0]!.label : '';
   };
 
-  const buildReport = (): ArrayBuffer => {
+  // dcmjs (~690 kB) is only needed to write the report, so it loads when the learner submits.
+  const buildReport = async (): Promise<ArrayBuffer> => {
+    const { buildMeasurementReport } = await import('@obgyn/dicom/sr');
     const byAsset = new Map(imaging.images.map((image) => [image.assetId, image]));
     return buildMeasurementReport({
       images: imaging.images,
@@ -131,7 +132,7 @@ export function ImagingLesson({
     if ((missing || unanswered) && !window.confirm(t('confirmIncomplete', { missing, unanswered }))) return;
     setPending(true);
     try {
-      const sr = buildReport();
+      const sr = await buildReport();
       setLastSr(sr);
       const graded = ImagingResultSchema.parse(await api('POST', `learn/lessons/${lessonId}/imaging/attempts`, {
           sr: toBase64(sr),

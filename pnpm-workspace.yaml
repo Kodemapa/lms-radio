@@ -12,3 +12,7 @@ onlyBuiltDependencies:
   - prisma
   - sharp
   - unrs-resolver
+
+# One copy of dcmjs in the browser: Cornerstone pins 0.52.0, we use 0.52.2 (saves ~700 kB).
+overrides:
+  dcmjs: 0.52.2
