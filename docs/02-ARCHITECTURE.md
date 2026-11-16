@@ -75,6 +75,32 @@ approves the application, which sets their role to `FACULTY`.
 - **Learner uploads** (`POST /uploads`) are images/PDFs up to 20 MB, always private and
   always need the de-identification confirmation. Only instructor-uploaded images are public.
 
+## Progress reports
+
+`ReportsService` (`apps/api/src/reports/`) builds one learner's report for one course; the
+learner (`GET /learn/courses/:slug/report`, page `/account/learning/:slug`) and the course team
+(`GET /instructor/courses/:id/students/:userId/report`, linked from the Students tab) see the
+same numbers:
+
+- **Where they are:** last lesson visited, next unfinished lesson, lessons done.
+- **Per lesson:** status, times opened (`LessonProgress.views`), video watch time
+  (`watchedSec`, forward playback capped by real time) and furthest point (`furthestSec`),
+  in-video question tries (`CheckpointAnswer.attempts`), quiz / DICOM attempt history,
+  assignment status.
+- **Per topic:** `topicMastery()` in `@obgyn/types` groups each quiz's latest attempt, in-video
+  questions (right first try) and the latest entrance test by topic; thresholds in `MASTERY`.
+
+## Calculators and learners' working (DICOM cases)
+
+- **Lesson resources** (`Lesson.resources`, `ResourceLinkSchema`): https links such as online
+  calculators. The player lists them and opens one in a sandboxed iframe panel beside the lesson
+  (`components/player/resources.tsx`), with a new-tab fallback. A DICOM report field can name
+  its calculator (`ReportFieldKey.resourceId`) to show a "Calculate with …" button.
+- **Working** (`ImagingAttempt.explanation`, `workingAssetIds`): per case Off / Optional /
+  Required (`CaseKey.working`). Files are the learner's own IMAGE/PDF uploads, readable by the
+  learner and course staff through signed URLs (`AccessService.assertAssetAccess`). Graders
+  verify or return it (`PUT /instructor/imaging-attempts/:id/working`) from the Reports tab.
+
 ## In-video questions
 
 Video lessons can have questions pinned to a time (`QuizQuestion.atSec`). The player pauses
@@ -86,9 +112,15 @@ question is passed. Wrong answers never reveal the solution. Instructors add the
 
 ## Question bank, entrance test, certificate design
 
-- **Question bank** (`BankQuestion`, per course): instructors paste many questions at once
+- **Question topics** (`QuestionTopic`, per course, ordered): bank questions, quiz questions and
+  in-video questions each point to one (`topicId`). Topics are created, renamed, reordered and
+  deleted in the bank's side panel (`/instructor/courses/:id/topics`); deleting one keeps its
+  questions under "No topic". Imports create missing topics by name. Topics drive the
+  strengths / weaknesses in progress reports.
+- **Question bank** (`BankQuestion`, per course): instructors import many questions at once
   (`parseQuestionBank` in `@obgyn/types` accepts `*`/`-` markers or `a) b) … Answer: b`, with
-  `# Topic` headers), then pick them into quizzes or in-video questions. Picking **copies** the
+  `# Topic` headers; or a CSV / Excel file), add single questions, and move or delete selected
+  questions in bulk (`POST …/bank/bulk`). Then they pick them into quizzes or in-video questions. Picking **copies** the
   question (`QuizQuestion.bankQuestionId` remembers the source), so editing the bank never
   silently changes a live quiz.
 - **Entrance test**: when enabled, each attempt draws `entranceQuestionCount` random bank
@@ -138,3 +170,10 @@ question is passed. Wrong answers never reveal the solution. Instructors add the
 | 2026-11-15 | Bank questions are copied into quizzes, not linked | A published quiz must not change because someone edited the bank |
 | 2026-11-15 | Entrance and bank payloads are validated with the shared zod schemas on the API (not class-validator) | Nested arrays of options; one schema for the import preview and the server |
 | 2026-11-15 | The fetal medicine course has an entrance test (5 random questions from a 15-question pool, 60% to pass, 3 attempts) | Brochure: "Selection by online MCQ-based entrance exam" |
+| 2026-11-16 | Question topics are records (`QuestionTopic`), not free text. Bank questions, quiz questions and in-video questions each point to one; questions copied from the bank keep its topic. Deleting a topic keeps its questions, which become "No topic". Imports create missing topics by name | Free text couldn't be renamed or reordered safely, and quiz questions had no topic, so reports couldn't group answers by topic |
+| 2026-11-16 | Topic strength: ≥ 80% Strong, 60–79% Developing, < 60% Needs work, fewer than 3 answers "Not enough data" (`MASTERY` in `packages/types/src/progress.ts`) | Teaching thresholds, not clinical content. Could become a per-course setting later |
+| 2026-11-16 | Answers counted per topic: each quiz's latest attempt, in-video questions right on the first try, and the latest entrance test | The latest attempt shows current knowledge. In-video questions can be retried until right, so only the first try shows what the learner knew |
+| 2026-11-16 | Video watch time (`LessonProgress.watchedSec`) only adds forward playback, capped at the real time between progress reports plus 5 s; `views` counts lesson opens | Skipping ahead must not count as watching. Uses existing progress reports, so no extra requests |
+| 2026-11-16 | Learners and the course team see the same progress report (`/learn/courses/:slug/report`, `/instructor/courses/:id/students/:userId/report`) | One source of truth; what the instructor discusses with the student is exactly what the student sees |
+| 2026-11-16 | Lessons have resource links (`Lesson.resources`, https only), e.g. FMF / perinatology.com calculators. Each opens in a sandboxed iframe panel beside the lesson (no referrer, no access to our page), with a "New tab" fallback; a DICOM report field can name the calculator to use | Learners calculate without leaving the case. We don't copy third-party calculators: their formulas are clinical content we'd have to version and review (CLAUDE.md rule 5). Building our own reviewed calculators is a later option |
+| 2026-11-16 | DICOM attempts can carry the learner's working (explanation + up to 6 photos/PDFs of their own uploads), per-case Off / Optional / Required. Course graders mark it Verified or Returned (feedback required); this doesn't change the auto score | The score checks the final value within the tolerance ("buffer"); the working check confirms the method. Files are served only through signed URLs to the learner and course staff |

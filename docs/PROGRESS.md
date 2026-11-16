@@ -2,6 +2,31 @@
 
 Test accounts and the dev login: see [DEV-LOGINS.md](DEV-LOGINS.md).
 
+## Update 2026-11-16 (later): instructor speed, topics, progress reports, calculators
+
+All verified in real Chrome against the dev database. Typecheck, lint and tests are green (API 124, web 55, types 81).
+
+- **Instructor dashboard speed** (TODO PERF-1):
+  - `instructor/loading.tsx` plus a spinner on the clicked sidebar link: navigation gives feedback while a page compiles or renders.
+  - Imaging UI is lazy-loaded. First-load JS: course editor 452 → 242 kB, lesson page 425 → ~206 kB.
+  - Cause of "tabs don't respond": clicks made before the 9.7 MB dev editor chunk hydrated were dropped. Fixed by the smaller chunk.
+  - The DICOM workspace lays out by its own width (CSS container query), so it stacks cleanly beside the calculator panel.
+- **Question topics** (INS-7): topics are records now. Side panel to create, rename, reorder and delete; add single questions; bulk move / delete; import picks a default topic; quiz and in-video questions take a topic. The migration converted the old free-text topics (11 in the dev DB) and tagged bank-copied quiz questions.
+- **Progress reports** (INS-8):
+  - Students tab: "Current lesson" column (also in the CSV) and a report link per student.
+  - Report: last / next lesson, views, video watch time and furthest point, in-video question tries, quiz and DICOM attempt history, strengths and weaknesses per topic.
+  - Learners see the same report under **My learning → Progress report**.
+  - Watch time and views are recorded from this release on; older activity shows 0.
+- **DICOM calculators and working** (INS-9):
+  - Case editor: "Calculators and resources" (FMF, perinatology.com suggestions), a calculator per report field, and learners' working Off / Optional / Required with a prompt.
+  - Learner: calculator opens beside the case; working = explanation + up to 6 photos/PDFs.
+  - Reports tab: "Check working", then Verify or Return (feedback required). The learner sees the verdict.
+- **Migrations** (run `pnpm --filter @obgyn/api db:deploy`):
+  - `20261116120000_question_topics_and_progress`: `QuestionTopic`; `topicId` on bank and quiz questions; `Course.entranceTopicId` (replaces `entranceTopic`); `LessonProgress.furthestSec / watchedSec / views`. Data-preserving.
+  - `20261116140000_calculation_working`: `Lesson.resources`; working fields and `WorkingStatus` on `ImagingAttempt`.
+- **Reseed note:** a fresh seed names topics after the modules ("Dating and Doppler", …). The migrated dev DB still has "Module 1" … "Module 10" (instructors can rename them).
+- **Next:** INS-10 to INS-16 and CALC-1 in `docs/TODO.md`; PERF-2 to PERF-4 unchanged.
+
 ## Update 2026-11-16: DICOM imaging tests working end to end
 
 - **Verified in real Chrome with a scratchpad fixture:**

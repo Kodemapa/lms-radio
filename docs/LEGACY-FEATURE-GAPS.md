@@ -36,11 +36,11 @@ Legend: ✅ in the new platform · 🟡 partly · ❌ missing · ⛔ deliberatel
 | Feature (old) | New | Notes / what's needed |
 |---|---|---|
 | Dashboard | 🟡 | ✅ enrolment chart, active learners, completions, pending reviews, invitations; **sales/revenue** waits for commerce |
-| Create / edit course, curriculum, quizzes, assignments | ✅ | Plus question bank, entrance test, certificate designer, DICOM cases |
+| Create / edit course, curriculum, quizzes, assignments | ✅ | Plus question bank (with topics, bulk move/delete), entrance test, certificate designer, DICOM cases (calculator links, learners' working) |
 | Curriculum **trash / restore**, permanent delete | ✅ | Soft delete, 30-day purge |
 | Assignment review | ✅ | |
 | **Student quiz reports** (per-student attempt details) | ✅ | Quizzes, DICOM cases, entrance test; item analysis |
-| **Enrolled students** list per course, course analytics | ✅ | Students tab + CSV; Analytics tab |
+| **Enrolled students** list per course, course analytics | ✅ | Students tab (current lesson) + CSV; Analytics tab; per-student progress report with topic strengths (also shown to the learner) |
 | Reviews of my courses (reply / report) | ✅ | Reply publicly, report to admins |
 | **Coupons / promo codes** | ❌ | §3 |
 | **Earnings, commission, withdrawal requests, wallet** | ❌ | §3 (needs payouts policy) |
