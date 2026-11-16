@@ -78,7 +78,8 @@ export async function SiteHeader() {
                 </Link>
                 <Link
                   href="/login?mode=register"
-                  className="rounded-[4px] bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:opacity-90"
+                  // On phones the menu drawer carries Register; showing it here too overflows the bar.
+                  className="hidden rounded-[4px] bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:opacity-90 sm:inline-block"
                 >
                   {t('register')}
                 </Link>

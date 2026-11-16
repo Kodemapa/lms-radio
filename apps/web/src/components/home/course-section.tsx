@@ -22,13 +22,25 @@ export async function CourseSection({
   const [t, wishlist] = await Promise.all([getTranslations('Common'), getWishlistIds()]);
   if (courses.length === 0) return null;
   return (
-    <section aria-labelledby={id} className={`section-gap ${muted ? 'bg-section' : ''}`}>
+    <section
+      aria-labelledby={id}
+      className={`section-gap fetal-course-section ${muted ? 'bg-section' : ''}`}
+    >
       <div className="container">
-        <SectionHeading id={id} title={title} subtitle={subtitle} href={href} linkLabel={t('viewAll')} />
+        <SectionHeading
+          id={id}
+          title={title}
+          subtitle={subtitle}
+          href={href}
+          linkLabel={t('viewAll')}
+        />
         <CourseGrid>
           {courses.map((course) => (
             <li key={course.id}>
-              <CourseCard course={course} wishlisted={wishlist ? wishlist.has(course.id) : undefined} />
+              <CourseCard
+                course={course}
+                wishlisted={wishlist ? wishlist.has(course.id) : undefined}
+              />
             </li>
           ))}
         </CourseGrid>

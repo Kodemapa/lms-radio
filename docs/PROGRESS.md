@@ -2,6 +2,30 @@
 
 Test accounts and the dev login: see [DEV-LOGINS.md](DEV-LOGINS.md).
 
+## Homepage redesign — 2026-11-16
+
+- Audience clarified: fetal ultrasound courses for radiology postgraduates and residents.
+- Rebuilt homepage using supplied visual references: lavender/plum/apricot palette, rounded editorial hero, layered illustrative imaging card, compact navigation and warm specialty cards.
+- Replaced general ObGyn category navigation with fetal ultrasound foundations, anatomy, biometry/growth and Doppler course-search links. Existing catalogue and faculty records remain unchanged.
+- Updated English/Hindi homepage and footer copy. Schematic preview is labelled; no clinical reference values or commercial simulator integration claims added.
+- Verified web typecheck, 55 web tests, lint (two existing configuration warnings), diff whitespace and homepage HTTP 200. Browser visual QA remains outstanding because the browser execution tool was unavailable.
+
+### Second pass (same day): playful landing page with real photos
+
+- New sections: hero (arched photo, floating scan card + 3D render), topic marquee, image pathway cards, pinned scroll-told "How you'll learn" (`learning-journey.tsx`), dark practice band (browser practice formats; hardware simulators named only as "designed to sit alongside"), faculty CTA, FAQ with photo, image credits.
+- Motion: `Reveal` (IntersectionObserver) for scroll-in, CSS scroll-timeline reading-progress bar, morphing blob, marquee. All disabled under `prefers-reduced-motion`; content stays visible without JS.
+- Styles moved out of `globals.css` into `src/components/home/home.css`; Bricolage Grotesque added as `--font-display` via `next/font` (self-hosted).
+- **Decisions log — landing imagery:** photos come from Wikimedia Commons (CC0 / CC BY / CC BY-SA), stored in `src/components/home/images/` and credited in `image-credits.tsx`. Crops remove exam IDs, dates and — on the 3D render — the on-screen sex field (PC-PNDT). Marketing images are not protected content, so the signed-URL rule doesn't apply; replace with faculty-supplied images when available.
+- Visual QA done in Chrome at 1440px and 390px (no horizontal overflow, no runtime errors; only the pre-existing missing `favicon.ico` 404).
+- Responsive pass, measured at 2560/1920/1440/1024/768/390/360: container widens to 1400px (≥1600) and 1560px (≥2000) with the header; hero fills the first screen on desktop (capped at 1080px); journey steps use px-capped heights with a vertically centred pinned stage; pathway cards and practice tasks become scroll-snap swipe rails under 768px; header Register button moves into the menu drawer under 640px (it overflowed at 360px). Mobile page length went from 11.6 to 8.6 screens at 390px; zero horizontal overflow at every size.
+- Content pass: home copy now describes shipped features only (from this file and `TODO.md`).
+  - "How you'll learn" = video with in-video questions → measure on DICOM → instant grading vs faculty reference (result mock-up) → progress report with topic strengths (report mock-up). Both mock-ups are labelled "Illustrative example".
+  - New trust strip: protected content, de-identified scans, PC-PNDT, English/Hindi.
+  - Dark band = the real imaging toolkit (calipers/ellipses, landmarks/outlines, findings + SR, calculators + working) plus an "On the way" row for planned work only: LIV-1, COMM-1, IMG-5, IMG-9, IMG-6. Hardware-simulator names removed (no integration exists yet).
+  - Faculty CTA lists real instructor tools (INS-1…INS-9); two FAQs added (how grading works, de-identification).
+  - **Keep in sync:** when an "On the way" item ships, move it out of `Home.practice.soon` in `messages/*.json`.
+- "Why it's different" section (`difference.tsx`, after the topic ribbon): typical LMS vs. here across images, practice, assessment, feedback, reasoning and progress (every "here" claim is a shipped feature), then "the understanding loop" (see it → do it → find out why → try again). On mobile the table becomes one card per row.
+
 ## Update 2026-11-16 (later): instructor speed, topics, progress reports, calculators
 
 All verified in real Chrome against the dev database. Typecheck, lint and tests are green (API 124, web 55, types 81).

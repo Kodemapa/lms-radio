@@ -1,26 +1,31 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { CourseSection } from '@/components/home/course-section';
+import { Difference } from '@/components/home/difference';
 import { Educators } from '@/components/home/educators';
 import { Faqs } from '@/components/home/faqs';
+import { FetalPathways } from '@/components/home/fetal-pathways';
 import { Hero } from '@/components/home/hero';
+import { ImageCredits } from '@/components/home/image-credits';
 import { InstructorCommunity } from '@/components/home/instructor-community';
-import { TopCategories } from '@/components/home/top-categories';
+import { PracticeBand } from '@/components/home/practice-band';
+import { TopicMarquee } from '@/components/home/topic-marquee';
 import { WhyChooseUs } from '@/components/home/why-choose-us';
-import { getCategories, getCourses, getInstructors } from '@/lib/catalog';
+import { getCourses, getInstructors } from '@/lib/catalog';
+import '@/components/home/home.css';
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const [t, categories, newest, free, instructors] = await Promise.all([
+  const [t, newest, free, instructors] = await Promise.all([
     getTranslations('Home'),
-    getCategories(),
-    getCourses({ sort: 'newest', pageSize: 8 }),
+    getCourses({ sort: 'newest', pageSize: 4 }),
     getCourses({ price: 'free', sort: 'popular', pageSize: 4 }),
     getInstructors(),
   ]);
 
   return (
-    <>
+    <div className="clinical-home">
+      <div className="lp-progress" aria-hidden />
       <Hero
         stats={{
           courses: newest?.total ?? 0,
@@ -28,7 +33,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           students: instructors.reduce((sum, i) => sum + i.studentCount, 0),
         }}
       />
-      <TopCategories categories={categories} />
+      <TopicMarquee />
+      <Difference />
+      <FetalPathways />
+      <WhyChooseUs />
       <CourseSection
         id="newest"
         title={t('newestCourses')}
@@ -36,7 +44,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         href="/courses?sort=newest"
         courses={newest?.items ?? []}
       />
-      <WhyChooseUs />
+      <PracticeBand />
       <CourseSection
         id="free"
         title={t('freeCourses')}
@@ -48,6 +56,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <Educators instructors={instructors} />
       <InstructorCommunity />
       <Faqs />
-    </>
+      <ImageCredits />
+    </div>
   );
 }

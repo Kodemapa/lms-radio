@@ -26,7 +26,7 @@ export async function TopCategories({ categories }: { categories: CategoryNode[]
   const [t, tCommon] = await Promise.all([getTranslations('Home'), getTranslations('Common')]);
   if (categories.length === 0) return null;
   return (
-    <section aria-labelledby="top-categories" className="section-gap bg-section">
+    <section aria-labelledby="top-categories" className="section-gap">
       <div className="container">
         <SectionHeading
           id="top-categories"
@@ -42,13 +42,15 @@ export async function TopCategories({ categories }: { categories: CategoryNode[]
               <li key={category.id}>
                 <Link
                   href={`/courses?category=${category.slug}`}
-                  className="group flex h-full items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-primary"
+                  className="group flex h-full items-center gap-4 rounded-xl border border-border bg-card p-6 transition-all hover:-translate-y-1 hover:border-primary hover:shadow-sm"
                 >
                   <span className="rounded-xl bg-primary-light p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                    <Icon aria-hidden className="size-7" />
+                    <Icon aria-hidden className="size-6" />
                   </span>
                   <span className="flex min-w-0 flex-col">
-                    <span className="truncate font-semibold group-hover:text-primary">{category.name}</span>
+                    <span className="truncate font-semibold group-hover:text-primary">
+                      {category.name}
+                    </span>
                     <span className="text-sm text-muted-foreground">
                       {tCommon('coursesCount', { count: category.courseCount })}
                     </span>

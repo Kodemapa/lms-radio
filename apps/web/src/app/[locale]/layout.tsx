@@ -1,13 +1,19 @@
 import { type Metadata } from 'next';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Geist, Noto_Sans_Devanagari } from 'next/font/google';
+import { Bricolage_Grotesque, Geist, Noto_Sans_Devanagari } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { type ReactNode } from 'react';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' });
+// Rounded, friendly display face for landing-page headings.
+const display = Bricolage_Grotesque({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+});
 // Not preloaded: Google's CSS for this family has no subset markers for Next to
 // pick a file from, and only Hindi pages need it.
 const devanagari = Noto_Sans_Devanagari({
@@ -39,7 +45,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   const t = await getTranslations('Common');
 
   return (
-    <html lang={locale} className={`${geist.variable} ${devanagari.variable}`}>
+    <html lang={locale} className={`${geist.variable} ${display.variable} ${devanagari.variable}`}>
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
         <a
           href="#main"

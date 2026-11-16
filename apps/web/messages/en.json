@@ -76,7 +76,7 @@
     "savedToWishlist": "Saved to wishlist"
   },
   "Footer": {
-    "about": "Courses, live classes and simulators for obstetrics & gynaecology, built for learners and faculty in India.",
+    "about": "Focused fetal ultrasound education for radiology postgraduates and residents. Faculty-led courses, imaging case practice and individual learning reports.",
     "aboutTitle": "About us",
     "contactTitle": "Get in touch",
     "emailUs": "Email us",
@@ -88,54 +88,256 @@
     "copyright": "© {year} {appName}. All rights reserved."
   },
   "Home": {
-    "eyebrow": "For MBBS students, residents, sonologists, nurses and faculty",
-    "title": "Learn obstetrics & gynaecology by doing",
-    "subtitle": "Courses, live classes and browser-based simulators for ultrasound, CTG and labour-ward emergencies, made for learners in India.",
-    "ctaCourses": "Explore courses",
-    "ctaInstructor": "Teach on the platform",
+    "eyebrow": "Fetal ultrasound · Radiology education",
+    "title": "A closer look.",
+    "subtitle": "Fetal ultrasound for radiology PGs and residents: protected video classes, real DICOM cases you measure yourself, instant grading against faculty references, and a progress report that shows exactly where to focus.",
+    "ctaCourses": "Explore the courses",
     "statCourses": "Courses",
     "statInstructors": "Expert instructors",
     "statStudents": "Learners",
-    "topCategories": "Top categories",
-    "topCategoriesSubtitle": "Find the right course for where you are in training.",
-    "newestCourses": "Newest courses",
-    "newestCoursesSubtitle": "Recently published by our faculty.",
-    "freeCourses": "Start for free",
-    "freeCoursesSubtitle": "Free courses to try the platform.",
-    "whyTitle": "Why learners choose us",
-    "why": {
-      "simulators": {
-        "title": "Simulators in the browser",
-        "body": "Practise fetal biometry, Doppler and CTG interpretation without expensive hardware, with automatic scoring."
-      },
-      "protection": {
-        "title": "Protected content",
-        "body": "Lectures are protected and watermarked with your details, so faculty can share their best material."
-      },
-      "faculty": {
-        "title": "Faculty-reviewed",
-        "body": "Every course is reviewed before publishing, and clinical numbers come from versioned, reviewed content."
-      },
-      "compliance": {
-        "title": "PC-PNDT compliant",
-        "body": "No course, quiz, dataset or AI output ever identifies fetal sex."
-      }
-    },
-    "educatorsTitle": "Learn from expert educators",
-    "educatorsSubtitle": "Consultants and teachers from leading OBG departments.",
-    "communityTitle": "Share what you know",
-    "communityBody": "Teach residents, sonologists and midwives across India. Build your course with our tools, and we'll review and publish it.",
-    "communityCta": "Become an instructor",
-    "faqTitle": "Frequently asked questions",
+    "topCategories": "Small details. Essential skills.",
+    "topCategoriesSubtitle": "Explore the core areas of fetal ultrasound, from image orientation to measurements and interpretation.",
+    "newestCourses": "Make room for your next discovery.",
+    "newestCoursesSubtitle": "Explore the latest courses in the catalogue and find your next step.",
+    "freeCourses": "A good place to begin.",
+    "freeCoursesSubtitle": "Discover free courses and get to know the learning experience.",
+    "educatorsTitle": "The people behind the perspective.",
+    "educatorsSubtitle": "Meet the faculty guiding your learning journey.",
+    "communityTitle": "Your experience. Their next breakthrough.",
+    "communityBody": "Turn your teaching into cases residents can practise on — and see exactly where each learner needs help.",
+    "communityCta": "Become faculty",
+    "faqTitle": "A few things you might be wondering.",
     "faq": {
       "q1": "Who are the courses for?",
-      "a1": "MBBS students, OBG residents (MS/MD/DNB), sonologists, nurses and midwives, and faculty.",
+      "a1": "The learning experience is designed specifically for radiology postgraduates and residents studying fetal ultrasound. Check each course page for its level and prerequisites.",
       "q2": "Can I download videos?",
       "a2": "No. To protect faculty content, videos stream only inside the website and our apps, with your details watermarked on screen.",
       "q3": "Do I get a certificate?",
       "a3": "Courses with certificates show it on the course page. You receive it after completing every lesson.",
       "q4": "Can I learn in Hindi?",
-      "a4": "Yes. The site is available in English and Hindi, and some courses are taught in Hindi. More languages are coming."
+      "a4": "Yes. The site is available in English and Hindi, and some courses are taught in Hindi. More languages are coming.",
+      "q5": "How are image cases graded?",
+      "a5": "Faculty draw the reference measurements on the image and set an allowed deviation. Your calipers and ellipses are recalculated from your own drawing and compared with that range, so you see a pass or a clear reason for each miss.",
+      "q6": "Are the scans from real patients?",
+      "a6": "Cases use real ultrasound images that are de-identified before learners see them: patient details are removed from the DICOM on our server. In line with the PC-PNDT Act, nothing on the platform reveals or teaches fetal sex."
+    },
+    "titleAccent": "A deeper understanding.",
+    "ctaApproach": "How you’ll learn",
+    "audience": "Purpose-built for radiology PGs and residents, with faculty-led courses and practical imaging assessments.",
+    "previewLabel": "Practice preview",
+    "feedbackBody": "Measure. Compare. Understand.",
+    "previewCase": "Fetal biometry",
+    "pathwayEyebrow": "Your learning, in focus",
+    "exploreTopic": "Find courses",
+    "pathways": {
+      "foundations": {
+        "title": "Ultrasound foundations",
+        "body": "Build your understanding of imaging principles, orientation and scanning technique."
+      },
+      "anatomy": {
+        "title": "Fetal anatomy",
+        "body": "Explore anatomical landmarks, standard views and structured case interpretation."
+      },
+      "biometry": {
+        "title": "Biometry & growth",
+        "body": "Connect measurement technique with fetal biometry and growth assessment."
+      },
+      "doppler": {
+        "title": "Doppler studies",
+        "body": "Develop your understanding of Doppler principles and waveform interpretation."
+      }
+    },
+    "heroChipTopic": "Mid-trimester anomaly scan",
+    "topicsLabel": "Topics covered",
+    "topics": {
+      "t1": "Mid-trimester anomaly scan",
+      "t2": "First-trimester dating",
+      "t3": "Fetal biometry",
+      "t4": "Umbilical artery Doppler",
+      "t5": "Fetal neurosonography",
+      "t6": "Fetal heart views",
+      "t7": "Placenta & amniotic fluid",
+      "t8": "Growth assessment"
+    },
+    "journeyEyebrow": "How you’ll learn",
+    "week": {
+      "anatomy": "Anatomy",
+      "biometry": "Biometry",
+      "doppler": "Doppler"
+    },
+    "practice": {
+      "eyebrow": "Inside every imaging case",
+      "title": "A real viewer, real tools, real feedback.",
+      "body": "Image cases run in your browser on de-identified DICOM. No install, no hardware — and every submission is scored automatically.",
+      "cta": "Browse courses",
+      "tools": {
+        "measure": {
+          "title": "Calipers & ellipses",
+          "body": "Measure lengths and circumferences with editable, rotatable handles; pan, zoom and adjust contrast."
+        },
+        "mark": {
+          "title": "Landmarks & outlines",
+          "body": "Pin structures and outline regions; scored by position and overlap with partial credit."
+        },
+        "report": {
+          "title": "Findings & report values",
+          "body": "Answer findings and enter report values; your structured report downloads as a DICOM SR."
+        },
+        "working": {
+          "title": "Calculators & working",
+          "body": "Open the case’s calculator beside the image and attach your working for faculty review."
+        }
+      },
+      "soonLabel": "On the way",
+      "soon": {
+        "live": "Live classes in the app",
+        "qa": "Course Q&A",
+        "ownScan": "Own-scan review by faculty",
+        "osce": "Timed OSCE exam mode",
+        "cine": "Cine clip cases"
+      }
+    },
+    "communityEyebrow": "For faculty",
+    "faqEyebrow": "Good questions",
+    "credits": {
+      "title": "Image credits",
+      "note": "Photographs from Wikimedia Commons, cropped to remove exam identifiers. Used under the licences shown."
+    },
+    "img": {
+      "scanning": "A sonographer performing an abdominal ultrasound in a training lab",
+      "profile": "Mid-trimester ultrasound image of a fetal profile",
+      "render3d": "3D ultrasound rendering of a fetus",
+      "faculty": "A sonographer teaching a colleague at the ultrasound screen",
+      "lab": "A student practising a scan while classmates look on",
+      "cohort": "A group of sonography students and faculty in their scanning lab",
+      "skillsLab": "Students practising scans in a shared skills lab"
+    },
+    "previewBadge": "Interactive",
+    "heroChipGraded": "Graded against faculty references",
+    "mockNote": "Illustrative example",
+    "journey": {
+      "title": "From the lecture to the scan, one case at a time.",
+      "subtitle": "Every module follows the same rhythm: learn the concept, measure it on a real image, get graded, and know what to revise next.",
+      "watch": {
+        "title": "Watch, and answer as you go",
+        "body": "Faculty video classes pause for quick in-video questions, so you check the concept before moving on. Videos stream protected and watermarked — never downloaded."
+      },
+      "measure": {
+        "title": "Measure on real DICOM",
+        "body": "Open de-identified scans in the browser viewer. Place calipers and ellipses, pin landmarks and outline structures with the same tools you use at the machine."
+      },
+      "graded": {
+        "title": "Get graded instantly",
+        "body": "Each measurement is checked against the faculty reference and its allowed deviation, with the reason for every miss. Show your working with built-in calculator links, and faculty verify it."
+      },
+      "report": {
+        "title": "See where you stand",
+        "body": "Your progress report tracks lessons, watch time and every attempt, then sorts your topics into strengths and the ones that need work."
+      },
+      "result": {
+        "title": "Case result",
+        "hc": "HC ellipse",
+        "bpd": "BPD caliper",
+        "finding": "Finding",
+        "within": "Within range",
+        "position": "Check placement",
+        "correct": "Correct",
+        "footer": "Reference overlay unlocked"
+      },
+      "progress": {
+        "title": "Your progress report",
+        "badge": "Revise Doppler",
+        "strong": "Strong",
+        "mid": "Getting there",
+        "weak": "Needs work"
+      }
+    },
+    "trust": {
+      "label": "Built in from day one",
+      "protected": {
+        "title": "Protected content",
+        "body": "Encrypted streaming, a moving watermark, no downloads."
+      },
+      "deidentified": {
+        "title": "De-identified scans",
+        "body": "Patient details stripped on upload, server-side."
+      },
+      "pcpndt": {
+        "title": "PC-PNDT compliant",
+        "body": "Fetal sex is never shown, taught or predicted."
+      },
+      "languages": {
+        "title": "English & हिन्दी",
+        "body": "Switch language anytime; more Indian languages coming."
+      }
+    },
+    "faculty": {
+      "cases": "Build DICOM cases with reference measurements and allowed deviation",
+      "bank": "A question bank organised by topic, for quizzes and in-video questions",
+      "reports": "Per-student progress reports, item analysis and course analytics",
+      "team": "Co-instructors and graders, with working you can verify or return"
+    },
+    "diff": {
+      "eyebrow": "Why it’s different",
+      "title": "Most LMSs stop at the video.",
+      "titleAccent": "Understanding starts after it.",
+      "lede": "Fetal ultrasound is a hands-on skill. Watching someone place a caliper doesn’t teach you where to place it. So every lesson here ends with you doing it yourself — and finding out exactly why you got it right or wrong.",
+      "tableLabel": "A typical LMS compared with this platform",
+      "them": "Typical LMS",
+      "us": "Here",
+      "rows": {
+        "images": {
+          "topic": "Images",
+          "them": "Screenshots and slides you look at.",
+          "us": "Real, de-identified DICOM scans you scroll, zoom and adjust in a proper viewer."
+        },
+        "practice": {
+          "topic": "Practice",
+          "them": "Watch the video, tick it as complete.",
+          "us": "Measure the same structure yourself with calipers, ellipses, pins and outlines."
+        },
+        "assessment": {
+          "topic": "Assessment",
+          "them": "A multiple-choice quiz at the end.",
+          "us": "Your own measurements are graded against a faculty reference and its allowed deviation."
+        },
+        "feedback": {
+          "topic": "Feedback",
+          "them": "A score, and nothing else.",
+          "us": "The reason for every miss — value, placement or wrong structure — then the reference overlay to compare with your attempt."
+        },
+        "reasoning": {
+          "topic": "Reasoning",
+          "them": "Your thinking stays invisible.",
+          "us": "Show your working with the case calculators; faculty verify it or return it with comments."
+        },
+        "progress": {
+          "topic": "Progress",
+          "them": "“60% complete.”",
+          "us": "Strengths and gaps by topic, attempt history and watch time — so you know what to revise."
+        }
+      },
+      "loop": {
+        "eyebrow": "The understanding loop",
+        "title": "Learn it, do it, see why — then do it better.",
+        "body": "Understanding comes from attempts and honest feedback, not from re-watching. Every case closes the loop.",
+        "see": {
+          "title": "See it",
+          "body": "A short faculty class, with questions that check the concept as you watch."
+        },
+        "do": {
+          "title": "Do it",
+          "body": "Measure and mark the structure on a real scan."
+        },
+        "why": {
+          "title": "Find out why",
+          "body": "Instant grading with a reason for each miss, plus the reference overlay."
+        },
+        "again": {
+          "title": "Try again",
+          "body": "Re-attempt the case or revise the weak topic your report points to."
+        }
+      }
     }
   },
   "Courses": {

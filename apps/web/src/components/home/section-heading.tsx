@@ -25,7 +25,7 @@ export function SectionHeading({
       {href && linkLabel ? (
         <Link
           href={href}
-          className="flex items-center gap-1.5 rounded-[4px] border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+          className="flex items-center gap-1.5 rounded-lg px-1 py-2 text-sm font-medium text-primary transition-colors hover:underline"
         >
           {linkLabel}
           <ArrowRight aria-hidden className="size-4 rtl:rotate-180" />
