@@ -45,6 +45,10 @@ Sign in with any `+91…` number or email; in development the OTP is printed in 
 | `pnpm lint` / `pnpm typecheck` / `pnpm format` | Quality checks |
 | `pnpm desktop` / `pnpm mobile` | Start the desktop or mobile app |
 
+## Deployment
+
+For push-to-deploy of the web app to aaPanel, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## Legacy code
 
 `lms.kodemapa.com/` (Laravel) and `lmsweb.kodemapa.com/` (Next.js) are the previous
