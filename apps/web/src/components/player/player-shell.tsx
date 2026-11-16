@@ -37,18 +37,21 @@ export function PlayerShell({ outline, children }: { outline: PlayerOutline; chi
   );
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-section">
-      <header className="z-20 flex shrink-0 items-center gap-3 border-b border-border bg-secondary px-4 py-3 text-secondary-foreground">
-        <Link href={`/courses/${course.slug}`} className="flex items-center gap-1.5 rounded-md p-1.5 text-sm hover:bg-white/10" aria-label={t('backToCourse')}>
+    <div className="page-glow flex h-dvh flex-col overflow-hidden bg-background">
+      <header
+        className="z-20 flex shrink-0 items-center gap-3 bg-secondary px-4 py-3 text-secondary-foreground"
+        style={{ backgroundImage: 'var(--grain), linear-gradient(100deg, #2f2340 0%, #3d2b56 60%, #4a2f45 100%)', backgroundBlendMode: 'soft-light, normal' }}
+      >
+        <Link href={`/courses/${course.slug}`} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-white/10" aria-label={t('backToCourse')}>
           <ArrowLeft aria-hidden className="size-5 rtl:rotate-180" />
           <span className="hidden sm:inline">{t('backToCourse')}</span>
         </Link>
         <span aria-hidden className="h-6 w-px bg-white/20" />
         <p className="min-w-0 flex-1 truncate font-semibold">{course.title}</p>
-        <span className="hidden text-sm opacity-80 md:inline">{t('progress', { percent: progress.percent })}</span>
+        <span className="hidden rounded-full bg-white/10 px-3 py-1 text-sm font-medium md:inline">{t('progress', { percent: progress.percent })}</span>
         <WishlistButton courseId={course.id} initial={outline.wishlisted} variant="dark" className="px-2.5 py-1.5" />
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger className="rounded-md p-2 hover:bg-white/10 lg:hidden" aria-label={t('openMenu')}>
+          <DialogTrigger className="rounded-full p-2 hover:bg-white/10 lg:hidden" aria-label={t('openMenu')}>
             <ListTree aria-hidden className="size-5" />
           </DialogTrigger>
           <SheetContent side="right" closeLabel={tCommon('close')} aria-describedby={undefined}>
@@ -60,8 +63,8 @@ export function PlayerShell({ outline, children }: { outline: PlayerOutline; chi
       {/* Each column scrolls on its own: browsing chapters never moves the video. */}
       <div className="flex min-h-0 flex-1">
         <main id="main" className="min-w-0 flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">{children}</main>
-        <aside className="hidden w-80 shrink-0 flex-col border-l border-border bg-card lg:flex xl:w-96">
-          <h2 className="shrink-0 border-b border-border px-4 py-3 font-semibold">{t('curriculum')}</h2>
+        <aside className="surface my-3 me-3 hidden w-80 shrink-0 flex-col overflow-hidden lg:flex xl:w-96">
+          <h2 className="shrink-0 border-b border-border/70 px-5 py-4 font-semibold">{t('curriculum')}</h2>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">{sidebar()}</div>
         </aside>
       </div>

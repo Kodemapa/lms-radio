@@ -63,7 +63,7 @@ export function AssignmentLesson({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="rounded-2xl border border-border bg-card p-5">
+      <section className="surface p-5">
         <h2 className="mb-2 flex flex-wrap items-baseline justify-between gap-2 font-semibold">
           {t('instructions')}
           {assignment.points ? <span className="text-sm font-normal text-muted-foreground">{t('points', { points: assignment.points })}</span> : null}
@@ -81,7 +81,7 @@ export function AssignmentLesson({
       {!enrolled ? (
         <p className="text-sm text-muted-foreground">{t('previewOnly')}</p>
       ) : canSubmit ? (
-        <form onSubmit={submit} className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+        <form onSubmit={submit} className="flex flex-col gap-4 surface p-5">
           <div className="flex flex-col gap-2">
             <Label htmlFor="assignment-answer">{t('yourAnswer')}</Label>
             <Textarea id="assignment-answer" rows={8} maxLength={10000} value={text} onChange={(e) => setText(e.target.value)} />

@@ -40,13 +40,13 @@ export default async function SubmissionsPage({ params, searchParams }: Props) {
         ))}
       </nav>
       {submissions.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted-foreground">
+        <p className="soft-wash rounded-3xl p-10 text-center text-muted-foreground">
           {t('submissionsEmpty')}
         </p>
       ) : (
         <ul className="flex flex-col gap-4">
           {submissions.map((submission) => (
-            <li key={submission.id} className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+            <li key={submission.id} className="flex flex-col gap-3 surface p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="font-semibold">{submission.learner.displayName}</h2>
                 <span className="text-sm text-muted-foreground">

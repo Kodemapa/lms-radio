@@ -40,7 +40,7 @@ export function ProfileForm({ me, bio }: { me: UserProfile; bio: string | null }
   }
 
   return (
-    <form onSubmit={save} className="flex max-w-2xl flex-col gap-5 rounded-2xl border border-border bg-card p-6">
+    <form onSubmit={save} className="flex max-w-2xl flex-col gap-5 surface p-6">
       <p className="text-sm text-muted-foreground">{t('signedInWith', { contact: me.email ?? me.phone ?? '' })}</p>
       <div className="flex flex-col gap-2">
         <Label htmlFor="displayName">{t('displayName')}</Label>

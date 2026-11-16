@@ -45,7 +45,7 @@ export function TrashTab({ courseId, locked, onChange }: { courseId: string; loc
       {items === null ? (
         <p role="status" className="text-sm text-muted-foreground">{t('loading')}</p>
       ) : items.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">{t('trashEmpty')}</p>
+        <p className="rounded-2xl border border-dashed border-primary/25 bg-primary-light/40 p-8 text-center text-muted-foreground">{t('trashEmpty')}</p>
       ) : (
         <ul className="flex flex-col divide-y divide-border rounded-xl border border-border">
           {items.map((item) => (

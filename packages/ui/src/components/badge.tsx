@@ -5,7 +5,7 @@ export function Badge({ className, ...props }: ComponentProps<'span'>) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-xs font-medium',
+        'inline-flex items-center rounded-full border border-transparent bg-muted px-2.5 py-0.5 text-xs font-semibold',
         className,
       )}
       {...props}

@@ -441,7 +441,7 @@ export function ImagingCaseDialog({
                             value={option.assetId ?? ''}
                             disabled={disabled}
                             onChange={(e) => updateOption({ assetId: e.target.value || null })}
-                            className="h-9 rounded-[4px] border border-border bg-background px-2 text-xs"
+                            className="h-9 surface-sm px-2 text-xs"
                           >
                             <option value="">{t('noImage')}</option>
                             {images.map((image, i) => (
@@ -524,7 +524,7 @@ export function ImagingCaseDialog({
                   {fields.map((field, index) => (
                     <div key={field.id} className="contents">
                       <Input aria-label={t('fieldLabel')} value={field.label} maxLength={200} disabled={disabled} onChange={(e) => updateField(index, { label: e.target.value })} />
-                      <select aria-label={t('unit')} value={field.unit} disabled={disabled} onChange={(e) => updateField(index, { unit: e.target.value as ReportFieldKey['unit'] })} className="h-9 rounded-[4px] border border-border bg-background px-2 text-sm">
+                      <select aria-label={t('unit')} value={field.unit} disabled={disabled} onChange={(e) => updateField(index, { unit: e.target.value as ReportFieldKey['unit'] })} className="h-9 surface-sm px-2 text-sm">
                         {REPORT_UNITS.map((unit) => (
                           <option key={unit} value={unit}>
                             {unit === 'none' ? '—' : unit}
@@ -534,7 +534,7 @@ export function ImagingCaseDialog({
                       <Input aria-label={t('referenceValue')} type="number" step="any" disabled={disabled} value={field.value} onChange={(e) => updateField(index, { value: Number(e.target.value) })} />
                       <Input aria-label={t('tolerance')} type="number" min={0} step="any" disabled={disabled} value={field.tolerance} onChange={(e) => updateField(index, { tolerance: Math.max(0, Number(e.target.value)) })} />
                       <Input aria-label={t('marks')} type="number" min={1} max={100} disabled={disabled} value={field.marks} onChange={(e) => updateField(index, { marks: clampMarks(e.target.value) })} />
-                      <select aria-label={t('calculator')} value={field.resourceId ?? ''} disabled={disabled || !resources.length} onChange={(e) => updateField(index, { resourceId: e.target.value || null })} className="h-9 min-w-0 rounded-[4px] border border-border bg-background px-2 text-sm">
+                      <select aria-label={t('calculator')} value={field.resourceId ?? ''} disabled={disabled || !resources.length} onChange={(e) => updateField(index, { resourceId: e.target.value || null })} className="h-9 min-w-0 surface-sm px-2 text-sm">
                         <option value="">{resources.length ? t('noCalculator') : t('addCalculatorFirst')}</option>
                         {resources.map((r) => (
                           <option key={r.id} value={r.id}>{r.title || r.url}</option>

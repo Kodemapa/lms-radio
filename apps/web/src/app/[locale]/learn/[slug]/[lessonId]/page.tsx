@@ -13,7 +13,7 @@ export default async function LessonPage({ params }: Props) {
 
   if (!result.ok) {
     return (
-      <div className="mx-auto flex max-w-xl flex-col items-center gap-4 rounded-2xl border border-border bg-card p-10 text-center">
+      <div className="mx-auto flex max-w-xl flex-col items-center gap-4 surface p-10 text-center">
         <Lock aria-hidden className="size-10 text-muted-foreground" />
         <p>{result.code === 'LOCKED_SEQUENCE' ? t('lockedBody') : t('notEnrolled')}</p>
         <Link href={`/courses/${slug}`} className="font-medium text-primary hover:underline">{t('goToCourse')}</Link>

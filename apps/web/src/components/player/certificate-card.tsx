@@ -24,13 +24,13 @@ export function CertificateCard({
   const [state, setState] = useState<'idle' | 'pending' | 'fee' | 'error'>('idle');
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+    <div className="flex flex-col gap-3 surface-sm p-4">
       <p className="flex items-center gap-2 font-semibold">
         <Award aria-hidden className="size-5 text-primary" />
         {complete ? t('finishTitle') : t('certificateIncomplete')}
       </p>
       {issued ? (
-        <Link href={`/certificates/${issued}`} className="rounded-[4px] bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground hover:bg-primary-hover">
+        <Link href={`/certificates/${issued}`} className="rounded-full bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground hover:bg-primary-hover">
           {t('viewCertificate')}
         </Link>
       ) : complete ? (

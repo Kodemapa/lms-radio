@@ -8,7 +8,7 @@ export function Select({ className, children, ...props }: ComponentProps<'select
     <div className="relative">
       <select
         className={cn(
-          'flex h-10 w-full appearance-none rounded-md border border-border bg-background py-2 pl-3 pr-9 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-destructive',
+          'flex h-11 w-full appearance-none rounded-xl border border-border bg-card py-2 pl-4 pr-10 text-base transition-[border-color,box-shadow] focus-visible:outline-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-destructive',
           className,
         )}
         {...props}

@@ -45,7 +45,7 @@ export function PublishTab({
 
   if (course.status === 'PUBLISHED') {
     return (
-      <div className="flex max-w-2xl flex-col items-start gap-4 rounded-2xl border border-border bg-card p-6">
+      <div className="flex max-w-2xl flex-col items-start gap-4 surface p-6">
         <CheckCircle2 aria-hidden className="size-10 text-success" />
         <h2 className="text-xl font-semibold">{t('publishedTitle')}</h2>
         <p className="text-muted-foreground">{t('publishedNotice')}</p>
@@ -59,7 +59,7 @@ export function PublishTab({
 
   if (course.status === 'IN_REVIEW') {
     return (
-      <div className="flex max-w-2xl flex-col items-start gap-4 rounded-2xl border border-border bg-card p-6">
+      <div className="flex max-w-2xl flex-col items-start gap-4 surface p-6">
         <Clock3 aria-hidden className="size-10 text-primary" />
         <p>{t('inReviewNotice')}</p>
         <Button variant="outline" disabled={pending} onClick={() => act('withdraw')}>{t('withdraw')}</Button>
@@ -70,7 +70,7 @@ export function PublishTab({
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <div className="rounded-2xl border border-border bg-card p-6">
+      <div className="surface p-6">
         <h2 className="text-xl font-semibold">{t('publishTitle')}</h2>
         <p className="mt-1 text-muted-foreground">{t('publishIntro')}</p>
         <h3 className="mb-3 mt-6 font-semibold">{t('checklist')}</h3>

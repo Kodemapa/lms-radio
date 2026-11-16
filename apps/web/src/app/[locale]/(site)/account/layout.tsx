@@ -21,11 +21,11 @@ export default async function AccountLayout({
   const t = await getTranslations('Account');
 
   return (
-    <div className="bg-section">
-      <div className="container grid gap-6 py-8 lg:grid-cols-[260px_1fr] lg:py-12">
-        <aside className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 lg:sticky lg:top-4 lg:self-start">
-          <div className="flex items-center gap-3 border-b border-border pb-4">
-            <span className="flex size-12 items-center justify-center rounded-full bg-primary-light font-semibold text-primary">
+    <div className="page-glow">
+      <div className="container grid grid-cols-[minmax(0,1fr)] gap-6 py-8 lg:grid-cols-[270px_minmax(0,1fr)] lg:py-12">
+        <aside className="flex flex-col gap-4 surface p-4 lg:sticky lg:top-24 lg:self-start">
+          <div className="soft-wash -m-1 flex items-center gap-3 rounded-2xl p-3">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-card bg-gradient-to-br from-[#c9b5ef] to-[#fbc9a1] font-semibold text-[#2f2340] shadow-sm">
               {initials(me.displayName)}
             </span>
             <span className="min-w-0">

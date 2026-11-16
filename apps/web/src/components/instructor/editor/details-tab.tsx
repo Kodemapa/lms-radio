@@ -82,7 +82,7 @@ export function DetailsTab({
   return (
     <form onSubmit={save} noValidate>
       <fieldset disabled={locked} className="flex flex-col gap-6">
-        <div className="grid gap-6 rounded-2xl border border-border bg-card p-5 md:p-6">
+        <div className="grid gap-6 surface p-5 md:p-6">
           <div className="flex flex-col gap-2">
             <Label htmlFor="title">{t('title')}</Label>
             <Input id="title" value={form.title} maxLength={120} onChange={(e) => set('title', e.target.value)} required />
@@ -148,7 +148,7 @@ export function DetailsTab({
           />
         </div>
 
-        <div className="grid gap-6 rounded-2xl border border-border bg-card p-5 md:grid-cols-2 md:p-6">
+        <div className="grid gap-6 surface p-5 md:grid-cols-2 md:p-6">
           <ListEditor
             id="learnings"
             label={t('learnings')}
@@ -169,7 +169,7 @@ export function DetailsTab({
           />
         </div>
 
-        <div className="grid gap-6 rounded-2xl border border-border bg-card p-5 md:grid-cols-2 md:p-6">
+        <div className="grid gap-6 surface p-5 md:grid-cols-2 md:p-6">
           <div className="flex flex-col gap-3">
             {form.thumbnailAssetId ? (
               <CourseThumbnail
@@ -210,7 +210,7 @@ export function DetailsTab({
           </div>
         </div>
 
-        <details className="rounded-2xl border border-border bg-card p-5 md:p-6">
+        <details className="surface p-5 md:p-6">
           <summary className="cursor-pointer font-medium">{t('seo')}</summary>
           <div className="mt-4 grid gap-4">
             <div className="flex flex-col gap-2">

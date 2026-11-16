@@ -66,7 +66,7 @@ export function ApplicationForm({ initial }: { initial: InstructorApplication | 
   });
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-6">
+    <form onSubmit={submit} noValidate className="flex flex-col gap-5 surface p-6">
       {field('headline', t('headline'), <Input {...aria('headline')} value={values.headline} onChange={set('headline')} placeholder={t('headlinePlaceholder')} required />)}
       {field('qualifications', t('qualifications'), <Input {...aria('qualifications')} value={values.qualifications} onChange={set('qualifications')} placeholder={t('qualificationsPlaceholder')} required />)}
       <div className="grid gap-5 sm:grid-cols-2">

@@ -140,7 +140,7 @@ export function LessonView({ lesson }: { lesson: PlayerLessonDetail }) {
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
         {lesson.prevLessonId ? (
-          <Link href={`/learn/${slug}/${lesson.prevLessonId}`} className="flex items-center gap-1.5 rounded-[4px] border border-border bg-card px-4 py-2 text-sm font-medium hover:border-primary">
+          <Link href={`/learn/${slug}/${lesson.prevLessonId}`} className="flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-primary">
             <ArrowLeft aria-hidden className="size-4 rtl:rotate-180" />
             {t('previous')}
           </Link>
@@ -165,7 +165,7 @@ export function LessonView({ lesson }: { lesson: PlayerLessonDetail }) {
             </Button>
           ) : null}
           {lesson.nextLessonId ? (
-            <Link href={`/learn/${slug}/${lesson.nextLessonId}`} className="flex items-center gap-1.5 rounded-[4px] bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover">
+            <Link href={`/learn/${slug}/${lesson.nextLessonId}`} className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary-hover">
               {t('next')}
               <ArrowRight aria-hidden className="size-4 rtl:rotate-180" />
             </Link>

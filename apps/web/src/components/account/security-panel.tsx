@@ -22,7 +22,7 @@ export function SecurityPanel({ devices }: { devices: Device[] }) {
 
   return (
     <div className="flex flex-col gap-8">
-      <section aria-labelledby="devices" className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
+      <section aria-labelledby="devices" className="flex flex-col gap-4 surface p-6">
         <p id="devices" className="text-sm text-muted-foreground">{t('devicesIntro')}</p>
         <ul className="divide-y divide-border">
           {devices.map((device) => (

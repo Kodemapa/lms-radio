@@ -324,14 +324,14 @@ export function ImagingLesson({
                     value={fields[field.id] ?? ''}
                     disabled={!enrolled}
                     onChange={(e) => setFields((current) => ({ ...current, [field.id]: e.target.value }))}
-                    className="w-40 rounded-[4px] border border-border bg-background px-3 py-2"
+                    className="w-40 surface-sm px-3 py-2"
                   />
                   {field.unit === 'none' ? null : <span className="text-muted-foreground">{field.unit}</span>}
                   {field.resourceId && resources.some((r) => r.id === field.resourceId) ? (
                     <button
                       type="button"
                       onClick={() => openResource(field.resourceId!)}
-                      className="flex items-center gap-1 rounded-[4px] border border-border px-2 py-1.5 text-xs font-medium text-primary hover:border-primary"
+                      className="flex items-center gap-1 rounded-full border border-border px-2 py-1.5 text-xs font-medium text-primary hover:border-primary"
                     >
                       <Calculator aria-hidden className="size-3.5" />
                       {t('calculateWith', { title: resources.find((r) => r.id === field.resourceId)!.title })}
@@ -361,7 +361,7 @@ export function ImagingLesson({
               value={explanation}
               onChange={(e) => setExplanation(e.target.value)}
               placeholder={tWorking('explanationPlaceholder')}
-              className="rounded-[4px] border border-border bg-background px-3 py-2"
+              className="surface-sm px-3 py-2"
             />
           </label>
           {workingFiles.length ? (

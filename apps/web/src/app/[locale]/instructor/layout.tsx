@@ -40,12 +40,12 @@ export default async function InstructorLayout({
   ];
 
   return (
-    <div className="flex min-h-dvh flex-col bg-section">
-      <header className="sticky top-0 z-20 border-b border-border bg-card">
-        <div className="flex items-center justify-between gap-4 px-4 py-3 lg:px-6">
+    <div className="page-glow flex min-h-dvh flex-col bg-background">
+      <header className="site-header">
+        <div className="flex h-[68px] items-center justify-between gap-4 px-4 lg:px-6">
           <div className="flex items-center gap-4">
             <Brand name={tCommon('appName')} />
-            <span className="hidden rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-primary sm:inline">
+            <span className="hidden rounded-full bg-accent-light px-3 py-1 text-xs font-semibold text-accent-deep sm:inline">
               {tCommon('instructorDashboard')}
             </span>
           </div>
@@ -67,11 +67,11 @@ export default async function InstructorLayout({
         </div>
       </header>
       <div className="flex flex-1 flex-col lg:flex-row">
-        <aside className="border-b border-border bg-card p-3 lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r lg:p-4">
+        <aside className="surface m-3 p-2 lg:sticky lg:top-[84px] lg:m-4 lg:me-0 lg:w-64 lg:shrink-0 lg:self-start lg:p-3">
           <SidebarNav items={items} label={tCommon('instructorDashboard')} />
           <Link
             href="/"
-            className="mt-6 hidden items-center gap-2 px-3 text-sm text-muted-foreground hover:text-primary lg:flex"
+            className="mt-4 hidden items-center gap-2 rounded-full px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-primary-light hover:text-primary lg:flex"
           >
             <ArrowLeft aria-hidden className="size-4 rtl:rotate-180" />
             {t('nav.backToSite')}

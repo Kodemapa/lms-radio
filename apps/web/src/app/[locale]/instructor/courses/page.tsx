@@ -20,7 +20,7 @@ export default async function InstructorCoursesPage({ params }: { params: Promis
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-bold md:text-3xl">{t('coursesTitle')}</h1>
-        <Link href="/instructor/courses/new" className="flex items-center gap-2 rounded-[4px] bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary-hover">
+        <Link href="/instructor/courses/new" className="flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 font-medium text-primary-foreground hover:bg-primary-hover">
           <Plus aria-hidden className="size-4" />
           {t('nav.newCourse')}
         </Link>
@@ -28,7 +28,7 @@ export default async function InstructorCoursesPage({ params }: { params: Promis
       {courses.length > 0 ? (
         <CoursesTable courses={courses} />
       ) : (
-        <p className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted-foreground">
+        <p className="soft-wash rounded-3xl p-10 text-center text-muted-foreground">
           {t('noCourses')}
         </p>
       )}

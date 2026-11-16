@@ -29,13 +29,13 @@ export default async function ReviewPage({ params }: { params: Promise<{ locale:
         <p className="text-muted-foreground">{t('reviewIntro')}</p>
       </div>
       {queue.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted-foreground">
+        <p className="soft-wash rounded-3xl p-10 text-center text-muted-foreground">
           {t('reviewEmpty')}
         </p>
       ) : (
         <ul className="flex flex-col gap-4">
           {queue.map((course) => (
-            <li key={course.id} className="grid gap-4 rounded-2xl border border-border bg-card p-4 md:grid-cols-[200px_1fr]">
+            <li key={course.id} className="grid gap-4 surface p-4 md:grid-cols-[200px_1fr]">
               <CourseThumbnail assetId={course.thumbnailAssetId} title={course.title} seed={course.slug} />
               <div className="flex flex-col gap-2">
                 <Link href={`/instructor/courses/${course.id}`} className="text-lg font-semibold hover:text-primary">

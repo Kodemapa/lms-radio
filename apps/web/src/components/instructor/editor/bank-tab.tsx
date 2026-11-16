@@ -163,7 +163,7 @@ export function BankTab({ courseId, locked }: { courseId: string; locked: boolea
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 surface p-4">
         <p className="max-w-2xl text-sm text-muted-foreground">{t('intro')}</p>
         {!locked ? (
           <div className="flex flex-wrap gap-2">
@@ -181,7 +181,7 @@ export function BankTab({ courseId, locked }: { courseId: string; locked: boolea
 
       <div className="grid items-start gap-4 lg:grid-cols-[280px_1fr]">
         {/* Topics */}
-        <nav aria-label={t('topicsTitle')} className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-3 lg:sticky lg:top-20">
+        <nav aria-label={t('topicsTitle')} className="flex flex-col gap-2 surface p-3 lg:sticky lg:top-20">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-sm font-semibold">{t('topicsTitle')}</h2>
             {!locked ? (
@@ -248,7 +248,7 @@ export function BankTab({ courseId, locked }: { courseId: string; locked: boolea
           </label>
 
           {!locked && visible.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-3 py-2 text-sm" aria-live="polite">
+            <div className="flex flex-wrap items-center gap-3 surface-sm px-3 py-2 text-sm" aria-live="polite">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -288,9 +288,9 @@ export function BankTab({ courseId, locked }: { courseId: string; locked: boolea
           {actionError ? <p role="alert" className="text-sm text-destructive">{actionError}</p> : null}
 
           {bank.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted-foreground">{t('empty')}</p>
+            <p className="soft-wash rounded-3xl p-10 text-center text-muted-foreground">{t('empty')}</p>
           ) : visible.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted-foreground">{t('noneHere')}</p>
+            <p className="soft-wash rounded-3xl p-10 text-center text-muted-foreground">{t('noneHere')}</p>
           ) : (
             <>
               <p className="text-sm text-muted-foreground">{t('total', { count: visible.length })}</p>

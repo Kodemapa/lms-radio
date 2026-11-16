@@ -43,7 +43,7 @@ function LevelBadge({ level }: { level: MasteryLevel }) {
 
 function Stat({ icon, label, value, detail }: { icon: ReactNode; label: string; value: ReactNode; detail?: ReactNode }) {
   return (
-    <div className="flex flex-col gap-1 rounded-2xl border border-border bg-card p-4">
+    <div className="flex flex-col gap-1 surface p-4">
       <span className="flex items-center gap-2 text-sm text-muted-foreground">
         {icon}
         {label}
@@ -77,7 +77,7 @@ export function LearnerReportView({ report, audience }: { report: LearnerReport;
       {/* Where they are */}
       <section aria-labelledby="report-where" className="flex flex-col gap-4">
         <h2 id="report-where" className="sr-only">{t('overviewTitle')}</h2>
-        <div className="grid gap-4 rounded-2xl border border-border bg-card p-5 md:grid-cols-[1fr_1fr]">
+        <div className="grid gap-4 surface p-5 md:grid-cols-[1fr_1fr]">
           <div className="flex flex-col gap-2">
             <span className="text-sm text-muted-foreground">{t('progress')}</span>
             <Meter percent={overview.percent} label={t('progress')} />
@@ -158,12 +158,12 @@ export function LearnerReportView({ report, audience }: { report: LearnerReport;
             <TopicGroup title={t('needsWork')} topics={weak} level="NEEDS_WORK" empty={t('noneWeak')} />
           </div>
         ) : (
-          <p className="rounded-2xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
+          <p className="soft-wash rounded-3xl p-6 text-center text-sm text-muted-foreground">
             {you ? t('noTopicDataYou') : t('noTopicData')}
           </p>
         )}
         {report.topics.length ? (
-          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+          <div className="overflow-x-auto surface">
             <table className="w-full text-left text-sm">
               <caption className="sr-only">{t('topicsTitle')}</caption>
               <thead className="bg-muted/60 text-xs uppercase text-muted-foreground">
@@ -216,7 +216,7 @@ export function LearnerReportView({ report, audience }: { report: LearnerReport;
           <p className="text-sm text-muted-foreground">{t('lessonsHelp')}</p>
         </div>
         {report.chapters.map((chapter) => (
-          <details key={chapter.id} open={chapter.id === nextChapter} className="group rounded-2xl border border-border bg-card">
+          <details key={chapter.id} open={chapter.id === nextChapter} className="group surface">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 [&::-webkit-details-marker]:hidden">
               <span className="min-w-0 font-medium">{chapter.title}</span>
               <span className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
@@ -246,7 +246,7 @@ function sources(topic: TopicMastery, t: ReturnType<typeof useTranslations<'Repo
 function TopicGroup({ title, topics, level, empty }: { title: string; topics: TopicMastery[]; level: MasteryLevel; empty: string }) {
   const { Icon } = LEVEL_STYLE[level];
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
+    <div className="flex flex-col gap-2 surface p-4">
       <h3 className="flex items-center gap-2 text-sm font-semibold">
         <Icon aria-hidden className={`size-4 ${level === 'STRONG' ? 'text-success' : level === 'NEEDS_WORK' ? 'text-destructive' : 'text-amber-600'}`} />
         {title}

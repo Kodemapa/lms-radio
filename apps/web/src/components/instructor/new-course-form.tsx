@@ -31,7 +31,7 @@ export function NewCourseForm() {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6">
+    <form onSubmit={submit} noValidate className="flex flex-col gap-4 surface p-6">
       <div className="flex flex-col gap-2">
         <Label htmlFor="new-course-title">{t('courseTitle')}</Label>
         <Input

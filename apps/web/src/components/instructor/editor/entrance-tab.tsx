@@ -50,7 +50,7 @@ export function EntranceTab({ courseId, locked }: { courseId: string; locked: bo
 
   return (
     <fieldset disabled={locked} className="flex max-w-2xl flex-col gap-6">
-      <div className="flex flex-col gap-6 rounded-2xl border border-border bg-card p-5 md:p-6">
+      <div className="flex flex-col gap-6 surface p-5 md:p-6">
         <p className="text-sm text-muted-foreground">{t('intro')}</p>
         <div className="flex items-start justify-between gap-4">
           <Label htmlFor="entrance-enabled">{t('enabled')}</Label>

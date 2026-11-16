@@ -56,7 +56,7 @@ export function DropdownMenuSubContent({ className, ...props }: ComponentProps<t
   return (
     <DropdownPrimitive.Portal>
       <DropdownPrimitive.SubContent
-        className={cn('z-50 min-w-[12rem] rounded-xl border border-border bg-card p-1.5 shadow-lg', className)}
+        className={cn('z-50 min-w-[12rem] rounded-2xl border border-border/70 bg-card p-1.5 shadow-lg', className)}
         {...props}
       />
     </DropdownPrimitive.Portal>

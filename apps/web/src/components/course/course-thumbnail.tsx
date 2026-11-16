@@ -1,11 +1,12 @@
 import { Stethoscope } from 'lucide-react';
 import { fileUrl } from '@/lib/public-env';
 
+// Plum / violet / rose / apricot, matching the design system.
 const GRADIENTS = [
-  'from-[#5a5bb5] to-[#8b5cf6]',
-  'from-[#1b2a41] to-[#5a5bb5]',
-  'from-[#0f766e] to-[#5a5bb5]',
-  'from-[#9d174d] to-[#5a5bb5]',
+  'from-[#2f2340] via-[#6a52a3] to-[#b78bd6]',
+  'from-[#6a52a3] via-[#a86bb2] to-[#ef8746]',
+  'from-[#3a2e48] via-[#9b3550] to-[#ef8746]',
+  'from-[#4a3570] via-[#6a52a3] to-[#e9a8c4]',
 ];
 
 /** Course image, or a branded gradient when no thumbnail has been uploaded. */

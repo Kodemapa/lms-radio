@@ -10,6 +10,18 @@ Test accounts and the dev login: see [DEV-LOGINS.md](DEV-LOGINS.md).
 - Updated English/Hindi homepage and footer copy. Schematic preview is labelled; no clinical reference values or commercial simulator integration claims added.
 - Verified web typecheck, 55 web tests, lint (two existing configuration warnings), diff whitespace and homepage HTTP 200. Browser visual QA remains outstanding because the browser execution tool was unavailable.
 
+### Design system rolled out app-wide (same day)
+
+- **Decisions log — "soft clinical" design system** is now the global default (`apps/web/src/app/globals.css`), not just the landing page:
+  - Warm palette (cream paper, lavender/plum primary, apricot accent) with a matching warm dark mode; tokens `--accent`, `--accent-deep`, `--accent-light` added.
+  - Headings use the display face (`--display-stack`, Bricolage Grotesque); Tailwind radius scale raised (`rounded-md/lg/xl` are rounder) and `shadow-*` map to soft layered shadows.
+  - Utilities: `surface` / `surface-sm` (replace bordered boxes), `soft-wash` (grainy lavender→peach), `kicker`, `.page-hero` (+ `.page-hero-orb`), `.page-glow` (layout backgrounds), `.lift` (hover).
+- Shared primitives (`packages/ui`): pill buttons, 24px cards, rounded inputs with focus halo, segmented pill tabs, blurred dialog overlay, gradient progress.
+- Layout: single sticky translucent header (Categories row removed — filtering lives on `/courses`; search is a pill, in the menu drawer on phones), plum grain footer panel, shared `PageHero` (`components/layout/page-hero.tsx`).
+- Pages: courses (search + filter pills in one bar, `course-filter-bar.tsx`; sidebar removed, grid full width; `AutoSubmitForm` now auto-submits only on select/radio/checkbox changes and re-enables fields on back/forward cache restore), course detail (light hero, floating enrol card), instructors, simulators, login (photo panel), become-instructor, account, instructor area, lesson player.
+- Codemod: 4px corners → pills/rounded fields (36); bordered boxes → `surface`/`surface-sm` (53); dashed empty states → `soft-wash` (11). `categories-menu.tsx` deleted (unused).
+- Verified in Chrome at 1440 and 390 px across 11 pages, light and dark: zero horizontal overflow (fixed pre-existing 34 px / 248 px overflow on course detail and account via `minmax(0,1fr)` grid columns).
+
 ### Second pass (same day): playful landing page with real photos
 
 - New sections: hero (arched photo, floating scan card + 3D render), topic marquee, image pathway cards, pinned scroll-told "How you'll learn" (`learning-journey.tsx`), dark practice band (browser practice formats; hardware simulators named only as "designed to sit alongside"), faculty CTA, FAQ with photo, image credits.

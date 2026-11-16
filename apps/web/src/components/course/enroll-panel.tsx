@@ -30,7 +30,7 @@ export function EnrollPanel({
     return (
       <Link
         href={`/login?next=${encodeURIComponent(`/${locale}/courses/${slug}`)}`}
-        className={`flex rounded-[4px] bg-primary font-medium text-primary-foreground hover:bg-primary-hover ${full}`}
+        className={`flex rounded-full bg-primary font-medium text-primary-foreground hover:bg-primary-hover ${full}`}
       >
         {t('signInToEnroll')}
       </Link>
@@ -45,7 +45,7 @@ export function EnrollPanel({
         </p>
         <Link
           href={`/learn/${slug}`}
-          className={`flex rounded-[4px] bg-primary font-medium text-primary-foreground hover:bg-primary-hover ${full}`}
+          className={`flex rounded-full bg-primary font-medium text-primary-foreground hover:bg-primary-hover ${full}`}
         >
           {t('startLearning')}
         </Link>

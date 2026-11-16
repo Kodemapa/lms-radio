@@ -113,7 +113,7 @@ export function DictionaryPanel({ dictionary, open = false }: { dictionary: read
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('dictionarySearch')}
           aria-label={t('dictionarySearch')}
-          className="mt-2 w-full rounded-[4px] border border-border bg-background px-2 py-1"
+          className="mt-2 w-full surface-sm px-2 py-1"
         />
       ) : null}
       <dl className="mt-2 flex max-h-64 flex-col gap-1.5 overflow-y-auto">
@@ -217,7 +217,7 @@ export function ImagingWorkspace({
                 role="tab"
                 aria-selected={i.assetId === image.assetId}
                 onClick={() => setAssetId(i.assetId)}
-                className={`rounded-[4px] border px-3 py-1.5 text-sm ${i.assetId === image.assetId ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:bg-muted'}`}
+                className={`rounded-full border px-3 py-1.5 text-sm ${i.assetId === image.assetId ? 'border-primary bg-primary text-primary-foreground' : 'border-border hover:bg-muted'}`}
               >
                 {index + 1}. {i.label}
               </button>
@@ -236,7 +236,7 @@ export function ImagingWorkspace({
                 disabled={needsCalibration && !calibrated}
                 onClick={() => setMode(m)}
                 title={needsCalibration && !calibrated ? t('uncalibrated') : t(key)}
-                className={`flex items-center gap-1.5 rounded-[4px] border px-2.5 py-1.5 text-sm disabled:opacity-40 ${mode === m ? 'border-primary bg-primary-light text-primary' : 'border-border hover:bg-muted'}`}
+                className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-sm disabled:opacity-40 ${mode === m ? 'border-primary bg-primary-light text-primary' : 'border-border hover:bg-muted'}`}
               >
                 <Icon aria-hidden className="size-4" />
                 {t(key)}
@@ -246,7 +246,7 @@ export function ImagingWorkspace({
           <button
             type="button"
             onClick={() => setReset((n) => n + 1)}
-            className="flex items-center gap-1.5 rounded-[4px] border border-border px-2.5 py-1.5 text-sm hover:bg-muted"
+            className="flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1.5 text-sm hover:bg-muted"
           >
             <RotateCcw aria-hidden className="size-4" />
             {t('resetView')}
@@ -337,7 +337,7 @@ export function ImagingWorkspace({
                       placeholder={t('labelPlaceholder')}
                       onChange={(e) => update(a.id, { label: e.target.value })}
                       onClick={(e) => e.stopPropagation()}
-                      className="min-w-0 flex-1 rounded-[4px] border border-border bg-background px-2 py-1 font-mono uppercase"
+                      className="min-w-0 flex-1 surface-sm px-2 py-1 font-mono uppercase"
                     />
                   ) : (
                     <span className="flex-1 font-mono font-medium">{a.label || t('unlabelled')}</span>

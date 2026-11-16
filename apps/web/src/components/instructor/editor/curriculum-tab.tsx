@@ -74,13 +74,13 @@ export function CurriculumTab({
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
 
       {course.chapters.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
+        <p className="soft-wash rounded-3xl p-8 text-center text-muted-foreground">
           {t('noChapters')}
         </p>
       ) : (
         <ol className="flex flex-col gap-4">
           {course.chapters.map((chapter, chapterIndex) => (
-            <li key={chapter.id} className="rounded-2xl border border-border bg-card">
+            <li key={chapter.id} className="surface">
               <div className="flex flex-wrap items-center gap-2 border-b border-border p-4">
                 <span className="flex size-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                   {chapter.position}

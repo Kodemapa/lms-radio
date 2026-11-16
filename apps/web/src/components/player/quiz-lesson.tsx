@@ -81,7 +81,7 @@ export function QuizLesson({ lessonId, quiz, enrolled }: { lessonId: string; qui
           const graded = byQuestion.get(question.id);
           const name = `q-${question.id}`;
           return (
-            <li key={question.id} className="rounded-2xl border border-border bg-card p-5">
+            <li key={question.id} className="surface p-5">
               <fieldset disabled={!!result || !enrolled}>
                 <legend className="mb-1 font-semibold">
                   {index + 1}. {question.text}

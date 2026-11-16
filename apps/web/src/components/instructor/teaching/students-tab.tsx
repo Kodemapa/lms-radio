@@ -125,7 +125,7 @@ export function StudentsTab({ courseId }: { courseId: string }) {
               </table>
             </div>
           ) : (
-            <p className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">{t('noStudents')}</p>
+            <p className="rounded-2xl border border-dashed border-primary/25 bg-primary-light/40 p-8 text-center text-muted-foreground">{t('noStudents')}</p>
           )}
           {pages > 1 ? (
             <nav aria-label={t('pagination')} className="flex items-center justify-end gap-2 text-sm">

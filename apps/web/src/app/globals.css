@@ -4,63 +4,84 @@
 @source '../../../../packages/ui/src';
 
 /*
- * Palette carried over from the previous eLMS website (lmsweb):
- * purple primary, near-black secondary, soft grey borders and sections.
+ * "Soft clinical" design system, shared by every page:
+ * lavender + plum + warm peach on cream paper, soft layered shadows,
+ * generous radii and a rounded display face for headings.
+ * The landing page adds its own art direction on top (components/home/home.css).
  */
 :root {
-  --background: #ffffff;
-  --foreground: #010211;
+  --background: #fffaf4;
+  --foreground: #2b2036;
   --card: #ffffff;
-  --card-foreground: #010211;
-  --muted: #f2f5f7;
-  --muted-foreground: #6b6b76;
-  --border: #d8e0e6;
-  --primary: #5a5bb5;
-  --primary-hover: #4d4e9b;
+  --card-foreground: #2b2036;
+  --muted: #f4eef7;
+  --muted-foreground: #6c6275;
+  --border: #ece4ef;
+  --primary: #6a52a3;
+  --primary-hover: #563f8a;
   --primary-foreground: #ffffff;
-  --primary-light: #eeeef8;
-  --secondary: #1b2a41;
+  --primary-light: #efe8fa;
+  --secondary: #2f2340;
   --secondary-foreground: #ffffff;
-  --success: #83b807;
+  --accent: #ef8746;
+  --accent-deep: #c45f1f;
+  --accent-light: #fff1e6;
+  --success: #4f8a2b;
   --rating: #db9305;
-  --destructive: #dc2626;
+  --destructive: #c8372d;
   --destructive-foreground: #ffffff;
-  --ring: #5a5bb5;
-  --section: #f2f5f7;
-  --footer: #010211;
-  --footer-panel: #2a2a37;
+  --ring: #6a52a3;
+  --section: #f7f1f4;
+  --footer: #2b2036;
+  --footer-panel: #3a2e48;
   /* Chart marks (validated for contrast and lightness on the card surface). */
-  --chart-1: #5a5bb5;
-  --chart-track: #e4e5f4;
+  --chart-1: #6a52a3;
+  --chart-track: #ebe4f6;
+
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --soft-gradient: linear-gradient(130deg, #efe5fb 0%, #f8e4ec 58%, #fde3cf 100%);
+  --shadow-soft: 0 1px 2px #2b20360a, 0 18px 40px -16px #2b203626;
+  --shadow-lift: 0 2px 4px #2b20360d, 0 28px 50px -20px #2b203640;
+  /* next/font sets --font-display on <html>; this is the full fallback stack. */
+  --display-stack: var(--font-display), var(--font-geist), var(--font-devanagari), system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
+  /* Warm plum night palette; same hues, lowered lightness. */
   :root {
-    --background: #0d0e1a;
-    --foreground: #eef0f6;
-    --card: #161728;
-    --card-foreground: #eef0f6;
-    --muted: #1f2033;
-    --muted-foreground: #a3a5b8;
-    --border: #2c2e46;
-    --primary: #8b8ce0;
-    --primary-hover: #a1a2ea;
-    --primary-foreground: #0d0e1a;
-    --primary-light: #24254a;
-    --secondary: #e7e9f3;
-    --secondary-foreground: #0d0e1a;
-    --success: #9ccf2a;
-    --ring: #8b8ce0;
-    --section: #121323;
-    --footer: #07070f;
-    --footer-panel: #1c1c2b;
-    --chart-1: #8384d9;
-    --chart-track: #2a2b4d;
+    --background: #17121d;
+    --foreground: #f3edf7;
+    --card: #211a29;
+    --card-foreground: #f3edf7;
+    --muted: #2a2233;
+    --muted-foreground: #b3a8bd;
+    --border: #352b40;
+    --primary: #b49cf0;
+    --primary-hover: #c6b3f5;
+    --primary-foreground: #17121d;
+    --primary-light: #2e2545;
+    --secondary: #f3edf7;
+    --secondary-foreground: #17121d;
+    --accent: #f59a5e;
+    --accent-deep: #f7ad7b;
+    --accent-light: #3a2a22;
+    --success: #8fcf62;
+    --destructive: #f07167;
+    --ring: #b49cf0;
+    --section: #1c1623;
+    --footer: #0f0b13;
+    --footer-panel: #1f1827;
+    --chart-1: #a993ea;
+    --chart-track: #2e2545;
+    --soft-gradient: linear-gradient(130deg, #2a2140 0%, #2f2030 58%, #33241e 100%);
+    --shadow-soft: 0 1px 2px #0006, 0 18px 40px -16px #000a;
+    --shadow-lift: 0 2px 4px #0006, 0 28px 50px -20px #000c;
   }
 }
 
 @theme inline {
   --font-sans: var(--font-geist), var(--font-devanagari), system-ui, sans-serif;
+  --font-heading: var(--display-stack);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -74,6 +95,9 @@
   --color-primary-light: var(--primary-light);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-light: var(--accent-light);
   --color-success: var(--success);
   --color-rating: var(--rating);
   --color-destructive: var(--destructive);
@@ -82,6 +106,31 @@
   --color-section: var(--section);
   --color-footer: var(--footer);
   --color-footer-panel: var(--footer-panel);
+  /* Softer, layered shadows everywhere `shadow-*` is used. */
+  --shadow-sm: var(--shadow-soft);
+  --shadow-md: var(--shadow-soft);
+  --shadow-lg: var(--shadow-lift);
+}
+
+/* Rounder corners app-wide: every rounded-md/lg/xl picks these up. */
+@theme {
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
+
+@layer base {
+  h1,
+  h2 {
+    font-family: var(--display-stack);
+    letter-spacing: -0.02em;
+  }
+  ::selection {
+    background: #ef874640;
+  }
 }
 
 /* Same container widths as the previous site. */
@@ -93,11 +142,57 @@
 }
 
 @utility section-title {
-  @apply text-xl font-semibold md:text-2xl lg:text-[28px];
+  font-family: var(--display-stack);
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  @apply text-2xl font-semibold md:text-3xl lg:text-[34px];
 }
 
 @utility section-gap {
-  @apply py-10 md:py-16 lg:py-20;
+  @apply py-12 md:py-16 lg:py-20;
+}
+
+/* Small uppercase label with a leading dash, used above headings. */
+@utility kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  &::before {
+    content: '';
+    width: 22px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+  }
+}
+
+/* A white, softly lifted panel; the replacement for bordered boxes. */
+@utility surface {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-soft);
+}
+
+/* Smaller surface for compact panels and list rows. */
+@utility surface-sm {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px #2b203608, 0 10px 24px -14px #2b20361f;
+}
+
+/* Lavender → peach wash with film grain. */
+@utility soft-wash {
+  background-image: var(--grain), var(--soft-gradient);
+  background-blend-mode: soft-light, normal;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -106,5 +201,121 @@
   *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- Site header (all pages) ---------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--background) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+/* ---------- Background glow for app layouts (account, instructor, learn) ---------- */
+.page-glow {
+  position: relative;
+  isolation: isolate;
+}
+.page-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 520px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(40% 70% at 92% 0%, #fde0c6 0%, transparent 70%),
+    radial-gradient(40% 70% at 0% 0%, #ede0fc 0%, transparent 70%);
+}
+@media (prefers-color-scheme: dark) {
+  .page-glow::before {
+    background:
+      radial-gradient(40% 70% at 92% 0%, #3a281f 0%, transparent 70%),
+      radial-gradient(40% 70% at 0% 0%, #2c2145 0%, transparent 70%);
+  }
+}
+
+/* ---------- Page hero (inner pages) ---------- */
+.page-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding-block: clamp(36px, 6vw, 72px) clamp(32px, 5vw, 56px);
+}
+.page-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(45% 80% at 88% 10%, #fde0c6 0%, transparent 70%),
+    radial-gradient(40% 80% at 0% 0%, #ede0fc 0%, transparent 70%);
+}
+@media (prefers-color-scheme: dark) {
+  .page-hero::before {
+    background:
+      radial-gradient(45% 80% at 88% 10%, #3a281f 0%, transparent 70%),
+      radial-gradient(40% 80% at 0% 0%, #2c2145 0%, transparent 70%);
+  }
+}
+.page-hero h1 {
+  font-size: clamp(32px, 4.4vw, 56px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  text-wrap: balance;
+}
+.page-hero-orb {
+  position: absolute;
+  z-index: -1;
+  right: -60px;
+  top: -80px;
+  width: clamp(220px, 28vw, 380px);
+  aspect-ratio: 1;
+  border-radius: 46% 54% 44% 56% / 52% 42% 58% 48%;
+  background-image: var(--grain),
+    linear-gradient(140deg, #c9b5ef 0%, #e5c4e2 45%, #fbc9a1 100%);
+  background-blend-mode: soft-light, normal;
+  opacity: 0.55;
+  filter: blur(2px);
+}
+@media (prefers-color-scheme: dark) {
+  .page-hero-orb {
+    opacity: 0.22;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .page-hero-orb {
+    animation: orb-morph 16s ease-in-out infinite alternate;
+  }
+}
+@keyframes orb-morph {
+  50% {
+    border-radius: 58% 42% 52% 48% / 44% 56% 44% 56%;
+    transform: rotate(10deg) scale(1.04);
+  }
+  100% {
+    border-radius: 42% 58% 60% 40% / 55% 45% 55% 45%;
+    transform: rotate(-8deg);
+  }
+}
+
+/* Hover lift for card-like links. */
+.lift {
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.35s;
+}
+.lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lift:hover {
+    transform: none;
   }
 }

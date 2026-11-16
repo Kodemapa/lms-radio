@@ -89,7 +89,7 @@ export function TeamTab({ courseId, myRole, myUserId }: { courseId: string; myRo
       {rows === null ? (
         <p role="status" className="text-sm text-muted-foreground">{t('loading')}</p>
       ) : rows.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border p-6 text-center text-muted-foreground">{t('noTeam')}</p>
+        <p className="rounded-2xl border border-dashed border-primary/25 bg-primary-light/40 p-6 text-center text-muted-foreground">{t('noTeam')}</p>
       ) : (
         <ul className="flex flex-col divide-y divide-border rounded-xl border border-border">
           {rows.map((row) => (

@@ -367,7 +367,8 @@
     },
     "page": "Page {page} of {pages}",
     "prevPage": "Previous page",
-    "nextPage": "Next page"
+    "nextPage": "Next page",
+    "kicker": "The catalogue"
   },
   "CourseDetail": {
     "breadcrumb": "Breadcrumb",
@@ -432,7 +433,8 @@
     "subtitle": "Learn from consultants and teachers across India.",
     "empty": "No instructors yet.",
     "viewProfile": "View profile",
-    "coursesBy": "Courses by {name}"
+    "coursesBy": "Courses by {name}",
+    "kicker": "Faculty"
   },
   "Simulators": {
     "title": "Simulators",
@@ -463,7 +465,8 @@
         "title": "Labour-ward emergencies",
         "body": "Timed scenarios such as PPH, shoulder dystocia and eclampsia."
       }
-    }
+    },
+    "kicker": "Practice"
   },
   "Login": {
     "title": "Sign in",
@@ -558,7 +561,8 @@
     },
     "reviewNote": "Note from the reviewer: {note}",
     "goToDashboard": "Go to instructor dashboard",
-    "alreadyInstructor": "You're already an instructor."
+    "alreadyInstructor": "You're already an instructor.",
+    "kicker": "For faculty"
   },
   "Instructor": {
     "nav": {

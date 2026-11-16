@@ -83,7 +83,7 @@ export function LessonResources() {
   const { resources, open } = useResourcePanel();
   if (!resources.length) return null;
   return (
-    <section aria-labelledby="lesson-resources" className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
+    <section aria-labelledby="lesson-resources" className="flex flex-col gap-3 surface p-4">
       <h2 id="lesson-resources" className="flex items-center gap-2 font-semibold">
         <Calculator aria-hidden className="size-5 text-primary" />
         {t('heading')}
@@ -96,12 +96,12 @@ export function LessonResources() {
             <span className="truncate text-xs text-muted-foreground">{new URL(link.url).hostname}</span>
             <span className="mt-auto flex flex-wrap gap-2">
               {link.embed ? (
-                <button type="button" onClick={() => open(link.id)} className="flex items-center gap-1.5 rounded-[4px] bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary-hover">
+                <button type="button" onClick={() => open(link.id)} className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary-hover">
                   <PanelRight aria-hidden className="size-4" />
                   {t('openBeside')}
                 </button>
               ) : null}
-              <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-[4px] border border-border px-3 py-1.5 text-sm font-medium hover:border-primary">
+              <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-sm font-medium hover:border-primary">
                 <ExternalLink aria-hidden className="size-4" />
                 {t('newTab')}
               </a>

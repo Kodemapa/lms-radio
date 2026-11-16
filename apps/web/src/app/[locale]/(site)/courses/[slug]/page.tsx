@@ -82,17 +82,18 @@ export default async function CoursePage({ params }: Props) {
 
   return (
     <>
-      <section className="bg-secondary py-8 text-secondary-foreground md:py-12">
-        <div className="container grid gap-8 lg:grid-cols-[1fr_380px]">
+      <section className="page-hero">
+        <div className="page-hero-orb" aria-hidden />
+        <div className="container grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="flex flex-col gap-4">
             <nav aria-label={t('breadcrumb')}>
-              <ol className="flex flex-wrap items-center gap-1 text-sm opacity-80">
-                <li><Link href="/courses" className="hover:underline">{tCommon('courses')}</Link></li>
+              <ol className="flex w-fit flex-wrap items-center gap-1 rounded-full bg-card/70 px-3 py-1.5 text-sm text-muted-foreground shadow-sm backdrop-blur">
+                <li><Link href="/courses" className="font-medium hover:text-primary">{tCommon('courses')}</Link></li>
                 {course.category ? (
                   <>
                     <ChevronRight aria-hidden className="size-4 rtl:rotate-180" />
                     <li>
-                      <Link href={`/courses?category=${course.category.slug}`} className="hover:underline">
+                      <Link href={`/courses?category=${course.category.slug}`} className="font-medium hover:text-primary">
                         {course.category.name}
                       </Link>
                     </li>
@@ -100,9 +101,9 @@ export default async function CoursePage({ params }: Props) {
                 ) : null}
               </ol>
             </nav>
-            <h1 className="text-3xl font-bold leading-tight md:text-4xl">{course.title}</h1>
-            <p className="text-lg opacity-85">{course.shortDescription}</p>
-            <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm opacity-90">
+            <h1>{course.title}</h1>
+            <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground">{course.shortDescription}</p>
+            <ul className="flex flex-wrap gap-2 text-sm [&>li]:rounded-full [&>li]:bg-card/80 [&>li]:px-3 [&>li]:py-1.5 [&>li]:shadow-sm">
               {course.rating.average ? (
                 <li className="flex items-center gap-1.5">
                   <span className="font-semibold text-rating">{course.rating.average.toFixed(1)}</span>
@@ -127,20 +128,20 @@ export default async function CoursePage({ params }: Props) {
               ) : null}
             </ul>
             {course.instructor ? (
-              <Link href={`/instructors/${course.instructor.id}`} className="flex w-fit items-center gap-3 hover:underline">
-                <span className="flex size-10 items-center justify-center rounded-full bg-white/15 font-semibold">
+              <Link href={`/instructors/${course.instructor.id}`} className="group flex w-fit items-center gap-3">
+                <span className="flex size-11 items-center justify-center rounded-full border-2 border-card bg-gradient-to-br from-[#c9b5ef] to-[#fbc9a1] font-semibold text-[#2f2340] shadow-sm">
                   {initials(course.instructor.displayName)}
                 </span>
-                <span className="text-sm">{tCommon('by', { name: course.instructor.displayName })}</span>
+                <span className="text-sm font-medium group-hover:text-primary">{tCommon('by', { name: course.instructor.displayName })}</span>
               </Link>
             ) : null}
           </div>
         </div>
       </section>
 
-      <div className="container grid gap-8 py-8 lg:grid-cols-[1fr_380px] lg:py-12">
-        <aside className="order-first lg:order-last lg:-mt-64">
-          <div className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-4 shadow-lg lg:sticky lg:top-4">
+      <div className="container grid grid-cols-[minmax(0,1fr)] gap-8 pb-16 pt-2 lg:grid-cols-[minmax(0,1fr)_380px] lg:pb-24">
+        <aside className="order-first lg:order-last lg:-mt-72">
+          <div className="surface flex flex-col gap-5 p-4 shadow-lg lg:sticky lg:top-24">
             {course.previewAssetId && me ? (
               <PreviewDialog
                 assetId={course.previewAssetId}
@@ -155,14 +156,14 @@ export default async function CoursePage({ params }: Props) {
             )}
             <PriceTag price={course.price} locale={locale} freeLabel={tCommon('free')} size="lg" />
             {needsEntrance ? (
-              <div className="flex flex-col gap-3 rounded-xl border border-primary/40 bg-primary-light p-4">
+              <div className="soft-wash flex flex-col gap-3 rounded-2xl p-4">
                 <p className="font-semibold text-primary">{tEntrance('required')}</p>
                 <p className="text-sm">
                   {tEntrance('requiredBody', { count: course.entranceTest!.questionCount, pass: course.entranceTest!.passPercent })}
                 </p>
                 <Link
                   href={me ? `/learn/${course.slug}/entrance` : `/login?next=${encodeURIComponent(`/${locale}/learn/${course.slug}/entrance`)}`}
-                  className="flex justify-center rounded-[4px] bg-primary py-3 font-medium text-primary-foreground hover:bg-primary-hover"
+                  className="flex justify-center rounded-full bg-primary py-3 font-medium text-primary-foreground hover:bg-primary-hover"
                 >
                   {me ? tEntrance('takeTest') : tEntrance('signInFirst')}
                 </Link>
@@ -217,12 +218,12 @@ export default async function CoursePage({ params }: Props) {
 
           <TabsContent value="overview" className="flex flex-col gap-8">
             {course.learnings.length > 0 ? (
-              <section aria-labelledby="learn" className="rounded-2xl border border-border p-5 md:p-6">
+              <section aria-labelledby="learn" className="surface p-6 md:p-8">
                 <h2 id="learn" className="mb-4 text-xl font-semibold">{t('whatYoullLearn')}</h2>
                 <ul className="grid gap-3 md:grid-cols-2">
                   {course.learnings.map((item) => (
                     <li key={item} className="flex gap-2.5">
-                      <Check aria-hidden className="mt-0.5 size-5 shrink-0 text-success" />
+                      <Check aria-hidden className="mt-0.5 box-content size-3.5 shrink-0 rounded-full bg-accent p-1 text-white" />
                       {item}
                     </li>
                   ))}
@@ -269,7 +270,7 @@ export default async function CoursePage({ params }: Props) {
             {course.entranceTest ? (
               <Link
                 href={me ? `/learn/${course.slug}/entrance` : `/login?next=${encodeURIComponent(`/${locale}/learn/${course.slug}/entrance`)}`}
-                className="mb-3 flex items-center gap-3 rounded-xl border border-primary/40 bg-primary-light px-4 py-3 text-sm hover:border-primary"
+                className="soft-wash mb-4 flex items-center gap-3 rounded-2xl px-5 py-4 text-sm transition-shadow hover:shadow-md"
               >
                 <ClipboardCheck aria-hidden className="size-5 shrink-0 text-primary" />
                 <span className="flex-1 font-medium text-primary">{tEntrance('title')}</span>
@@ -309,11 +310,11 @@ export default async function CoursePage({ params }: Props) {
                         return (
                           <li key={lesson.id}>
                             {canOpen(lesson.isPreview) ? (
-                              <Link href={`/learn/${course.slug}/${lesson.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-muted">
+                              <Link href={`/learn/${course.slug}/${lesson.id}`} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-primary-light/60">
                                 {body}
                               </Link>
                             ) : (
-                              <div className="flex items-center gap-3 px-4 py-3">{body}</div>
+                              <div className="flex items-center gap-3 px-5 py-3">{body}</div>
                             )}
                           </li>
                         );
@@ -327,8 +328,8 @@ export default async function CoursePage({ params }: Props) {
 
           {course.instructor ? (
             <TabsContent value="instructor">
-              <Link href={`/instructors/${course.instructor.id}`} className="flex items-center gap-4 rounded-2xl border border-border p-5 hover:border-primary">
-                <span className="flex size-16 items-center justify-center rounded-full bg-primary-light text-xl font-bold text-primary">
+              <Link href={`/instructors/${course.instructor.id}`} className="surface lift flex items-center gap-4 p-6">
+                <span className="flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-[#c9b5ef] to-[#fbc9a1] text-xl font-bold text-[#2f2340]">
                   {initials(course.instructor.displayName)}
                 </span>
                 <span className="flex flex-col">

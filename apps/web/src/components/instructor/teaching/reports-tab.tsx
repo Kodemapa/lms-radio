@@ -40,7 +40,7 @@ export function ReportsTab({ courseId }: { courseId: string }) {
   if (error) return <p role="alert" className="text-sm text-destructive">{t('loadFailed')}</p>;
   if (!list) return <p role="status" className="text-sm text-muted-foreground">{t('loading')}</p>;
   if (open) return <Report courseId={courseId} summary={open} onBack={() => setOpen(null)} />;
-  if (!list.length) return <p className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">{t('noAssessments')}</p>;
+  if (!list.length) return <p className="rounded-2xl border border-dashed border-primary/25 bg-primary-light/40 p-8 text-center text-muted-foreground">{t('noAssessments')}</p>;
 
   return (
     <div className="overflow-x-auto rounded-xl border border-border">

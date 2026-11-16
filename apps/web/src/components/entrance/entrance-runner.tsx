@@ -109,7 +109,7 @@ export function EntranceRunner({
           {result ? t('passedTitle', { score: result.scorePercent }) : t('alreadyPassed')}
         </p>
         <p>{t('passedBody')}</p>
-        <Link href={`/learn/${slug}`} className="rounded-[4px] bg-primary px-5 py-2.5 font-medium text-primary-foreground hover:bg-primary-hover">
+        <Link href={`/learn/${slug}`} className="rounded-full bg-primary px-5 py-2.5 font-medium text-primary-foreground hover:bg-primary-hover">
           {t('startCourse')}
         </Link>
       </div>
@@ -122,7 +122,7 @@ export function EntranceRunner({
       <div className="flex flex-col gap-5">
         <ol className="flex flex-col gap-4">
           {paper.questions.map((q, index) => (
-            <li key={q.id} className="rounded-2xl border border-border bg-card p-5">
+            <li key={q.id} className="surface p-5">
               <fieldset>
                 <legend className="mb-1 font-semibold">{index + 1}. {q.text}</legend>
                 <p className="mb-3 text-xs text-muted-foreground">{q.allowMultiple ? t('selectMany') : t('selectOne')}</p>
@@ -174,7 +174,7 @@ export function EntranceRunner({
           <p>{t('failedBody', { correct: result.correctCount, total: result.total })}</p>
         </div>
       ) : null}
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-6">
+      <div className="flex flex-col gap-3 surface p-6">
         <p className="flex items-center gap-2 font-semibold">
           <ClipboardCheck aria-hidden className="size-5 text-primary" />
           {t('rules', { count: status.questionCount, pass: status.passPercent })}

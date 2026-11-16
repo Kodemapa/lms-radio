@@ -62,7 +62,7 @@ export function CertificateTab({ courseId, courseTitle, enabled }: { courseId: s
 
   return (
     <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
-      <div className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-5">
+      <div className="flex flex-col gap-5 surface p-5">
         <p className="text-sm text-muted-foreground">{t('intro')}</p>
         {!enabled ? <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900 dark:bg-amber-900/30 dark:text-amber-100">{t('enableHint')}</p> : null}
         {text('issuerName', t('issuerName'), 120)}

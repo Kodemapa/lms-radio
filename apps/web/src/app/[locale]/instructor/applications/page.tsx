@@ -23,13 +23,13 @@ export default async function ApplicationsPage({ params }: { params: Promise<{ l
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold md:text-3xl">{t('applicationsTitle')}</h1>
       {applications.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted-foreground">
+        <p className="soft-wash rounded-3xl p-10 text-center text-muted-foreground">
           {t('applicationsEmpty')}
         </p>
       ) : (
         <ul className="flex flex-col gap-4">
           {applications.map((application) => (
-            <li key={application.id} className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+            <li key={application.id} className="flex flex-col gap-3 surface p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="text-lg font-semibold">{application.applicant.displayName}</h2>
                 <span className="text-sm text-muted-foreground">

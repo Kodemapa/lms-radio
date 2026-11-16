@@ -62,7 +62,7 @@ export function PricingTab({
   return (
     <form onSubmit={save} noValidate>
       <fieldset disabled={locked} className="flex max-w-2xl flex-col gap-6">
-        <div className="flex flex-col gap-6 rounded-2xl border border-border bg-card p-5 md:p-6">
+        <div className="flex flex-col gap-6 surface p-5 md:p-6">
           {toggle('is-free', t('isFree'), t('isFreeHint'), isFree, setIsFree)}
           {!isFree ? (
             <div className="grid gap-4 sm:grid-cols-2">
@@ -78,7 +78,7 @@ export function PricingTab({
             </div>
           ) : null}
         </div>
-        <div className="flex flex-col gap-6 rounded-2xl border border-border bg-card p-5 md:p-6">
+        <div className="flex flex-col gap-6 surface p-5 md:p-6">
           {toggle('certificate', t('certificate'), t('certificateHint'), certificate, setCertificate)}
           {certificate && isFree ? (
             <div className="flex flex-col gap-2 sm:max-w-xs">

@@ -184,7 +184,7 @@ export function FileUpload({
           type="button"
           disabled={disabled || busy}
           onClick={() => input.current?.click()}
-          className="flex items-center gap-2 rounded-[4px] border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
+          className="flex items-center gap-2 rounded-full border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
         >
           {state.phase === 'error' ? <RotateCcw aria-hidden className="size-4" /> : <FileUp aria-hidden className="size-4" />}
           {shownName ? t('replace') : t('choose')}

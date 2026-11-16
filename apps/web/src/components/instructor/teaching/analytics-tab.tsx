@@ -34,14 +34,14 @@ export function AnalyticsTab({ courseId }: { courseId: string }) {
     <div className="flex flex-col gap-6">
       <ul className="grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
         {funnel.map((f) => (
-          <li key={f.key} className="rounded-xl border border-border bg-card p-4">
+          <li key={f.key} className="surface-sm p-4">
             <span className="block text-sm text-muted-foreground">{t(`funnel.${f.key}`)}</span>
             <span className="text-2xl font-semibold tabular-nums">{f.value.toLocaleString()}</span>
             {f.share !== null ? <span className="ms-2 text-sm text-muted-foreground">{t('ofEnrolled', { percent: f.share })}</span> : null}
           </li>
         ))}
       </ul>
-      <section className="rounded-xl border border-border bg-card p-4">
+      <section className="surface-sm p-4">
         <DayBars
           data={data.enrolmentsByDay}
           title={t('enrolments30')}

@@ -46,7 +46,7 @@ export function ReviewsManager() {
       {items === null ? (
         !error ? <p role="status" className="text-sm text-muted-foreground">{t('loading')}</p> : null
       ) : items.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">{t('noReviews')}</p>
+        <p className="rounded-2xl border border-dashed border-primary/25 bg-primary-light/40 p-8 text-center text-muted-foreground">{t('noReviews')}</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {items.map((r) => (
@@ -80,7 +80,7 @@ function ReviewItem({ review, onChanged }: { review: InstructorReview; onChanged
   };
 
   return (
-    <li className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4 text-sm">
+    <li className="flex flex-col gap-2 surface-sm p-4 text-sm">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium">{review.authorName}</span>
         <span className="flex items-center gap-0.5" aria-label={t('stars', { count: review.rating })}>
