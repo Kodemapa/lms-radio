@@ -14,6 +14,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Overridable so a production build can run beside `next dev` (e.g. bundle analysis).
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   poweredByHeader: false,
   transpilePackages: ['@obgyn/ui'],
   outputFileTracingRoot: path.join(__dirname, '../../'),

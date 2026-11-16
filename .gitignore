@@ -5,6 +5,7 @@ dist/
 out/
 release/
 .next/
+.next-analyze/
 .turbo/
 coverage/
 *.tsbuildinfo
