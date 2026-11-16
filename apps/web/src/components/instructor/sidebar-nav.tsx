@@ -1,6 +1,6 @@
 'use client';
 
-import { ClipboardCheck, ClipboardList, LayoutDashboard, Library, PlusCircle, UserCheck } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, LayoutDashboard, Library, MessageSquareText, PlusCircle, UserCheck } from 'lucide-react';
 import { Link, usePathname } from '@/i18n/navigation';
 
 const ICONS = {
@@ -8,6 +8,7 @@ const ICONS = {
   courses: Library,
   newCourse: PlusCircle,
   submissions: ClipboardList,
+  reviews: MessageSquareText,
   review: ClipboardCheck,
   applications: UserCheck,
 };

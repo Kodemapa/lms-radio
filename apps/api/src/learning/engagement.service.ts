@@ -20,8 +20,9 @@ export class EngagementService {
 
   async reviews(slug: string, viewerId?: string): Promise<ReviewList> {
     const course = await this.publishedCourse(slug);
+    // Reviews hidden by an admin stay visible only to their author.
     const rows = await this.prisma.courseReview.findMany({
-      where: { courseId: course.id },
+      where: { courseId: course.id, OR: [{ hiddenAt: null }, ...(viewerId ? [{ userId: viewerId }] : [])] },
       orderBy: { updatedAt: 'desc' },
       include: { user: { select: { displayName: true } } },
       take: 100,
@@ -34,6 +35,7 @@ export class EngagementService {
       authorName: row.user.displayName,
       updatedAt: row.updatedAt.toISOString(),
       mine: row.userId === viewerId,
+      reply: row.reply,
     }));
     return {
       average: rows.length ? Math.round((rows.reduce((s, r) => s + r.rating, 0) / rows.length) * 10) / 10 : null,

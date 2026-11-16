@@ -57,6 +57,12 @@ export async function ReviewsSection({
               </div>
               <span className="sr-only">{t('star', { count: review.rating })}</span>
               {review.comment ? <p className="whitespace-pre-line text-muted-foreground">{review.comment}</p> : null}
+              {review.reply ? (
+                <div className="ms-4 mt-1 border-s-2 border-primary/40 ps-3 text-sm">
+                  <span className="block text-xs font-medium text-primary">{t('instructorReply')}</span>
+                  <p className="whitespace-pre-line">{review.reply}</p>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>

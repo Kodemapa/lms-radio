@@ -14,11 +14,14 @@ export function forwardHeaders(req: Request, extra: Record<string, string> = {})
 /** Pass an upstream API response straight through. */
 export async function passThrough(upstream: Response): Promise<NextResponse> {
   if (upstream.status === 204) return new NextResponse(null, { status: 204 });
-  return new NextResponse(await upstream.text(), {
+  // Bytes, not text: decoding as text would drop a UTF-8 BOM (CSV exports for Excel).
+  const disposition = upstream.headers.get('content-disposition');
+  return new NextResponse(await upstream.arrayBuffer(), {
     status: upstream.status,
     headers: {
       'content-type': upstream.headers.get('content-type') ?? 'application/json',
       'cache-control': 'no-store',
+      ...(disposition ? { 'content-disposition': disposition } : {}),
     },
   });
 }

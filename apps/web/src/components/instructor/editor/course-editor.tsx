@@ -1,6 +1,6 @@
 'use client';
 
-import { type CategoryNode, type InstructorCourse } from '@obgyn/types';
+import { canEditCourse, ownsCourse, type CategoryNode, type InstructorCourse } from '@obgyn/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@obgyn/ui';
 import { Lock, Pencil } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -13,15 +13,33 @@ import { EntranceTab } from './entrance-tab';
 import { DetailsTab } from './details-tab';
 import { PricingTab } from './pricing-tab';
 import { PublishTab } from './publish-tab';
+import { AnalyticsTab } from '../teaching/analytics-tab';
+import { ReportsTab } from '../teaching/reports-tab';
+import { StudentsTab } from '../teaching/students-tab';
+import { TeamTab } from '../teaching/team-tab';
+import { TrashTab } from '../teaching/trash-tab';
 
-type Tab = 'details' | 'curriculum' | 'bank' | 'entrance' | 'pricing' | 'certDesign' | 'publish';
-const TABS: Tab[] = ['details', 'curriculum', 'bank', 'entrance', 'pricing', 'certDesign', 'publish'];
+type BuildTab = 'details' | 'curriculum' | 'bank' | 'entrance' | 'pricing' | 'certDesign' | 'publish';
+type TeachTab = 'students' | 'reports' | 'analytics' | 'team' | 'trash';
+type Tab = BuildTab | TeachTab;
+const BUILD_TABS: BuildTab[] = ['details', 'curriculum', 'bank', 'entrance', 'pricing', 'certDesign', 'publish'];
+const TEACH_TABS: TeachTab[] = ['students', 'reports', 'analytics', 'team', 'trash'];
+/** Owner-only build steps; the rest of the build tabs need edit rights. */
+const OWNER_TABS = new Set<Tab>(['pricing', 'publish']);
 
-/** Course builder: Details → Curriculum → Pricing → Publish, like the previous site. */
-export function CourseEditor({ initial, categories }: { initial: InstructorCourse; categories: CategoryNode[] }) {
+/**
+ * Course builder (Details → Curriculum → Pricing → Publish, like the previous
+ * site) plus the course team's teaching tools. Tabs follow the viewer's role:
+ * graders see only teaching tabs; editors see everything but pricing/publish.
+ */
+export function CourseEditor({ initial, categories, myUserId }: { initial: InstructorCourse; categories: CategoryNode[]; myUserId: string | null }) {
   const t = useTranslations('Instructor');
   const [course, setCourse] = useState(initial);
-  const [tab, setTab] = useState<Tab>('details');
+  const canEdit = canEditCourse(course.myRole);
+  const isOwner = ownsCourse(course.myRole);
+  const buildTabs = canEdit ? BUILD_TABS.filter((tab) => isOwner || !OWNER_TABS.has(tab)) : [];
+  const teachTabs = TEACH_TABS.filter((tab) => tab !== 'trash' || canEdit);
+  const [tab, setTab] = useState<Tab>(canEdit ? 'details' : 'students');
   const locked = course.status === 'IN_REVIEW' || course.status === 'RETIRED';
 
   return (
@@ -48,8 +66,8 @@ export function CourseEditor({ initial, categories }: { initial: InstructorCours
       ) : null}
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
-        <TabsList>
-          {TABS.map((value, index) => (
+        <TabsList className="flex-wrap">
+          {buildTabs.map((value, index) => (
             <TabsTrigger key={value} value={value}>
               <span className="me-2 inline-flex size-6 items-center justify-center rounded-full border border-current text-xs">
                 {index + 1}
@@ -57,7 +75,19 @@ export function CourseEditor({ initial, categories }: { initial: InstructorCours
               {t(`editor.tabs.${value}`)}
             </TabsTrigger>
           ))}
+          {/* Teaching tools stay together when the row wraps. */}
+          <span className="flex flex-wrap items-center">
+            {buildTabs.length ? <span aria-hidden className="mx-1 h-6 w-px bg-border" /> : null}
+            {teachTabs.map((value) => (
+              <TabsTrigger key={value} value={value}>
+                {t(`editor.tabs.${value}`)}
+              </TabsTrigger>
+            ))}
+          </span>
         </TabsList>
+        {!isOwner ? (
+          <p className="mt-3 text-sm text-muted-foreground">{t('editor.yourRole', { role: t(`editor.roles.${course.myRole}`) })}</p>
+        ) : null}
         <TabsContent value="details">
           <DetailsTab
             course={course}
@@ -86,6 +116,21 @@ export function CourseEditor({ initial, categories }: { initial: InstructorCours
         </TabsContent>
         <TabsContent value="publish">
           <PublishTab course={course} onChange={setCourse} />
+        </TabsContent>
+        <TabsContent value="students">
+          <StudentsTab courseId={course.id} />
+        </TabsContent>
+        <TabsContent value="reports">
+          <ReportsTab courseId={course.id} />
+        </TabsContent>
+        <TabsContent value="analytics">
+          <AnalyticsTab courseId={course.id} />
+        </TabsContent>
+        <TabsContent value="team">
+          <TeamTab courseId={course.id} myRole={course.myRole} myUserId={myUserId} />
+        </TabsContent>
+        <TabsContent value="trash">
+          <TrashTab courseId={course.id} locked={locked} onChange={setCourse} />
         </TabsContent>
       </Tabs>
     </div>

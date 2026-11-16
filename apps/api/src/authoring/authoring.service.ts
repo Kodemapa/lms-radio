@@ -8,15 +8,21 @@ import {
 } from '@nestjs/common';
 import {
   submissionProblems,
+  TRASH_RETENTION_DAYS,
   type InstructorCourse,
   type InstructorCourseRow,
   type InstructorDashboard,
+  type TrashItem,
 } from '@obgyn/types';
 import { type MediaKind, Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { AuditService } from '../audit/audit.service';
 import { type AuthUser } from '../auth/auth-user';
+import { CoursePermissions, type CourseNeed, type CourseRole } from '../courses/course-permissions';
+import { LIVE_LESSON } from '../common/soft-delete';
 import { PrismaService } from '../prisma/prisma.service';
+import { CollaboratorsService } from '../teaching/collaborators.service';
+import { countByDay } from '../teaching/insights.service';
 import {
   type ChapterDto,
   type CourseDetailsDto,
@@ -26,9 +32,11 @@ import {
 
 const AUTHORING_INCLUDE = {
   chapters: {
+    where: { deletedAt: null },
     orderBy: { position: 'asc' },
     include: {
       lessons: {
+        where: { deletedAt: null },
         orderBy: { position: 'asc' },
         include: {
           mediaAsset: { select: { status: true, originalName: true, deidentified: true } },
@@ -42,7 +50,7 @@ const AUTHORING_INCLUDE = {
 type AuthoringCourse = Prisma.CourseGetPayload<{ include: typeof AUTHORING_INCLUDE }>;
 
 const ROW_INCLUDE = {
-  _count: { select: { enrollments: true, lessons: true } },
+  _count: { select: { enrollments: true, lessons: { where: LIVE_LESSON } } },
 } satisfies Prisma.CourseInclude;
 
 export function slugify(title: string): string {
@@ -58,9 +66,10 @@ export function slugify(title: string): string {
   return `${base || 'course'}-${randomBytes(3).toString('hex')}`;
 }
 
-function toRow(course: Prisma.CourseGetPayload<{ include: typeof ROW_INCLUDE }>): InstructorCourseRow {
+function toRow(course: Prisma.CourseGetPayload<{ include: typeof ROW_INCLUDE }>, myRole: CourseRole): InstructorCourseRow {
   return {
     id: course.id,
+    myRole,
     slug: course.slug,
     title: course.title,
     status: course.status,
@@ -74,9 +83,10 @@ function toRow(course: Prisma.CourseGetPayload<{ include: typeof ROW_INCLUDE }>)
   };
 }
 
-function toInstructorCourse(course: AuthoringCourse): InstructorCourse {
+function toInstructorCourse(course: AuthoringCourse, myRole: CourseRole): InstructorCourse {
   return {
     id: course.id,
+    myRole,
     slug: course.slug,
     status: course.status,
     reviewNote: course.reviewNote,
@@ -133,6 +143,8 @@ function toInstructorCourse(course: AuthoringCourse): InstructorCourse {
   };
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 const cleanList = (items: string[]) =>
   [...new Set(items.map((item) => item.trim()).filter(Boolean))];
 
@@ -146,24 +158,49 @@ export class AuthoringService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly permissions: CoursePermissions,
+    private readonly collaborators: CollaboratorsService,
   ) {}
+
+  /** My role on each course in a list (owner, admin, or my co-instructor role). */
+  private async rolesFor(user: AuthUser, courses: { id: string; instructorId: string | null }[]): Promise<Map<string, CourseRole>> {
+    const shared = await this.prisma.courseCollaborator.findMany({
+      where: { userId: user.userId, status: 'ACCEPTED', courseId: { in: courses.map((c) => c.id) } },
+      select: { courseId: true, role: true },
+    });
+    const byCourse = new Map(shared.map((c) => [c.courseId, c.role as CourseRole]));
+    return new Map(
+      courses.map((c) => [c.id, c.instructorId === user.userId ? 'OWNER' : (byCourse.get(c.id) ?? (user.role === 'ADMIN' ? 'ADMIN' : 'GRADER'))]),
+    );
+  }
+
+  /** Own courses plus those shared with me (admins: their own). */
+  private async myCoursesWhere(user: AuthUser): Promise<Prisma.CourseWhereInput> {
+    const ids = await this.permissions.courseIds(user, 'view');
+    return ids === null ? { instructorId: user.userId } : { id: { in: ids } };
+  }
 
   // ---- Dashboard & lists ------------------------------------------------------
 
   async dashboard(user: AuthUser): Promise<InstructorDashboard> {
-    const where = { instructorId: user.userId };
-    const [byStatus, totalStudents, totalLessons, recent] = await Promise.all([
+    const where = await this.myCoursesWhere(user);
+    const now = new Date();
+    const since30 = new Date(now.getTime() - 30 * DAY_MS);
+    const since7 = new Date(now.getTime() - 7 * DAY_MS);
+    const gradeIds = await this.permissions.courseIds(user, 'grade');
+    const [byStatus, totalStudents, totalLessons, recent, enrolments, active, completions30d, pendingSubmissions, invitations] = await Promise.all([
       this.prisma.course.groupBy({ by: ['status'], where, _count: { _all: true } }),
       this.prisma.enrollment.count({ where: { course: where } }),
-      this.prisma.lesson.count({ where: { course: where } }),
-      this.prisma.course.findMany({
-        where,
-        include: ROW_INCLUDE,
-        orderBy: { updatedAt: 'desc' },
-        take: 5,
-      }),
+      this.prisma.lesson.count({ where: { course: where, ...LIVE_LESSON } }),
+      this.prisma.course.findMany({ where, include: ROW_INCLUDE, orderBy: { updatedAt: 'desc' }, take: 5 }),
+      this.prisma.enrollment.findMany({ where: { course: where, createdAt: { gte: since30 } }, select: { createdAt: true } }),
+      this.prisma.lessonProgress.groupBy({ by: ['userId'], where: { course: where, updatedAt: { gte: since7 } } }),
+      this.prisma.lessonProgress.count({ where: { course: where, completedAt: { gte: since30 } } }),
+      this.prisma.assignmentSubmission.count({ where: { status: 'SUBMITTED', ...(gradeIds === null ? {} : { courseId: { in: gradeIds } }) } }),
+      this.collaborators.myInvitations(user),
     ]);
     const count = (status: string) => byStatus.find((row) => row.status === status)?._count._all ?? 0;
+    const roles = await this.rolesFor(user, recent);
     return {
       totalCourses: byStatus.reduce((sum, row) => sum + row._count._all, 0),
       published: count('PUBLISHED'),
@@ -171,17 +208,23 @@ export class AuthoringService {
       drafts: count('DRAFT'),
       totalStudents,
       totalLessons,
-      recentCourses: recent.map(toRow),
+      recentCourses: recent.map((c) => toRow(c, roles.get(c.id)!)),
+      enrolmentsByDay: countByDay(enrolments.map((e) => e.createdAt), 30, now),
+      activeLearners: active.length,
+      completions30d,
+      pendingSubmissions,
+      invitations,
     };
   }
 
   async listCourses(user: AuthUser): Promise<InstructorCourseRow[]> {
     const courses = await this.prisma.course.findMany({
-      where: { instructorId: user.userId },
+      where: await this.myCoursesWhere(user),
       include: ROW_INCLUDE,
       orderBy: { updatedAt: 'desc' },
     });
-    return courses.map(toRow);
+    const roles = await this.rolesFor(user, courses);
+    return courses.map((c) => toRow(c, roles.get(c.id)!));
   }
 
   // ---- Course -----------------------------------------------------------------
@@ -192,11 +235,13 @@ export class AuthoringService {
       include: AUTHORING_INCLUDE,
     });
     await this.log(user, 'course.created', course.id);
-    return toInstructorCourse(course);
+    return toInstructorCourse(course, 'OWNER');
   }
 
   async getCourse(user: AuthUser, courseId: string): Promise<InstructorCourse> {
-    return toInstructorCourse(await this.loadOwned(user, courseId));
+    const course = await this.loadOwned(user, courseId, { need: 'view' });
+    const role = await this.permissions.role(user, course);
+    return toInstructorCourse(course, role!);
   }
 
   async updateDetails(user: AuthUser, courseId: string, dto: CourseDetailsDto): Promise<InstructorCourse> {
@@ -205,8 +250,8 @@ export class AuthoringService {
       const exists = await this.prisma.category.count({ where: { id: dto.categoryId } });
       if (!exists) throw new BadRequestException('Unknown category');
     }
-    if (dto.thumbnailAssetId) await this.assertAsset(user, dto.thumbnailAssetId, 'IMAGE');
-    if (dto.previewAssetId) await this.assertAsset(user, dto.previewAssetId, 'VIDEO');
+    if (dto.thumbnailAssetId) await this.assertAsset(user, dto.thumbnailAssetId, 'IMAGE', courseId);
+    if (dto.previewAssetId) await this.assertAsset(user, dto.previewAssetId, 'VIDEO', courseId);
 
     await this.prisma.course.update({
       where: { id: course.id },
@@ -233,7 +278,7 @@ export class AuthoringService {
   }
 
   async updatePricing(user: AuthUser, courseId: string, dto: CoursePricingDto): Promise<InstructorCourse> {
-    const course = await this.loadOwned(user, courseId, { editable: true });
+    const course = await this.loadOwned(user, courseId, { editable: true, need: 'own' });
     if (!dto.isFree && dto.pricePaise < 100) {
       throw new BadRequestException('Paid courses cost at least ₹1');
     }
@@ -256,7 +301,7 @@ export class AuthoringService {
   }
 
   async submit(user: AuthUser, courseId: string): Promise<InstructorCourse> {
-    const course = await this.loadOwned(user, courseId);
+    const course = await this.loadOwned(user, courseId, { need: 'own' });
     if (course.status !== 'DRAFT') throw new ConflictException({ code: 'NOT_A_DRAFT' });
 
     const questions = await this.prisma.quizQuestion.findMany({
@@ -295,7 +340,7 @@ export class AuthoringService {
   }
 
   async withdraw(user: AuthUser, courseId: string): Promise<InstructorCourse> {
-    const course = await this.loadOwned(user, courseId);
+    const course = await this.loadOwned(user, courseId, { need: 'own' });
     if (course.status !== 'IN_REVIEW') throw new ConflictException({ code: 'NOT_IN_REVIEW' });
     await this.prisma.course.update({ where: { id: course.id }, data: { status: 'DRAFT' } });
     await this.log(user, 'course.withdrawn', course.id);
@@ -303,7 +348,7 @@ export class AuthoringService {
   }
 
   async deleteCourse(user: AuthUser, courseId: string): Promise<void> {
-    const course = await this.loadOwned(user, courseId);
+    const course = await this.loadOwned(user, courseId, { need: 'own' });
     if (course.status !== 'DRAFT') throw new ConflictException({ code: 'ONLY_DRAFTS' });
     const enrolled = await this.prisma.enrollment.count({ where: { courseId: course.id } });
     if (enrolled > 0) throw new ConflictException({ code: 'HAS_STUDENTS' });
@@ -333,8 +378,14 @@ export class AuthoringService {
 
   async deleteChapter(user: AuthUser, chapterId: string): Promise<InstructorCourse> {
     const chapter = await this.ownedChapter(user, chapterId);
-    await this.prisma.chapter.delete({ where: { id: chapter.id } });
+    // To the trash: the chapter and its live lessons share one timestamp, so restoring brings them back together.
+    const deletedAt = new Date();
+    await this.prisma.$transaction([
+      this.prisma.lesson.updateMany({ where: { chapterId: chapter.id, deletedAt: null }, data: { deletedAt } }),
+      this.prisma.chapter.update({ where: { id: chapter.id }, data: { deletedAt } }),
+    ]);
     await this.renumber('chapter', chapter.courseId);
+    await this.log(user, 'chapter.trashed', chapter.courseId);
     return this.getCourse(user, chapter.courseId);
   }
 
@@ -351,9 +402,9 @@ export class AuthoringService {
 
   async addLesson(user: AuthUser, chapterId: string, dto: LessonDto): Promise<InstructorCourse> {
     const chapter = await this.ownedChapter(user, chapterId);
-    const durationSec = await this.lessonMedia(user, dto);
+    const durationSec = await this.lessonMedia(user, dto, chapter.courseId);
     const last = await this.prisma.lesson.findFirst({
-      where: { chapterId: chapter.id },
+      where: { chapterId: chapter.id, deletedAt: null },
       orderBy: { position: 'desc' },
       select: { position: true },
     });
@@ -371,7 +422,7 @@ export class AuthoringService {
 
   async updateLesson(user: AuthUser, lessonId: string, dto: LessonDto): Promise<InstructorCourse> {
     const lesson = await this.ownedLesson(user, lessonId);
-    const durationSec = await this.lessonMedia(user, dto);
+    const durationSec = await this.lessonMedia(user, dto, lesson.courseId);
     await this.prisma.lesson.update({
       where: { id: lesson.id },
       data: this.lessonData(dto, durationSec),
@@ -382,14 +433,16 @@ export class AuthoringService {
 
   async deleteLesson(user: AuthUser, lessonId: string): Promise<InstructorCourse> {
     const lesson = await this.ownedLesson(user, lessonId);
-    await this.prisma.lesson.delete({ where: { id: lesson.id } });
+    // To the trash; learner progress and attempts are kept in case it is restored.
+    await this.prisma.lesson.update({ where: { id: lesson.id }, data: { deletedAt: new Date() } });
     await this.renumber('lesson', lesson.chapterId);
+    await this.log(user, 'lesson.trashed', lesson.courseId);
     return this.getCourse(user, lesson.courseId);
   }
 
   async reorderLessons(user: AuthUser, chapterId: string, ids: string[]): Promise<InstructorCourse> {
     const chapter = await this.ownedChapter(user, chapterId);
-    const lessons = await this.prisma.lesson.findMany({ where: { chapterId: chapter.id }, select: { id: true } });
+    const lessons = await this.prisma.lesson.findMany({ where: { chapterId: chapter.id, deletedAt: null }, select: { id: true } });
     this.assertSameSet(lessons.map((l) => l.id), ids);
     await this.prisma.$transaction(
       ids.map((id, index) => this.prisma.lesson.update({ where: { id }, data: { position: index + 1 } })),
@@ -397,19 +450,108 @@ export class AuthoringService {
     return this.getCourse(user, chapter.courseId);
   }
 
+  // ---- Trash ------------------------------------------------------------------
+
+  /** Trashed chapters and lessons (older than the retention period are purged first). */
+  async trash(user: AuthUser, courseId: string): Promise<TrashItem[]> {
+    await this.loadOwned(user, courseId);
+    await this.purgeExpired(courseId);
+    const [chapters, lessons] = await Promise.all([
+      this.prisma.chapter.findMany({
+        where: { courseId, deletedAt: { not: null } },
+        include: { _count: { select: { lessons: true } } },
+        orderBy: { deletedAt: 'desc' },
+      }),
+      this.prisma.lesson.findMany({
+        where: { courseId, deletedAt: { not: null } },
+        include: { chapter: { select: { title: true, deletedAt: true } } },
+        orderBy: { deletedAt: 'desc' },
+      }),
+    ]);
+    const purgeAt = (date: Date) => new Date(date.getTime() + TRASH_RETENTION_DAYS * DAY_MS).toISOString();
+    return [
+      ...chapters.map((c) => ({
+        kind: 'CHAPTER' as const,
+        id: c.id,
+        title: c.title,
+        chapterTitle: null,
+        lessonCount: c._count.lessons,
+        deletedAt: c.deletedAt!.toISOString(),
+        purgeAt: purgeAt(c.deletedAt!),
+      })),
+      // Lessons trashed together with their chapter are listed under the chapter only.
+      ...lessons
+        .filter((l) => !(l.chapter.deletedAt && l.chapter.deletedAt.getTime() === l.deletedAt!.getTime()))
+        .map((l) => ({
+          kind: 'LESSON' as const,
+          id: l.id,
+          title: l.title,
+          chapterTitle: l.chapter.title,
+          lessonCount: 0,
+          deletedAt: l.deletedAt!.toISOString(),
+          purgeAt: purgeAt(l.deletedAt!),
+        })),
+    ].sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
+  }
+
+  /** Puts a chapter (with the lessons trashed with it) or a lesson back at the end. */
+  async restore(user: AuthUser, kind: 'chapter' | 'lesson', id: string): Promise<InstructorCourse> {
+    if (kind === 'chapter') {
+      const chapter = await this.prisma.chapter.findUnique({ where: { id } });
+      if (!chapter?.deletedAt) throw new NotFoundException();
+      await this.loadOwned(user, chapter.courseId, { editable: true });
+      const last = await this.prisma.chapter.findFirst({ where: { courseId: chapter.courseId, deletedAt: null }, orderBy: { position: 'desc' } });
+      await this.prisma.$transaction([
+        this.prisma.lesson.updateMany({ where: { chapterId: id, deletedAt: chapter.deletedAt }, data: { deletedAt: null } }),
+        this.prisma.chapter.update({ where: { id }, data: { deletedAt: null, position: (last?.position ?? 0) + 1 } }),
+      ]);
+      await this.renumber('lesson', id);
+      await this.log(user, 'chapter.restored', chapter.courseId);
+      return this.getCourse(user, chapter.courseId);
+    }
+    const lesson = await this.prisma.lesson.findUnique({ where: { id }, include: { chapter: { select: { deletedAt: true } } } });
+    if (!lesson?.deletedAt) throw new NotFoundException();
+    await this.loadOwned(user, lesson.courseId, { editable: true });
+    if (lesson.chapter.deletedAt) throw new ConflictException({ code: 'CHAPTER_IN_TRASH', message: 'Restore its chapter first' });
+    const last = await this.prisma.lesson.findFirst({ where: { chapterId: lesson.chapterId, deletedAt: null }, orderBy: { position: 'desc' } });
+    await this.prisma.lesson.update({ where: { id }, data: { deletedAt: null, position: (last?.position ?? 0) + 1 } });
+    await this.log(user, 'lesson.restored', lesson.courseId);
+    return this.getCourse(user, lesson.courseId);
+  }
+
+  /** Deletes a trashed item for good, with its learners' progress and attempts. */
+  async purge(user: AuthUser, kind: 'chapter' | 'lesson', id: string): Promise<void> {
+    const row =
+      kind === 'chapter'
+        ? await this.prisma.chapter.findUnique({ where: { id }, select: { courseId: true, deletedAt: true } })
+        : await this.prisma.lesson.findUnique({ where: { id }, select: { courseId: true, deletedAt: true } });
+    if (!row?.deletedAt) throw new NotFoundException();
+    await this.loadOwned(user, row.courseId, { editable: true });
+    if (kind === 'chapter') await this.prisma.chapter.delete({ where: { id } });
+    else await this.prisma.lesson.delete({ where: { id } });
+    await this.log(user, `${kind}.purged`, row.courseId);
+  }
+
+  private async purgeExpired(courseId: string): Promise<void> {
+    const cutoff = new Date(Date.now() - TRASH_RETENTION_DAYS * DAY_MS);
+    await this.prisma.lesson.deleteMany({ where: { courseId, deletedAt: { lt: cutoff } } });
+    await this.prisma.chapter.deleteMany({ where: { courseId, deletedAt: { lt: cutoff } } });
+  }
+
   // ---- Helpers ----------------------------------------------------------------
 
+  /** Loads a course the user may act on: `need` defaults to edit (see CoursePermissions). */
   private async loadOwned(
     user: AuthUser,
     courseId: string,
-    { editable = false }: { editable?: boolean } = {},
+    { editable = false, need = 'edit' }: { editable?: boolean; need?: CourseNeed } = {},
   ): Promise<AuthoringCourse> {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
       include: AUTHORING_INCLUDE,
     });
     if (!course) throw new NotFoundException();
-    if (course.instructorId !== user.userId && user.role !== 'ADMIN') throw new ForbiddenException();
+    if (!(await this.permissions.can(user, course, need))) throw new ForbiddenException();
     if (editable && (course.status === 'IN_REVIEW' || course.status === 'RETIRED')) {
       throw new ConflictException({ code: 'LOCKED', status: course.status });
     }
@@ -418,14 +560,14 @@ export class AuthoringService {
 
   private async ownedChapter(user: AuthUser, chapterId: string) {
     const chapter = await this.prisma.chapter.findUnique({ where: { id: chapterId } });
-    if (!chapter) throw new NotFoundException();
+    if (!chapter || chapter.deletedAt) throw new NotFoundException();
     await this.loadOwned(user, chapter.courseId, { editable: true });
     return chapter;
   }
 
   private async ownedLesson(user: AuthUser, lessonId: string) {
-    const lesson = await this.prisma.lesson.findUnique({ where: { id: lessonId } });
-    if (!lesson) throw new NotFoundException();
+    const lesson = await this.prisma.lesson.findUnique({ where: { id: lessonId }, include: { chapter: { select: { deletedAt: true } } } });
+    if (!lesson || lesson.deletedAt || lesson.chapter.deletedAt) throw new NotFoundException();
     await this.loadOwned(user, lesson.courseId, { editable: true });
     return lesson;
   }
@@ -450,15 +592,21 @@ export class AuthoringService {
   }
 
   /** Checks the lesson's file and returns its duration. */
-  private async lessonMedia(user: AuthUser, dto: LessonDto): Promise<number | null> {
+  private async lessonMedia(user: AuthUser, dto: LessonDto, courseId: string): Promise<number | null> {
     if (!dto.mediaAssetId || (dto.kind !== 'VIDEO' && dto.kind !== 'PDF')) return null;
-    const asset = await this.assertAsset(user, dto.mediaAssetId, dto.kind);
+    const asset = await this.assertAsset(user, dto.mediaAssetId, dto.kind, courseId);
     return asset.durationSec;
   }
 
-  private async assertAsset(user: AuthUser, assetId: string, kind: MediaKind) {
+  /** The uploader's own file, or one already used by this course (so co-instructors can re-save lessons). */
+  private async assertAsset(user: AuthUser, assetId: string, kind: MediaKind, courseId?: string) {
     const asset = await this.prisma.mediaAsset.findUnique({ where: { id: assetId } });
-    if (!asset || (asset.ownerId !== user.userId && user.role !== 'ADMIN')) {
+    const inCourse =
+      !!courseId &&
+      (await this.prisma.course.count({
+        where: { id: courseId, OR: [{ thumbnailAssetId: assetId }, { previewAssetId: assetId }, { lessons: { some: { mediaAssetId: assetId } } }] },
+      })) > 0;
+    if (!asset || (asset.ownerId !== user.userId && user.role !== 'ADMIN' && !inCourse)) {
       throw new BadRequestException('Unknown file');
     }
     if (asset.kind !== kind) throw new BadRequestException(`Expected a ${kind.toLowerCase()} file`);
@@ -476,7 +624,7 @@ export class AuthoringService {
   private async renumber(kind: 'chapter' | 'lesson', parentId: string): Promise<void> {
     if (kind === 'chapter') {
       const rows = await this.prisma.chapter.findMany({
-        where: { courseId: parentId },
+        where: { courseId: parentId, deletedAt: null },
         orderBy: { position: 'asc' },
         select: { id: true },
       });
@@ -488,7 +636,7 @@ export class AuthoringService {
       return;
     }
     const rows = await this.prisma.lesson.findMany({
-      where: { chapterId: parentId },
+      where: { chapterId: parentId, deletedAt: null },
       orderBy: { position: 'asc' },
       select: { id: true },
     });

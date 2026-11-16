@@ -110,6 +110,7 @@ model User {
   entranceAttempts      EntranceAttempt[]
   checkpointAnswers     CheckpointAnswer[]
   imagingAttempts       ImagingAttempt[]
+  collaborations        CourseCollaborator[]    @relation("CourseCollaborations")
   /// Set when the account is deleted; personal fields are erased (DPDP Act).
   deletedAt             DateTime?
 }
@@ -259,6 +260,7 @@ model Course {
   bankQuestions       BankQuestion[]
   entranceAttempts    EntranceAttempt[]
   annotationTerms     AnnotationTerm[]
+  collaborators       CourseCollaborator[]
   certificateTemplate CertificateTemplate?
 
   @@index([status, publishedAt])
@@ -266,11 +268,13 @@ model Course {
 }
 
 model Chapter {
-  id          String  @id @default(uuid()) @db.Uuid
-  courseId    String  @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
+  courseId    String    @db.Uuid
   position    Int
   title       String
   description String?
+  /// Soft delete (curriculum trash): hidden everywhere, restorable for 30 days.
+  deletedAt   DateTime?
 
   course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons Lesson[]
@@ -301,6 +305,8 @@ model Lesson {
   points          Int?
   /// ASSIGNMENT: file kinds learners may attach (IMAGE, PDF).
   submissionKinds MediaKind[] @default([])
+  /// Soft delete (curriculum trash). Learner progress and attempts are kept.
+  deletedAt       DateTime?
 
   course          Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
   chapter         Chapter                @relation(fields: [chapterId], references: [id], onDelete: Cascade)
@@ -608,12 +614,22 @@ model Certificate {
 }
 
 model CourseReview {
-  userId    String   @db.Uuid
-  courseId  String   @db.Uuid
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  userId       String    @db.Uuid
+  courseId     String    @db.Uuid
+  rating       Int
+  comment      String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  /// The course team's public reply.
+  reply        String?
+  repliedAt    DateTime?
+  repliedById  String?   @db.Uuid
+  /// Reported to admins by the course team (abuse, spam, off-topic).
+  reportedAt   DateTime?
+  reportReason String?
+  reportedById String?   @db.Uuid
+  /// Hidden by an admin after review.
+  hiddenAt     DateTime?
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -699,4 +715,34 @@ model AnnotationTerm {
 
   @@unique([courseId, abbrKey])
   @@index([courseId, position])
+}
+
+enum CollaboratorRole {
+  /// Edits the course like its owner (curriculum, questions, cases) and grades.
+  EDITOR
+  /// Reviews assignments and sees reports; cannot change content.
+  GRADER
+}
+
+enum CollaboratorStatus {
+  PENDING
+  ACCEPTED
+}
+
+/// A co-instructor on someone else's course. Only faculty can be invited.
+model CourseCollaborator {
+  id          String             @id @default(uuid()) @db.Uuid
+  courseId    String             @db.Uuid
+  userId      String             @db.Uuid
+  role        CollaboratorRole
+  status      CollaboratorStatus @default(PENDING)
+  invitedById String             @db.Uuid
+  createdAt   DateTime           @default(now())
+  respondedAt DateTime?
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User   @relation("CourseCollaborations", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([userId, status])
 }

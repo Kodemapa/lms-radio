@@ -150,14 +150,24 @@ Plan: `docs/IMAGE-TASKS-GAP-ANALYSIS.md`. Done: dictionary, pin/box/outline/cali
 
 ## P1 — Instructor insight
 
-- [ ] **INS-1 Enrolled students** · S — Per course: student, enrolled date, progress %, last activity, certificate.
-- [ ] **INS-2 Quiz & imaging reports** · M
+**Also fixed on 2026-11-16 (security):** any faculty account could previously act as manager of every course: drafts, media, other courses' learners' files, and the entrance bypass. Course rights now come from one place, `CoursePermissions` (owner, accepted co-instructor or admin).
+
+PC-PNDT text screening now also blocks disclosures ("baby is a boy", "male fetus", Hindi equivalents).
+
+Still open from the old instructor area:
+- coupons, earnings, refunds and withdrawals (COM-*);
+- live classes (LIV-1);
+- notifications (NOT-*);
+- admin hide/unhide of reported reviews (ADM).
+
+- [x] **INS-1 Enrolled students** · S (done 2026-11-16: Students tab, search/sort/paging, masked emails, CSV; course team excluded) — Per course: student, enrolled date, progress %, last activity, certificate.
+- [x] **INS-2 Quiz & imaging reports** · M (done: Reports tab for quizzes, DICOM cases and entrance test; item analysis; attempt detail)
   - Per-student attempts with answers.
   - Item analysis: % correct per question/annotation, most common wrong option.
-- [ ] **INS-3 Course analytics** · M — Funnel: enrolled → started → per-lesson completion → certificate; video watch-through.
-- [ ] **INS-4 Curriculum trash / restore** · S — Soft-delete chapters and lessons; restore within 30 days.
-- [ ] **INS-5 Reviews management** · S — Instructor replies to reviews; reports abusive reviews to admin.
-- [ ] **INS-6 Co-instructors (team members)** · M — Invite by email, roles (editor, grader); grading access to submissions.
+- [x] **INS-3 Course analytics** · M (done: funnel, 30-day enrolments chart, completion per lesson; dashboard activity + chart) — Funnel: enrolled → started → per-lesson completion → certificate; video watch-through.
+- [x] **INS-4 Curriculum trash / restore** · S (done: soft delete, Trash tab, restore, permanent delete, 30-day purge) — Soft-delete chapters and lessons; restore within 30 days.
+- [x] **INS-5 Reviews management** · S (done: /instructor/reviews, public replies, report to admin; admin hide UI is ADM work) — Instructor replies to reviews; reports abusive reviews to admin.
+- [x] **INS-6 Co-instructors (team members)** · M (done: Team tab, editor/grader roles, invitations on dashboard) — Invite by email, roles (editor, grader); grading access to submissions.
 
 ## P1 — Commerce (Phase 3)
 

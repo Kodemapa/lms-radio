@@ -1,12 +1,14 @@
 import { type CourseDetail, type CourseSummary } from '@obgyn/types';
 import { Prisma } from '@prisma/client';
+import { LIVE_LESSON } from '../common/soft-delete';
 
 /** Everything needed to build a CourseSummary, in one query. */
 export const COURSE_SUMMARY_INCLUDE = {
   category: { select: { slug: true, name: true } },
   instructor: { select: { id: true, displayName: true, headline: true } },
-  lessons: { select: { durationSec: true } },
-  reviews: { select: { rating: true } },
+  lessons: { where: LIVE_LESSON, select: { durationSec: true } },
+  // Reviews hidden by an admin don't count towards the rating.
+  reviews: { where: { hiddenAt: null }, select: { rating: true } },
   _count: { select: { enrollments: true } },
 } satisfies Prisma.CourseInclude;
 
@@ -44,9 +46,11 @@ export function toCourseSummary(course: CourseWithSummary): CourseSummary {
 export const COURSE_DETAIL_INCLUDE = {
   ...COURSE_SUMMARY_INCLUDE,
   chapters: {
+    where: { deletedAt: null },
     orderBy: { position: 'asc' },
     include: {
       lessons: {
+        where: { deletedAt: null },
         orderBy: { position: 'asc' },
         select: { id: true, position: true, title: true, kind: true, isPreview: true, durationSec: true },
       },

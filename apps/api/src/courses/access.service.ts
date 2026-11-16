@@ -1,7 +1,8 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { STAFF_ROLES } from '@obgyn/types';
 import { type AuthUser } from '../auth/auth-user';
+import { LIVE_LESSON } from '../common/soft-delete';
 import { PrismaService } from '../prisma/prisma.service';
+import { CoursePermissions } from './course-permissions';
 
 interface CourseRef {
   id: string;
@@ -12,11 +13,17 @@ interface CourseRef {
 /** Single place that decides who may open a lesson or a media asset. */
 @Injectable()
 export class AccessService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly permissions: CoursePermissions,
+  ) {}
 
-  /** Staff and the course's own instructor see everything, including drafts. */
-  isOwnerOrStaff(user: AuthUser, course: CourseRef): boolean {
-    return STAFF_ROLES.includes(user.role) || course.instructorId === user.userId;
+  /**
+   * Admins, the course's owner and its accepted co-instructors see everything,
+   * including drafts. Other faculty are treated like any learner.
+   */
+  isManager(user: AuthUser, course: CourseRef): Promise<boolean> {
+    return this.permissions.can(user, course, 'view');
   }
 
   async isEnrolled(userId: string, courseId: string): Promise<boolean> {
@@ -57,7 +64,7 @@ export class AccessService {
   /** Lesson ids in course order. */
   async orderedLessonIds(courseId: string): Promise<string[]> {
     const lessons = await this.prisma.lesson.findMany({
-      where: { courseId },
+      where: { courseId, ...LIVE_LESSON },
       orderBy: [{ chapter: { position: 'asc' } }, { position: 'asc' }],
       select: { id: true },
     });
@@ -72,7 +79,7 @@ export class AccessService {
         where: { userId, courseId, completedAt: { not: null } },
         select: { lessonId: true },
       }),
-      this.prisma.lesson.findMany({ where: { courseId, isPreview: true }, select: { id: true } }),
+      this.prisma.lesson.findMany({ where: { courseId, isPreview: true, ...LIVE_LESSON }, select: { id: true } }),
     ]);
     const completed = new Set(done.map((row) => row.lessonId));
     const preview = new Set(previews.map((row) => row.id));
@@ -90,8 +97,9 @@ export class AccessService {
    * (preview-only visitors aren't tracked).
    */
   async getAccessibleLesson(user: AuthUser, lessonId: string) {
-    const lesson = await this.prisma.lesson.findUnique({
-      where: { id: lessonId },
+    // Trashed lessons are gone for everyone until restored.
+    const lesson = await this.prisma.lesson.findFirst({
+      where: { id: lessonId, ...LIVE_LESSON },
       include: {
         course: {
           select: {
@@ -108,7 +116,7 @@ export class AccessService {
       },
     });
     if (!lesson) throw new NotFoundException();
-    if (this.isOwnerOrStaff(user, lesson.course)) {
+    if (await this.isManager(user, lesson.course)) {
       // Staff testing a live free course get it in "My learning" too.
       await this.ensureEnrolled(user, lesson.course, { bypassEntrance: true });
       return { lesson, enrolled: false, manager: true };
@@ -146,7 +154,7 @@ export class AccessService {
     const lessonCourse = { select: { id: true, status: true, instructorId: true, entranceTestEnabled: true } } as const;
     const [lessons, previews, submissions, caseImages, imagingAttempts, references] = await Promise.all([
       this.prisma.lesson.findMany({
-        where: { mediaAssetId: assetId },
+        where: { mediaAssetId: assetId, ...LIVE_LESSON },
         select: { isPreview: true, course: lessonCourse },
       }),
       this.prisma.course.findMany({
@@ -181,21 +189,21 @@ export class AccessService {
     }
 
     for (const attempt of imagingAttempts) {
-      if (attempt.userId === user.userId || this.isOwnerOrStaff(user, attempt.lesson.course)) return;
+      if (attempt.userId === user.userId || await this.isManager(user, attempt.lesson.course)) return;
     }
     for (const reference of references) {
-      if (this.isOwnerOrStaff(user, reference.lesson.course)) return;
+      if (await this.isManager(user, reference.lesson.course)) return;
     }
     lessons.push(...caseImages.map((image) => image.lesson));
 
     for (const submission of submissions) {
-      if (submission.userId === user.userId || this.isOwnerOrStaff(user, submission.course)) return;
+      if (submission.userId === user.userId || await this.isManager(user, submission.course)) return;
     }
     for (const course of previews) {
-      if (course.status === 'PUBLISHED' || this.isOwnerOrStaff(user, course)) return;
+      if (course.status === 'PUBLISHED' || await this.isManager(user, course)) return;
     }
     for (const { isPreview, course } of lessons) {
-      if (this.isOwnerOrStaff(user, course)) return;
+      if (await this.isManager(user, course)) return;
       if (course.status !== 'PUBLISHED') continue;
       if (await this.isEnrolled(user.userId, course.id)) return;
       // Free previews don't bypass an entrance test.

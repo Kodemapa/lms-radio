@@ -26,6 +26,7 @@ import { type AuthUser } from '../auth/auth-user';
 import { zodOrThrow } from '../common/zod';
 import { AccessService } from '../courses/access.service';
 import { DEFAULT_PASS_PERCENT } from '../learning/grading';
+import { CoursePermissions } from '../courses/course-permissions';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { gradeImaging, readKey, type CaseKey, type GradingImage, type KeyAnnotation } from './grading';
@@ -60,6 +61,7 @@ export class ImagingService {
     private readonly storage: StorageService,
     private readonly access: AccessService,
     private readonly audit: AuditService,
+    private readonly permissions: CoursePermissions,
   ) {}
 
   // ---- Upload processing -------------------------------------------------------
@@ -181,7 +183,8 @@ export class ImagingService {
       if (!asset || asset.kind !== 'DICOM' || asset.status !== 'READY' || !asset.dicomMeta) {
         throw new BadRequestException({ code: 'NOT_A_DICOM_IMAGE', message: `"${image.label}" is not an uploaded DICOM image` });
       }
-      if (asset.ownerId !== user.userId && user.role !== 'ADMIN') throw new ForbiddenException();
+      const inCase = await this.prisma.imagingImage.count({ where: { lessonId, assetId: asset.id } });
+      if (asset.ownerId !== user.userId && user.role !== 'ADMIN' && inCase === 0) throw new ForbiddenException();
       metaById.set(asset.id, DicomImageMetaSchema.parse(asset.dicomMeta));
     }
 
@@ -382,9 +385,9 @@ export class ImagingService {
   }
 
   private async ownedCourse(user: AuthUser, courseId: string, { editable = false } = {}) {
-    const course = await this.prisma.course.findUnique({ where: { id: courseId }, select: { instructorId: true, status: true } });
+    const course = await this.prisma.course.findUnique({ where: { id: courseId }, select: { id: true, instructorId: true, status: true } });
     if (!course) throw new NotFoundException();
-    if (course.instructorId !== user.userId && user.role !== 'ADMIN') throw new ForbiddenException();
+    if (!(await this.permissions.can(user, course, 'edit'))) throw new ForbiddenException();
     if (editable && course.status === 'IN_REVIEW') throw new ConflictException({ code: 'LOCKED' });
     return course;
   }
@@ -392,10 +395,10 @@ export class ImagingService {
   private async ownedLesson(user: AuthUser, lessonId: string, { editable = false } = {}) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
-      include: { course: { select: { instructorId: true, status: true } } },
+      include: { course: { select: { id: true, instructorId: true, status: true } } },
     });
-    if (!lesson || lesson.kind !== 'IMAGING') throw new NotFoundException();
-    if (lesson.course.instructorId !== user.userId && user.role !== 'ADMIN') throw new ForbiddenException();
+    if (!lesson || lesson.kind !== 'IMAGING' || lesson.deletedAt) throw new NotFoundException();
+    if (!(await this.permissions.can(user, lesson.course, 'edit'))) throw new ForbiddenException();
     if (editable && lesson.course.status === 'IN_REVIEW') throw new ConflictException({ code: 'LOCKED' });
     return lesson;
   }

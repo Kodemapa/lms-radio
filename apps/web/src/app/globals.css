@@ -29,6 +29,9 @@
   --section: #f2f5f7;
   --footer: #010211;
   --footer-panel: #2a2a37;
+  /* Chart marks (validated for contrast and lightness on the card surface). */
+  --chart-1: #5a5bb5;
+  --chart-track: #e4e5f4;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -51,6 +54,8 @@
     --section: #121323;
     --footer: #07070f;
     --footer-panel: #1c1c2b;
+    --chart-1: #8384d9;
+    --chart-track: #2a2b4d;
   }
 }
 

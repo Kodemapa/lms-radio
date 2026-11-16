@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,11 +11,12 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   type InstructorCourse,
   type InstructorCourseRow,
   type InstructorDashboard,
+  type TrashItem,
 } from '@obgyn/types';
 import { type AuthUser } from '../auth/auth-user';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -160,7 +162,34 @@ export class AuthoringController {
   }
 
   @Delete('lessons/:id')
+  @ApiOperation({ summary: 'Move a lesson to the trash' })
   deleteLesson(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string): Promise<InstructorCourse> {
     return this.authoring.deleteLesson(user, id);
   }
+
+  // ---- Curriculum trash ----------------------------------------------------------
+
+  @Get('courses/:id/trash')
+  @ApiOperation({ summary: 'Trashed chapters and lessons (purged after 30 days)' })
+  trash(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string): Promise<TrashItem[]> {
+    return this.authoring.trash(user, id);
+  }
+
+  @Post('trash/:kind/:id/restore')
+  @ApiOperation({ summary: 'Restore a trashed chapter or lesson' })
+  restore(@CurrentUser() user: AuthUser, @Param('kind') kind: string, @Param('id', uuid) id: string): Promise<InstructorCourse> {
+    return this.authoring.restore(user, trashKind(kind), id);
+  }
+
+  @Delete('trash/:kind/:id')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Delete a trashed chapter or lesson permanently' })
+  purge(@CurrentUser() user: AuthUser, @Param('kind') kind: string, @Param('id', uuid) id: string): Promise<void> {
+    return this.authoring.purge(user, trashKind(kind), id);
+  }
+}
+
+function trashKind(kind: string): 'chapter' | 'lesson' {
+  if (kind !== 'chapter' && kind !== 'lesson') throw new BadRequestException('Unknown trash item');
+  return kind;
 }

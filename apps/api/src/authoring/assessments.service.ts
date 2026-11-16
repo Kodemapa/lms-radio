@@ -13,6 +13,7 @@ import {
 } from '@obgyn/types';
 import { AuditService } from '../audit/audit.service';
 import { type AuthUser } from '../auth/auth-user';
+import { CoursePermissions } from '../courses/course-permissions';
 import { PrismaService } from '../prisma/prisma.service';
 import { type QuestionDto, type SubmissionReviewDto } from './dto';
 
@@ -22,6 +23,7 @@ export class AssessmentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly permissions: CoursePermissions,
   ) {}
 
   // ---- Quiz questions ------------------------------------------------------------
@@ -104,10 +106,12 @@ export class AssessmentsService {
   // ---- Assignment submissions ------------------------------------------------------
 
   async submissions(user: AuthUser, status: SubmissionStatus): Promise<InstructorSubmission[]> {
+    // Courses I own or grade for (admins: all).
+    const courseIds = await this.permissions.courseIds(user, 'grade');
     const rows = await this.prisma.assignmentSubmission.findMany({
       where: {
         status,
-        ...(user.role === 'ADMIN' ? {} : { course: { instructorId: user.userId } }),
+        ...(courseIds === null ? {} : { courseId: { in: courseIds } }),
       },
       orderBy: { updatedAt: 'asc' },
       include: {
@@ -135,10 +139,10 @@ export class AssessmentsService {
   async review(user: AuthUser, submissionId: string, dto: SubmissionReviewDto): Promise<void> {
     const submission = await this.prisma.assignmentSubmission.findUnique({
       where: { id: submissionId },
-      include: { course: { select: { instructorId: true } } },
+      include: { course: { select: { id: true, instructorId: true } } },
     });
     if (!submission) throw new NotFoundException();
-    if (submission.course.instructorId !== user.userId && user.role !== 'ADMIN') throw new ForbiddenException();
+    if (!(await this.permissions.can(user, submission.course, 'grade'))) throw new ForbiddenException();
     if (submission.status !== 'SUBMITTED') throw new ConflictException({ code: 'ALREADY_REVIEWED' });
 
     await this.prisma.$transaction([
@@ -184,10 +188,10 @@ export class AssessmentsService {
   private async ownedQuizLesson(user: AuthUser, lessonId: string, { editable = false } = {}) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
-      include: { course: { select: { instructorId: true, status: true } } },
+      include: { course: { select: { id: true, instructorId: true, status: true } } },
     });
-    if (!lesson || (lesson.kind !== 'QUIZ' && lesson.kind !== 'VIDEO')) throw new NotFoundException();
-    if (lesson.course.instructorId !== user.userId && user.role !== 'ADMIN') throw new ForbiddenException();
+    if (!lesson || lesson.deletedAt || (lesson.kind !== 'QUIZ' && lesson.kind !== 'VIDEO')) throw new NotFoundException();
+    if (!(await this.permissions.can(user, lesson.course, 'edit'))) throw new ForbiddenException();
     if (editable && lesson.course.status === 'IN_REVIEW') throw new ConflictException({ code: 'LOCKED' });
     return lesson;
   }

@@ -62,3 +62,27 @@ describe('findFetalSexDeterminationText', () => {
     'Placental localisation and cervical length',
   ])('allows %p', (text) => expect(findFetalSexDeterminationText(text)).toEqual([]));
 });
+
+describe('PC-PNDT disclosure phrases', () => {
+  it.each([
+    'Your baby is a boy',
+    "it's a girl!",
+    'The fetus will be male',
+    'female foetus seen',
+    'बच्चा लड़का',
+    'बेटा होगा',
+  ])('blocks %s', (text) => {
+    expect(findFetalSexDeterminationText(text)).not.toHaveLength(0);
+  });
+
+  it.each([
+    'Karyotype 45,X (Turner syndrome)',
+    'Maternal age above 35 years',
+    'The female pelvis and the male partner',
+    'Measure the head circumference of the baby',
+    'Boys and girls in the clinic waiting area',
+  ])('allows %s', (text) => {
+    expect(findFetalSexDeterminationText(text)).toEqual([]);
+  });
+});
+

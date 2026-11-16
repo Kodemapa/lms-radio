@@ -7,6 +7,7 @@ export * from './instructor.js';
 export * from './learning.js';
 export * from './media.js';
 export * from './imaging.js';
+export * from './teaching.js';
 export * from './roles.js';
 export * from './submission.js';
 export * from './user.js';

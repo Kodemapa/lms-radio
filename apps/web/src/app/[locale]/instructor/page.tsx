@@ -1,7 +1,9 @@
 import { InstructorDashboardSchema } from '@obgyn/types';
-import { BookOpen, CheckCircle2, Clock3, FilePen, PlayCircle, Users } from 'lucide-react';
+import { Activity, BookOpen, CheckCircle2, ClipboardList, Clock3, FilePen, PlayCircle, Trophy, Users } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { CoursesTable } from '@/components/instructor/courses-table';
+import { EnrolmentChart } from '@/components/instructor/teaching/enrolment-chart';
+import { Invitations } from '@/components/instructor/teaching/invitations';
 import { Link } from '@/i18n/navigation';
 import { getMe } from '@/lib/catalog';
 import { apiGet } from '@/lib/server-api';
@@ -26,6 +28,11 @@ export default async function InstructorDashboardPage({ params }: { params: Prom
     { label: t('stats.students'), value: data.totalStudents, Icon: Users },
     { label: t('stats.lessons'), value: data.totalLessons, Icon: PlayCircle },
   ];
+  const activity = [
+    { label: t('stats.activeLearners'), value: data.activeLearners, Icon: Activity, href: null },
+    { label: t('stats.completions30d'), value: data.completions30d, Icon: Trophy, href: null },
+    { label: t('stats.pendingSubmissions'), value: data.pendingSubmissions, Icon: ClipboardList, href: '/instructor/submissions' as const },
+  ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -33,6 +40,34 @@ export default async function InstructorDashboardPage({ params }: { params: Prom
         <h1 className="text-2xl font-bold md:text-3xl">{t('dashboardTitle', { name: me?.displayName ?? '' })}</h1>
         <p className="text-muted-foreground">{t('dashboardSubtitle')}</p>
       </div>
+      <Invitations initial={data.invitations} />
+      <section aria-label={t('activityTitle')} className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <EnrolmentChart data={data.enrolmentsByDay} />
+        </div>
+        <ul className="grid gap-3">
+          {activity.map(({ label, value, Icon, href }) => {
+            const body = (
+              <>
+                <Icon aria-hidden className="size-5 text-primary" />
+                <span className="flex flex-col">
+                  <span className="text-xl font-semibold tabular-nums">{value.toLocaleString(locale)}</span>
+                  <span className="text-sm text-muted-foreground">{label}</span>
+                </span>
+              </>
+            );
+            return (
+              <li key={label}>
+                {href ? (
+                  <Link href={href} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 hover:border-primary">{body}</Link>
+                ) : (
+                  <span className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">{body}</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {stats.map(({ label, value, Icon }) => (
           <li key={label} className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5">

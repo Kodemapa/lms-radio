@@ -5,6 +5,7 @@ import {
   CourseSummarySchema,
   LessonKindSchema,
 } from './course.js';
+import { CourseInvitationSchema, CourseRoleSchema, DayCountSchema } from './teaching.js';
 
 const slugish = z.string().trim();
 const listItem = z.string().trim().min(1).max(200);
@@ -113,6 +114,8 @@ export type InstructorChapter = z.infer<typeof InstructorChapterSchema>;
 
 export const InstructorCourseSchema = z.object({
   id: z.string().uuid(),
+  /** My role on this course: what the editor lets me change. */
+  myRole: CourseRoleSchema,
   slug: z.string(),
   status: CourseStatusSchema,
   reviewNote: z.string().nullable(),
@@ -153,6 +156,7 @@ export const InstructorCourseRowSchema = z.object({
   pricePaise: z.number().int(),
   discountPricePaise: z.number().int().nullable(),
   updatedAt: z.string().datetime(),
+  myRole: CourseRoleSchema,
 });
 export type InstructorCourseRow = z.infer<typeof InstructorCourseRowSchema>;
 
@@ -164,6 +168,14 @@ export const InstructorDashboardSchema = z.object({
   totalStudents: z.number().int(),
   totalLessons: z.number().int(),
   recentCourses: z.array(InstructorCourseRowSchema),
+  /** Enrolments across my courses, last 30 days (oldest first, zero-filled). */
+  enrolmentsByDay: z.array(DayCountSchema),
+  /** Learners with progress in the last 7 days. */
+  activeLearners: z.number().int(),
+  /** Lesson completions in the last 30 days. */
+  completions30d: z.number().int(),
+  pendingSubmissions: z.number().int(),
+  invitations: z.array(CourseInvitationSchema),
 });
 export type InstructorDashboard = z.infer<typeof InstructorDashboardSchema>;
 

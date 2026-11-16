@@ -43,7 +43,12 @@ export async function CoursesTable({ courses }: { courses: InstructorCourseRow[]
                     <span className="line-clamp-2">{course.title}</span>
                   </Link>
                 </td>
-                <td className="px-4 py-3"><StatusBadge status={course.status} label={t(`status.${course.status}`)} /></td>
+                <td className="px-4 py-3">
+                  <StatusBadge status={course.status} label={t(`status.${course.status}`)} />
+                  {course.myRole === 'EDITOR' || course.myRole === 'GRADER' ? (
+                    <span className="ms-2 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">{t(`editor.roles.${course.myRole}`)}</span>
+                  ) : null}
+                </td>
                 <td className="px-4 py-3">{course.lessonCount}</td>
                 <td className="px-4 py-3">{course.studentCount}</td>
                 <td className="px-4 py-3">{price ? price.current : tCommon('free')}</td>
@@ -58,7 +63,7 @@ export async function CoursesTable({ courses }: { courses: InstructorCourseRow[]
                     {course.status === 'PUBLISHED' ? (
                       <Link href={`/courses/${course.slug}`} className="hover:underline">{t('viewOnSite')}</Link>
                     ) : null}
-                    {course.status === 'DRAFT' && course.studentCount === 0 ? (
+                    {course.status === 'DRAFT' && course.studentCount === 0 && (course.myRole === 'OWNER' || course.myRole === 'ADMIN') ? (
                       <DeleteCourseButton id={course.id} title={course.title} />
                     ) : null}
                   </div>

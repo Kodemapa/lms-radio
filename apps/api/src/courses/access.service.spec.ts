@@ -1,3 +1,4 @@
+import { CoursePermissions } from './course-permissions';
 import { type PrismaService } from '../prisma/prisma.service';
 import { AccessService } from './access.service';
 
@@ -10,7 +11,7 @@ function setup(order: string[], completed: string[], previews: string[] = []) {
     },
     lessonProgress: { findMany: jest.fn().mockResolvedValue(completed.map((lessonId) => ({ lessonId }))) },
   };
-  return new AccessService(prisma as unknown as PrismaService);
+  return new AccessService(prisma as unknown as PrismaService, new CoursePermissions(prisma as unknown as PrismaService));
 }
 
 describe('AccessService.lockedLessonIds (sequential access)', () => {

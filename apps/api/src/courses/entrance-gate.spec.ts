@@ -1,3 +1,4 @@
+import { CoursePermissions } from './course-permissions';
 import { ForbiddenException } from '@nestjs/common';
 import { type AuthUser } from '../auth/auth-user';
 import { type PrismaService } from '../prisma/prisma.service';
@@ -11,13 +12,14 @@ function setup({ passed = false, entrance = true }: { passed?: boolean; entrance
   const enrolled = new Set<string>();
   const prisma = {
     lesson: {
-      findUnique: jest.fn().mockResolvedValue({ id: 'l1', isPreview: true, courseId: 'c1', course }),
+      findFirst: jest.fn().mockResolvedValue({ id: 'l1', isPreview: true, courseId: 'c1', course }),
       findMany: jest.fn().mockResolvedValue([{ isPreview: true, course }]),
     },
     course: { findMany: jest.fn().mockResolvedValue([]) },
     assignmentSubmission: { findMany: jest.fn().mockResolvedValue([]) },
     imagingImage: { findMany: jest.fn().mockResolvedValue([]) },
     mediaAsset: { count: jest.fn().mockResolvedValue(0) },
+    courseCollaborator: { findUnique: jest.fn().mockResolvedValue(null) },
     imagingAttempt: { findMany: jest.fn().mockResolvedValue([]) },
     imagingCase: { findMany: jest.fn().mockResolvedValue([]) },
     enrollment: {
@@ -31,7 +33,7 @@ function setup({ passed = false, entrance = true }: { passed?: boolean; entrance
     },
     entranceAttempt: { count: jest.fn().mockResolvedValue(passed ? 1 : 0) },
   };
-  return new AccessService(prisma as unknown as PrismaService);
+  return new AccessService(prisma as unknown as PrismaService, new CoursePermissions(prisma as unknown as PrismaService));
 }
 
 describe('entrance test gate', () => {
@@ -55,5 +57,11 @@ describe('entrance test gate', () => {
 
   it("lets the course's instructor manage it without sitting the test", async () => {
     await expect(setup().getAccessibleLesson(instructor, 'l1')).resolves.toMatchObject({ manager: true });
+  });
+
+  it("does not give other faculty the instructor's view (they are treated as learners)", async () => {
+    const access = setup();
+    const otherFaculty = { userId: 'f2', sessionId: 's', role: 'FACULTY' as const };
+    await expect(access.getAccessibleLesson(otherFaculty, 'l1')).rejects.toMatchObject({ response: { code: 'ENTRANCE_REQUIRED' } });
   });
 });

@@ -24,6 +24,7 @@ import { type AuthUser } from '../auth/auth-user';
 import { AccessService } from '../courses/access.service';
 import { COURSE_SUMMARY_INCLUDE, toCourseSummary } from '../courses/course-mapper';
 import { ImagingService } from '../imaging/imaging.service';
+import { LIVE_LESSON } from '../common/soft-delete';
 import { PrismaService } from '../prisma/prisma.service';
 import { type AssignmentSubmitDto, type ProgressDto } from './dto';
 import { certificateSerial, DEFAULT_PASS_PERCENT, gradeQuiz } from './grading';
@@ -49,13 +50,14 @@ export class LearningService {
       where: { slug },
       include: {
         chapters: {
+          where: { deletedAt: null },
           orderBy: { position: 'asc' },
-          include: { lessons: { orderBy: { position: 'asc' } } },
+          include: { lessons: { where: { deletedAt: null }, orderBy: { position: 'asc' } } },
         },
       },
     });
     if (!course) throw new NotFoundException();
-    const manager = this.access.isOwnerOrStaff(user, course);
+    const manager = await this.access.isManager(user, course);
     if (!manager && course.status !== 'PUBLISHED') throw new NotFoundException();
     // Opening a free course enrols automatically (staff included, for My learning).
     const enrolledNow = await this.access.ensureEnrolled(user, course, { bypassEntrance: manager });
@@ -406,8 +408,8 @@ export class LearningService {
     if (existing) return { serial: existing.serial };
 
     const [total, done] = await Promise.all([
-      this.prisma.lesson.count({ where: { courseId: course.id } }),
-      this.prisma.lessonProgress.count({ where: { userId: user.userId, courseId: course.id, completedAt: { not: null } } }),
+      this.prisma.lesson.count({ where: { courseId: course.id, ...LIVE_LESSON } }),
+      this.prisma.lessonProgress.count({ where: { userId: user.userId, courseId: course.id, completedAt: { not: null }, lesson: LIVE_LESSON } }),
     ]);
     if (total === 0 || done < total) throw new ConflictException({ code: 'COURSE_INCOMPLETE', done, total });
     if (course.isFree && (course.certificateFeePaise ?? 0) > 0) {
@@ -445,15 +447,17 @@ export class LearningService {
       this.prisma.lessonProgress.findMany({ where: { userId: user.userId, courseId: { in: courseIds } } }),
       this.prisma.certificate.findMany({ where: { userId: user.userId, courseId: { in: courseIds } } }),
       this.prisma.lesson.findMany({
-        where: { courseId: { in: courseIds } },
+        where: { courseId: { in: courseIds }, ...LIVE_LESSON },
         orderBy: [{ chapter: { position: 'asc' } }, { position: 'asc' }],
         select: { id: true, courseId: true },
       }),
     ]);
     return enrollments.map(({ course, createdAt }) => {
       const mine = progress.filter((p) => p.courseId === course.id);
-      const done = new Set(mine.filter((p) => p.completedAt).map((p) => p.lessonId));
       const ordered = lessonOrder.filter((l) => l.courseId === course.id);
+      // Only live lessons count (trashed ones keep their progress rows).
+      const live = new Set(ordered.map((l) => l.id));
+      const done = new Set(mine.filter((p) => p.completedAt && live.has(p.lessonId)).map((p) => p.lessonId));
       const recent = mine.filter((p) => !p.completedAt).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0];
       return {
         course: toCourseSummary(course),

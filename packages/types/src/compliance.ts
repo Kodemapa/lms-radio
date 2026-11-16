@@ -68,6 +68,12 @@ const FETAL_SEX_DETERMINATION_TEXT = [
   /\bgender\s+reveal\b/i,
   /लिंग\s*(जाँच|जांच|परीक्षण|निर्धारण|पता)/,
   /भ्रूण\s*(का|के)?\s*लिंग/,
+  // Disclosures: stating the sex, not just asking about it.
+  /\b(baby|fetus|foetus|unborn|child|it)\s*(['’]s|is|will\s+be|looks\s+like)\s+(a\s+)?(boy|girl|male|female)\b/i,
+  /\b(male|female)\s+(fetus|foetus|baby|unborn)\b/i,
+  /\bit['’]?s\s+a\s+(boy|girl)\b/i,
+  /(बच्चा|शिशु|भ्रूण)\s*(लड़का|लड़की|बेटा|बेटी)/,
+  /(लड़का|लड़की|बेटा|बेटी)\s*(है|होगा|होगी)/,
 ];
 
 /** Returns the phrases in `text` that breach PC-PNDT, or an empty array. */

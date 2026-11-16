@@ -35,17 +35,17 @@ Legend: ✅ in the new platform · 🟡 partly · ❌ missing · ⛔ deliberatel
 
 | Feature (old) | New | Notes / what's needed |
 |---|---|---|
-| Dashboard | 🟡 | Exists; **sales, revenue and enrolment charts** missing |
+| Dashboard | 🟡 | ✅ enrolment chart, active learners, completions, pending reviews, invitations; **sales/revenue** waits for commerce |
 | Create / edit course, curriculum, quizzes, assignments | ✅ | Plus question bank, entrance test, certificate designer, DICOM cases |
-| Curriculum **trash / restore**, permanent delete | ❌ | Soft delete for chapters and lessons |
+| Curriculum **trash / restore**, permanent delete | ✅ | Soft delete, 30-day purge |
 | Assignment review | ✅ | |
-| **Student quiz reports** (per-student attempt details) | ❌ | Attempts stored; reporting UI and API missing |
-| **Enrolled students** list per course, course analytics | ❌ | Completion, progress and drop-off per lesson |
-| Reviews of my courses (reply / report) | 🟡 | Public list only |
+| **Student quiz reports** (per-student attempt details) | ✅ | Quizzes, DICOM cases, entrance test; item analysis |
+| **Enrolled students** list per course, course analytics | ✅ | Students tab + CSV; Analytics tab |
+| Reviews of my courses (reply / report) | ✅ | Reply publicly, report to admins |
 | **Coupons / promo codes** | ❌ | §3 |
 | **Earnings, commission, withdrawal requests, wallet** | ❌ | §3 (needs payouts policy) |
 | **Refund requests** (respond) | ❌ | §3 |
-| **Team members** (co-instructors, team vs individual instructor) | ❌ | Course collaborators with roles |
+| **Team members** (co-instructors, team vs individual instructor) | ✅ | Editor / grader roles, invitations |
 | **Live classes** (schedule, schedule now) | ❌ | Phase 4 |
 | Notifications | ❌ | §5 |
 

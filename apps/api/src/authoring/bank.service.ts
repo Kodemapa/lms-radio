@@ -20,6 +20,7 @@ import { Prisma } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { type AuthUser } from '../auth/auth-user';
 import { zodOrThrow } from '../common/zod';
+import { CoursePermissions } from '../courses/course-permissions';
 import { PrismaService } from '../prisma/prisma.service';
 import { AssessmentsService } from './assessments.service';
 
@@ -33,6 +34,7 @@ export class BankService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly assessments: AssessmentsService,
+    private readonly permissions: CoursePermissions,
   ) {}
 
   // ---- Bank ---------------------------------------------------------------------
@@ -119,7 +121,7 @@ export class BankService {
     atSec: number | null,
   ): Promise<InstructorQuestion[]> {
     const lesson = await this.prisma.lesson.findUnique({ where: { id: lessonId } });
-    if (!lesson || (lesson.kind !== 'QUIZ' && lesson.kind !== 'VIDEO')) throw new NotFoundException();
+    if (!lesson || lesson.deletedAt || (lesson.kind !== 'QUIZ' && lesson.kind !== 'VIDEO')) throw new NotFoundException();
     await this.ownedCourse(user, lesson.courseId, { editable: true });
     if (lesson.kind === 'VIDEO' && (atSec === null || bankQuestionIds.length !== 1)) {
       throw new BadRequestException('Add one question at a time to a video, with a time');
@@ -255,7 +257,7 @@ export class BankService {
   private async ownedCourse(user: AuthUser, courseId: string, { editable = false } = {}) {
     const course = await this.prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new NotFoundException();
-    if (course.instructorId !== user.userId && user.role !== 'ADMIN') throw new ForbiddenException();
+    if (!(await this.permissions.can(user, course, 'edit'))) throw new ForbiddenException();
     if (editable && course.status === 'IN_REVIEW') throw new ConflictException({ code: 'LOCKED' });
     return course;
   }

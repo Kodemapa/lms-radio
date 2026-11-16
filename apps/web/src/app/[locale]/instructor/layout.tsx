@@ -30,6 +30,7 @@ export default async function InstructorLayout({
     { href: '/instructor/courses', label: t('nav.courses'), icon: 'courses' as const },
     { href: '/instructor/courses/new', label: t('nav.newCourse'), icon: 'newCourse' as const },
     { href: '/instructor/submissions', label: t('nav.submissions'), icon: 'submissions' as const },
+    { href: '/instructor/reviews', label: t('nav.reviews'), icon: 'reviews' as const },
     ...(me.role === 'ADMIN'
       ? [
           { href: '/instructor/review', label: t('nav.review'), icon: 'review' as const },

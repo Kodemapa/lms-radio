@@ -219,6 +219,8 @@ export const ReviewSchema = z.object({
   authorName: z.string(),
   updatedAt: z.string().datetime(),
   mine: z.boolean(),
+  /** The course team's public reply. */
+  reply: z.string().nullable().default(null),
 });
 export type Review = z.infer<typeof ReviewSchema>;
 
