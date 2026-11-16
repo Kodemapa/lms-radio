@@ -14,10 +14,11 @@ import {
   Switch,
   Textarea,
 } from '@obgyn/ui';
-import { ArrowDown, ArrowUp, ClipboardList, FileText, HelpCircle, Info, ListChecks, Pencil, PlayCircle, Plus, ScanLine, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronDown, ClipboardList, FileText, HelpCircle, Info, ListChecks, Pencil, PlayCircle, Plus, ScanLine, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useState, type FormEvent } from 'react';
+import { prefetchCornerstone } from '@/components/imaging/cornerstone';
 import { formatClock } from '@/lib/format';
 import { courseApi } from '@/lib/instructor-api';
 import { ConfirmDialog } from '../confirm-dialog';
@@ -26,6 +27,9 @@ import { QuestionsDialog } from './questions-dialog';
 
 // Cornerstone + dcmjs are megabytes; load them only when a DICOM case is opened.
 const ImagingCaseDialog = dynamic(() => import('./imaging-case-dialog').then((m) => m.ImagingCaseDialog), { ssr: false });
+
+/** Courses with more lessons than this open with chapters collapsed. */
+const COLLAPSE_ABOVE_LESSONS = 30;
 
 type ChapterEdit = { mode: 'add' } | { mode: 'edit'; chapter: InstructorChapter };
 type LessonEdit = { mode: 'add'; chapterId: string } | { mode: 'edit'; lesson: InstructorLesson };
@@ -55,6 +59,18 @@ export function CurriculumTab({
   const [questionsFor, setQuestionsFor] = useState<InstructorLesson | null>(null);
   const [caseFor, setCaseFor] = useState<InstructorLesson | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Big courses (140+ lessons) start with only the first chapter open, so the
+  // editor doesn't render every lesson row and its buttons at once.
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => {
+    const lessons = course.chapters.reduce((sum, chapter) => sum + chapter.lessons.length, 0);
+    return new Set(lessons > COLLAPSE_ABOVE_LESSONS ? course.chapters.slice(1).map((chapter) => chapter.id) : []);
+  });
+  const toggleChapter = (chapterId: string) =>
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (!next.delete(chapterId)) next.add(chapterId);
+      return next;
+    });
 
   const run = async (fn: () => Promise<InstructorCourse>) => {
     setError(null);
@@ -81,11 +97,22 @@ export function CurriculumTab({
         <ol className="flex flex-col gap-4">
           {course.chapters.map((chapter, chapterIndex) => (
             <li key={chapter.id} className="surface">
-              <div className="flex flex-wrap items-center gap-2 border-b border-border p-4">
+              <div className={`flex flex-wrap items-center gap-2 p-4 ${collapsed.has(chapter.id) ? '' : 'border-b border-border'}`}>
                 <span className="flex size-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                   {chapter.position}
                 </span>
-                <h3 className="flex-1 font-semibold">{chapter.title}</h3>
+                <h3 className="min-w-0 flex-1 font-semibold">
+                  <button
+                    type="button"
+                    aria-expanded={!collapsed.has(chapter.id)}
+                    onClick={() => toggleChapter(chapter.id)}
+                    className="flex w-full items-center gap-2 rounded-md text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  >
+                    <span className="min-w-0 flex-1 truncate">{chapter.title}</span>
+                    <span className="shrink-0 text-xs font-normal text-muted-foreground">{chapter.lessons.length}</span>
+                    <ChevronDown aria-hidden className={`size-4 shrink-0 transition-transform ${collapsed.has(chapter.id) ? '' : 'rotate-180'}`} />
+                  </button>
+                </h3>
                 {!locked ? (
                   <div className="flex items-center gap-1">
                     <IconButton
@@ -134,6 +161,8 @@ export function CurriculumTab({
                 ) : null}
               </div>
 
+              {collapsed.has(chapter.id) ? null : (
+              <>
               {chapter.lessons.length === 0 ? (
                 <p className="px-4 py-3 text-sm text-muted-foreground">{t('noLessons')}</p>
               ) : (
@@ -167,7 +196,7 @@ export function CurriculumTab({
                           </span>
                         </span>
                         {lesson.kind === 'IMAGING' ? (
-                          <Button variant="outline" size="sm" onClick={() => setCaseFor(lesson)}>
+                          <Button variant="outline" size="sm" onClick={() => setCaseFor(lesson)} onMouseEnter={prefetchCornerstone} onFocus={prefetchCornerstone}>
                             <ScanLine aria-hidden className="size-4" />
                             {t('editCase')}
                           </Button>
@@ -239,6 +268,8 @@ export function CurriculumTab({
                   </Button>
                 </div>
               ) : null}
+              </>
+              )}
             </li>
           ))}
         </ol>

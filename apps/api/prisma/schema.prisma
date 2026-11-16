@@ -268,6 +268,7 @@ model Course {
 
   @@index([status, publishedAt])
   @@index([instructorId])
+  @@index([previewAssetId])
 }
 
 model Chapter {
@@ -326,6 +327,7 @@ model Lesson {
 
   @@index([chapterId, position])
   @@index([courseId])
+  @@index([mediaAssetId])
 }
 
 /// Uploaded files. `storageKey` is never sent to clients. Videos, PDFs and
@@ -358,6 +360,8 @@ model MediaAsset {
   imagingImages    ImagingImage[]
   imagingAttempts  ImagingAttempt[]
   referenceFor     ImagingCase[]
+
+  @@index([ownerId])
 }
 
 /// An IMAGING lesson's answer key. Clinical values (reference drawings,
@@ -373,6 +377,8 @@ model ImagingCase {
 
   lesson      Lesson      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   referenceSr MediaAsset? @relation(fields: [referenceSrAssetId], references: [id], onDelete: SetNull)
+
+  @@index([referenceSrAssetId])
 }
 
 model ImagingImage {
@@ -386,6 +392,7 @@ model ImagingImage {
   asset  MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@unique([lessonId, assetId])
+  @@index([assetId])
 }
 
 /// A learner's submitted DICOM SR and its grade.
@@ -415,6 +422,8 @@ model ImagingAttempt {
   workingReviewedBy User?      @relation("WorkingReviewer", fields: [workingReviewedById], references: [id], onDelete: SetNull)
 
   @@index([userId, lessonId, createdAt])
+  @@index([lessonId])
+  @@index([srAssetId])
   @@index([workingAssetIds], type: Gin)
 }
 
@@ -480,6 +489,7 @@ model LessonProgress {
 
   @@id([userId, lessonId])
   @@index([userId, courseId])
+  @@index([courseId, lessonId])
 }
 
 /// Quiz content is faculty-authored content, stored like any other course content (CLAUDE.md rule 5).
@@ -648,6 +658,7 @@ model AssignmentSubmission {
 
   @@unique([userId, lessonId])
   @@index([courseId, status])
+  @@index([fileAssetId])
 }
 
 model Certificate {
@@ -709,6 +720,7 @@ model Enrollment {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@id([userId, courseId])
+  @@index([courseId, createdAt])
 }
 
 /// Versioned, faculty-reviewed clinical content: drug doses, protocols, CTG

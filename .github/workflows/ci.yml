@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16.6-alpine
+        env:
+          POSTGRES_USER: elms
+          POSTGRES_PASSWORD: elms
+          POSTGRES_DB: elms
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U elms" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TURBO_TELEMETRY_DISABLED: 1
+      NEXT_TELEMETRY_DISABLED: 1
+      DATABASE_URL: postgresql://elms:elms@localhost:5432/elms?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply migrations
+        run: pnpm --filter @obgyn/api db:deploy
+      - name: Typecheck, lint and unit tests
+        run: pnpm turbo run typecheck lint test
+      - name: Build the web app
+        run: pnpm turbo run build --filter=@obgyn/web
+      - name: Bundle budget (first-load JS per route)
+        run: node tools/check-bundle-size.mjs

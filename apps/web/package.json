@@ -15,6 +15,7 @@
     "@cornerstonejs/core": "5.13.2",
     "@cornerstonejs/dicom-image-loader": "5.13.2",
     "@cornerstonejs/tools": "5.13.2",
+    "@obgyn/dicom": "workspace:*",
     "@obgyn/types": "workspace:*",
     "@obgyn/ui": "workspace:*",
     "dcmjs": "0.52.2",
@@ -26,11 +27,11 @@
     "read-excel-file": "9.3.10",
     "server-only": "0.0.1",
     "shaka-player": "5.3.2",
-    "zod": "3.25.76",
-    "@obgyn/dicom": "workspace:*"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.7",
+    "@next/bundle-analyzer": "15.5.29",
     "@obgyn/config": "workspace:*",
     "@playwright/test": "1.56.1",
     "@tailwindcss/postcss": "4.1.18",

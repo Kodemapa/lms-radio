@@ -45,8 +45,12 @@ export default async function LocaleLayout({ children, params }: Props) {
   const t = await getTranslations('Common');
 
   return (
-    <html lang={locale} className={`${geist.variable} ${display.variable} ${devanagari.variable}`}>
-      <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
+    // Browser extensions (screen recorders, password managers, Grammarly) add their own
+    // attributes to <html> and <body> before React loads. That is not our markup, so
+    // attribute differences on these two elements are not reported as hydration errors.
+    // This applies only to these elements, not to anything inside them.
+    <html lang={locale} className={`${geist.variable} ${display.variable} ${devanagari.variable}`} suppressHydrationWarning>
+      <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased" suppressHydrationWarning>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"

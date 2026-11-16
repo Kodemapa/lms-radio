@@ -1,6 +1,6 @@
 'use client';
 
-import { ellipseCoords, ellipseShape, regionPolygon } from '@obgyn/dicom';
+import { ellipseCoords, ellipseShape, regionPolygon } from '@obgyn/dicom/geometry';
 import { type AnnotationTool, type Point } from '@obgyn/types';
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { loadCornerstone, type Cornerstone } from './cornerstone';

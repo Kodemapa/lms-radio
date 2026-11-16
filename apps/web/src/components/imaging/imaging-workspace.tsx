@@ -1,6 +1,6 @@
 'use client';
 
-import { measureMm } from '@obgyn/dicom';
+import { measureMm } from '@obgyn/dicom/geometry';
 import {
   conceptByKey,
   findTerm,

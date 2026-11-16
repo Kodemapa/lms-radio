@@ -3,6 +3,7 @@
 The working backlog for the ObGyn e-LMS. Read `CLAUDE.md` first: the stack, the non-negotiable rules (PC-PNDT, signed media URLs, watermark, i18n, tests) and the doc-priority order. Background: `docs/LEGACY-FEATURE-GAPS.md` (old platform vs new), `docs/IMAGE-TASKS-GAP-ANALYSIS.md` (image assignments), `docs/PROGRESS.md` (state and how to run).
 
 **How to use this list**
+- A task is ticked only when its whole acceptance is met. Partly done tasks list what is done (`[x]`) and what is left (`[ ]`) under "Status".
 - Take a task by putting your name and branch next to it, e.g. `[ ] PERF-1 … — @name, feat/perf-lazy-imaging`. Tick it when merged.
 - One branch per task, conventional commits, a PR with tests. Definition of done is at the bottom.
 - Priorities: **P0** now · **P1** next · **P2** later · **P3** nice to have. Sizes: **S** ≤ 1 day · **M** 2–4 days · **L** 1–2 weeks.
@@ -33,15 +34,30 @@ In dev, a lesson page took **8.4 s** to compile on first load. The web dev serve
   - **16 Nov 2026:** done in code. First-load JS: course editor 452 → 242 kB, lesson page 425 → ~206 kB. The instructor case dialog was smoke-tested (it opens and renders the viewer). Still to do before ticking: run the full DICOM e2e flow.
   - Also added `instructor/loading.tsx` and a pending spinner on sidebar links. Before this, a click during a cold dev compile showed no feedback, and editor tab clicks made before hydration were dropped.
   - Not yet: `loading.tsx` for the learner area (`/learn`, `/account`) — same cold-compile symptom there.
+  - Status 16 Nov 2026 (later):
+    - [x] Imaging UI lazy-loaded. Production build: lesson page 214 kB, course editor 249 kB first-load JS.
+    - [x] `loading.tsx` for the learner area (`learn/[slug]`) and `account`.
+    - [ ] Run the full DICOM e2e flow in a browser (author a case, learner pass and fail).
 - [ ] **PERF-2 Keep dcmjs out of the viewer and workspace** · P0 · M
   - Split `@obgyn/dicom` into entry points: `@obgyn/dicom/geometry` (pure maths, no dcmjs) and `@obgyn/dicom/sr` (dcmjs).
   - The viewer and workspace import only geometry. Load `buildMeasurementReport` with `await import()` at submit time; consider a Web Worker.
   - **Accept:** no `dcmjs` in any chunk loaded before the learner presses Submit, verified with the bundle analyser.
+  - Status 16 Nov 2026:
+    - [x] Entry points `@obgyn/dicom/geometry`, `/image` and `/sr`; the viewer and workspace import only geometry.
+    - [x] The learner page loads `/sr` with `await import()` on Submit.
+    - [x] One copy of dcmjs in the browser. It was downloaded twice (~705 kB each): Cornerstone pins 0.52.0 and imports the ES build, we used 0.52.2 through CommonJS. Fixed with a pnpm override and a webpack alias.
+    - [ ] **Acceptance can't be met as written:** `@cornerstonejs/core` → `@cornerstonejs/metadata` imports dcmjs itself, so it loads with the viewer, before Submit. Decide: change the acceptance to "one copy of dcmjs, none on non-DICOM pages" (true now), or replace the viewer.
+    - [ ] Web Worker for building the report (optional).
 - [ ] **PERF-3 Shrink or defer Cornerstone** · P1 · M
   - Start loading Cornerstone when a DICOM lesson is opened or hovered in the curriculum (`loadCornerstone()` prefetch), not on first paint.
   - Restrict the image loader to the codecs we need (JPEG baseline, RLE, uncompressed) if the loader allows it.
   - Evaluate whether vtk.js can be avoided for 2D stack viewing.
   - **Accept:** documented size before/after; viewer ready in < 2 s on a 10 Mbps connection.
+  - Status 16 Nov 2026:
+    - [x] `prefetchCornerstone()` starts the download when a DICOM lesson link or "Edit case" is hovered or focused (skipped on data-saver / 2G).
+    - [x] Codecs checked: already loaded on demand as separate WASM files (176 kB – 1 MB each); the loader has no option to leave them out of the build.
+    - [x] vtk.js evaluated: can't be avoided. Cornerstone's stack viewport renders through it.
+    - [ ] Measure "viewer ready in < 2 s on 10 Mbps" (needs a throttled browser run).
 - [ ] **PERF-4 Bring Turbopack back for dev** · P1 · M
   - Options:
     - wrap Cornerstone in a pre-built ESM bundle (e.g. a `packages/viewer` built with tsup) that Turbopack can consume;
@@ -49,20 +65,37 @@ In dev, a lesson page took **8.4 s** to compile on first load. The web dev serve
     - or upgrade when Next/Turbopack supports `new Worker(new URL(…))` for these packages.
   - **Accept:** `next dev --turbopack` loads the DICOM lesson without hanging; dev first compile < 3 s.
   - **Seen 16 Nov:** the webpack dev server restarts itself with "approaching the used memory threshold" after many routes are compiled; another reason to move off webpack in dev.
-- [ ] **PERF-5 Bundle analysis in CI** · P1 · S
+  - Status 16 Nov 2026:
+    - [x] Retested: `next dev --turbopack` still hangs on a lesson page (no response after 150 s).
+    - [ ] Fix (one of the options above). Not started.
+- [x] **PERF-5 Bundle analysis in CI** · P1 · S
   - Add `@next/bundle-analyzer` behind `ANALYZE=1`.
   - Add a CI step that fails if any route's first-load JS grows > 10% over the committed baseline (`docs/perf-baseline.json`).
+  - **Done 16 Nov 2026.** `ANALYZE=1 pnpm --filter @obgyn/web build` writes treemaps. `node tools/check-bundle-size.mjs` compares every route with `docs/perf-baseline.json` (30 routes) and fails on growth above 10% and 2 kB; `--update` rewrites the baseline. It runs in `.github/workflows/ci.yml`, which has not run on GitHub yet.
 - [ ] **PERF-6 Big curriculum lists** · P1 · S
   - The course editor renders 140+ lessons with buttons; the learner sidebar renders all lessons.
   - Virtualise (e.g. `@tanstack/react-virtual`) or collapse chapters by default.
   - **Accept:** editor interaction stays smooth (no long tasks > 100 ms in the Performance panel) with 300 lessons.
+  - Status 16 Nov 2026:
+    - [x] Learner sidebar renders only the current chapter; other chapters open on click.
+    - [x] Course editor opens only the first chapter when a course has more than 30 lessons.
+    - [x] Chapter headers are buttons with `aria-expanded` (keyboard-operable). Collapsing was chosen over virtualising: no new dependency.
+    - [x] Measured in Chrome on a production build with the seeded 140-lesson course: opening all 10 chapters in the editor and in the learner sidebar gave no long task over 100 ms (longest 69 ms).
+    - [ ] Repeat with a 300-lesson course (the acceptance size); no such course exists in the seed.
 - [ ] **PERF-7 API hot paths** · P1 · M
   - DRM segment requests (`MediaService.packageFile`) do 2 DB reads per segment. Cache session validity and package lookups (in-memory LRU, 30 s, or Redis).
   - Add DB indexes found via `EXPLAIN` on outline/lesson queries.
   - **Accept:** p95 segment response < 30 ms locally under 50 concurrent players (k6 script in `tools/`).
-- [ ] **PERF-8 Caching headers** · P2 · S
+  - Status 16 Nov 2026:
+    - [x] Segment requests cache session validity and the package lookup for 30 s (`SEGMENT_CACHE_MS` in `media.service.ts`, `common/ttl-cache.ts`). Trade-off: a logout reaches segment requests up to 30 s late; licences and new grants are still live.
+    - [x] Indexes for the asset look-ups behind every signed URL and for enrolments / progress by course (migration `20261116150000_perf_lookup_indexes`; run `pnpm --filter @obgyn/api db:deploy`). Chosen by reading the queries.
+    - [x] `tools/k6/drm-segments.js` (50 players, p95 < 30 ms threshold).
+    - [ ] Run the k6 test (needs k6 installed, DRM on and a packaged video).
+    - [ ] Confirm the indexes with `EXPLAIN` on production-sized data.
+- [x] **PERF-8 Caching headers** · P2 · S
   - Long-term immutable caching for `/_next/static` and WASM.
   - Make sure the signed media gateway stays `no-store`.
+  - **Done 16 Nov 2026.** The immutable rule is production-only (in development file names are not hashed; caching them broke the home page after a pull). Checked on a production build: `/_next/static` JS and the WASM codecs return `public, max-age=31536000, immutable`; pages and `/api/*` return `no-store`. The API media gateway already sets `no-store` on stream, segment and licence responses.
 
 ---
 
@@ -243,6 +276,10 @@ Still open from the old instructor area:
   - Move the Playwright flows used so far (login via dev-login, DRM playback, DICOM case authoring and learner pass/fail, entrance test) into `apps/web/e2e/`.
   - Generate fixtures at test time; no patient images.
 - [ ] **QA-2 CI** · M — GitHub Actions: install, typecheck, lint, unit tests, Prisma migrate on a Postgres service, e2e on PRs.
+  - Status 16 Nov 2026:
+    - [x] `.github/workflows/ci.yml`: install, migrations on a Postgres service, typecheck, lint, unit tests, web build, bundle budget.
+    - [ ] e2e on PRs (depends on QA-1).
+    - [ ] First run on GitHub (the workflow has not run yet).
 - [ ] **QA-3 Pre-commit** · S — lint-staged + Prettier.
 - [ ] **OPS-1 Deployment** · L
   - Containers for web/api, AWS ap-south-1 (data in India).
