@@ -1,4 +1,4 @@
-# ObGyn e-LMS + Simulator Platform
+# GIFS e-LMS + Simulator Platform
 
 India-first e-learning for obstetrics & gynaecology, with browser-based simulators,
 protected content and in-app live classes. Start with [CLAUDE.md](CLAUDE.md) for the

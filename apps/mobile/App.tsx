@@ -11,7 +11,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text accessibilityRole="header" style={styles.title}>
-        ObGyn e-LMS
+        GIFS e-LMS
       </Text>
       <Text style={styles.body}>
         Screen capture is blocked in this app. Sign-in, courses and the protected player are

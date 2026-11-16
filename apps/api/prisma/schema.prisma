@@ -1,4 +1,4 @@
-// ObGyn e-LMS data model.
+// GIFS e-LMS data model.
 //
 // PC-PNDT (CLAUDE.md rule 1): no model may carry a field that identifies fetal
 // sex. Imported case data is passed through stripFetalSexFields() from

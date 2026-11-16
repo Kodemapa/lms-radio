@@ -1,6 +1,6 @@
 {
   "Common": {
-    "appName": "ObGyn e-LMS",
+    "appName": "GIFS e-LMS",
     "tagline": "Obstetrics & gynaecology learning with built-in simulators",
     "skipToContent": "Skip to main content",
     "language": "Language",
@@ -504,7 +504,7 @@
     "devPasswordHint": "Development: sign in with any email and password {code} (the same code also works as the OTP)."
   },
   "BecomeInstructor": {
-    "title": "Teach on ObGyn e-LMS",
+    "title": "Teach on GIFS e-LMS",
     "subtitle": "Share your expertise with residents, sonologists, nurses and midwives across India.",
     "cta": "Apply now",
     "signInToApply": "Sign in to apply",

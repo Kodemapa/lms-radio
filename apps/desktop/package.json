@@ -21,7 +21,7 @@
   },
   "build": {
     "appId": "com.example.obgynelms",
-    "productName": "ObGyn e-LMS",
+    "productName": "GIFS e-LMS",
     "directories": { "output": "release" },
     "files": ["dist/**", "package.json"],
     "mac": { "hardenedRuntime": true, "category": "public.app-category.education" },

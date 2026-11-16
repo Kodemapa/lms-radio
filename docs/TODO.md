@@ -1,6 +1,6 @@
 # Team to-do list
 
-The working backlog for the ObGyn e-LMS. Read `CLAUDE.md` first: the stack, the non-negotiable rules (PC-PNDT, signed media URLs, watermark, i18n, tests) and the doc-priority order. Background: `docs/LEGACY-FEATURE-GAPS.md` (old platform vs new), `docs/IMAGE-TASKS-GAP-ANALYSIS.md` (image assignments), `docs/PROGRESS.md` (state and how to run).
+The working backlog for the GIFS e-LMS. Read `CLAUDE.md` first: the stack, the non-negotiable rules (PC-PNDT, signed media URLs, watermark, i18n, tests) and the doc-priority order. Background: `docs/LEGACY-FEATURE-GAPS.md` (old platform vs new), `docs/IMAGE-TASKS-GAP-ANALYSIS.md` (image assignments), `docs/PROGRESS.md` (state and how to run).
 
 **How to use this list**
 - Take a task by putting your name and branch next to it, e.g. `[ ] PERF-1 … — @name, feat/perf-lazy-imaging`. Tick it when merged.

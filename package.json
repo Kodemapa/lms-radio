@@ -1,7 +1,7 @@
 {
   "name": "obgyn-elms",
   "private": true,
-  "description": "ObGyn e-LMS + Simulator Platform (monorepo)",
+  "description": "GIFS e-LMS + Simulator Platform (monorepo)",
   "packageManager": "pnpm@10.34.9",
   "engines": {
     "node": ">=20.18.0"

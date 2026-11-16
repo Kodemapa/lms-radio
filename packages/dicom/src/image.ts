@@ -157,7 +157,7 @@ export function deidentifyImage(bytes: ArrayBuffer | Uint8Array, pseudonym: stri
   set('00080018', 'UI', sopInstanceUID);
   if (file.dict['00200052']) set('00200052', 'UI', uid());
   set('00120062', 'CS', 'YES');
-  set('00120063', 'LO', 'OBGYN e-LMS: PS3.15 basic profile subset, UIDs replaced, private tags removed');
+  set('00120063', 'LO', 'GIFS e-LMS: PS3.15 basic profile subset, UIDs replaced, private tags removed');
   file.meta['00020003'] = { vr: 'UI', Value: [sopInstanceUID] };
   const meta = imageMeta(file.dict);
   return { bytes: file.write(), meta };

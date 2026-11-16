@@ -1,4 +1,4 @@
-# CLAUDE.md — ObGyn e-LMS + Simulator Platform
+# CLAUDE.md — GIFS e-LMS + Simulator Platform
 
 This file is the entry point for Claude Code. Read it fully before generating any code,
 then read the relevant file in `docs/` for the task at hand.

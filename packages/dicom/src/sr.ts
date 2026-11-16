@@ -184,7 +184,7 @@ export function buildMeasurementReport(input: ReportInput): ArrayBuffer {
     ReferringPhysicianName: '',
     StudyID: '',
     AccessionNumber: '',
-    Manufacturer: 'OBGYN e-LMS',
+    Manufacturer: 'GIFS e-LMS',
     SeriesDescription: input.title.slice(0, 64),
     ContentDate: date,
     ContentTime: time,

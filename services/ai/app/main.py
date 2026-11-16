@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 from .labels import StandardPlane
 
-app = FastAPI(title="ObGyn e-LMS AI service", version="0.1.0")
+app = FastAPI(title="GIFS e-LMS AI service", version="0.1.0")
 
 
 class PlaneClassifyRequest(BaseModel):

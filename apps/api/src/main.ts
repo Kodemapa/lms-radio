@@ -30,7 +30,7 @@ async function bootstrap(): Promise<void> {
     const document = SwaggerModule.createDocument(
       app,
       new DocumentBuilder()
-        .setTitle('ObGyn e-LMS API')
+        .setTitle('GIFS e-LMS API')
         .setVersion('0.1.0')
         .addBearerAuth()
         .build(),
