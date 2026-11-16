@@ -7,9 +7,11 @@
  * ./prisma/fetch-sample-media.sh first). The first two modules use them, with
  * in-video questions that pause the video until answered correctly.
  *
- * Sign in (development code 123456):
- *   admin@example.com       ADMIN
- *   instructor@example.com  FACULTY (Global Institute of Foetal Science)
+ * Sign in with email + password 123456 (development only); see docs/DEV-LOGINS.md:
+ *   admin@example.com        ADMIN
+ *   instructor@example.com   FACULTY (Global Institute of Foetal Science), owns the course
+ *   instructor2@example.com  FACULTY (Dr Arjun Mehta), for co-instructor testing
+ *   learner@example.com      LEARNER
  */
 import { ContentStatus, CourseLevel, LessonKind, MediaKind, PrismaClient, Role } from '@prisma/client';
 import { existsSync, statSync } from 'node:fs';
@@ -551,6 +553,17 @@ async function main() {
     where: { email: 'instructor@example.com' },
     update: profile,
     create: { email: 'instructor@example.com', ...profile },
+  });
+  // A second instructor (invite as co-instructor) and a learner, for team testing.
+  await prisma.user.upsert({
+    where: { email: 'instructor2@example.com' },
+    update: { role: Role.FACULTY },
+    create: { email: 'instructor2@example.com', displayName: 'Dr Arjun Mehta', headline: 'Fetal medicine consultant', role: Role.FACULTY },
+  });
+  await prisma.user.upsert({
+    where: { email: 'learner@example.com' },
+    update: {},
+    create: { email: 'learner@example.com', displayName: 'Test Learner', role: Role.LEARNER },
   });
 
   const [cover, logo, placenta, radiation] = await Promise.all([

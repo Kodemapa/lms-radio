@@ -1,5 +1,7 @@
 # Progress & handoff
 
+Test accounts and the dev login: see [DEV-LOGINS.md](DEV-LOGINS.md).
+
 ## Update 2026-11-16: DICOM imaging tests working end to end
 
 - **Verified in real Chrome with a scratchpad fixture:**
