@@ -18,6 +18,8 @@ const TRUST = [
  */
 export async function WhyChooseUs() {
   const t = await getTranslations('Home');
+  // The report mock-up borrows the real report's labels so the two never drift apart.
+  const r = await getTranslations('Report');
   const steps: JourneyStep[] = [
     {
       key: 'watch',
@@ -54,13 +56,27 @@ export async function WhyChooseUs() {
       body: t('journey.report.body'),
       visual: {
         type: 'report',
-        title: t('journey.progress.title'),
-        badge: t('journey.progress.badge'),
-        rows: [
-          { label: t('week.anatomy'), status: t('journey.progress.strong'), value: 84, tone: 'strong' },
-          { label: t('week.biometry'), status: t('journey.progress.mid'), value: 62, tone: 'mid' },
-          { label: t('week.doppler'), status: t('journey.progress.weak'), value: 34, tone: 'weak' },
+        title: r('myTitle'),
+        course: t('journey.progress.course'),
+        progress: { label: r('progress'), percent: 58, detail: r('lessonsDone', { done: 14, total: 24 }) },
+        where: [
+          { label: r('youWereOn'), lesson: t('journey.progress.lastLesson') },
+          { label: r('nextUp'), lesson: t('journey.progress.nextLesson'), next: true },
         ],
+        stats: [
+          { label: r('watchTime'), value: t('journey.progress.watchValue'), detail: r('watchTimeHelp') },
+          { label: r('quizAverage'), value: '76%', detail: r('quizAttempts', { count: 9 }) },
+          { label: r('videoQuestions'), value: '81%', detail: r('firstTryHelp', { count: 47 }) },
+        ],
+        topics: {
+          title: r('topicsTitle'),
+          columns: { topic: r('topic'), score: r('score'), level: r('level.title') },
+          rows: [
+            { label: t('week.anatomy'), score: 84, detail: r('correctOf', { correct: 21, answered: 25 }), level: r('level.STRONG'), tone: 'strong' },
+            { label: t('week.biometry'), score: 62, detail: r('correctOf', { correct: 13, answered: 21 }), level: r('level.DEVELOPING'), tone: 'mid' },
+            { label: t('week.doppler'), score: 34, detail: r('correctOf', { correct: 6, answered: 18 }), level: r('level.NEEDS_WORK'), tone: 'weak' },
+          ],
+        },
         note: t('mockNote'),
       },
     },

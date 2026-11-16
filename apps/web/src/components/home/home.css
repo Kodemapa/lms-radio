@@ -967,69 +967,138 @@ body:has(.clinical-home),
   color: var(--muted-foreground);
 }
 
-/* Illustrative "week at a glance" card (inspired by wellness dashboards) */
+/* Illustrative progress report, laid out like the real learner report page */
 .lp-week {
   position: relative;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   width: 100%;
   height: 100%;
-  padding: 32px;
+  padding: 28px;
   background:
     var(--lp-grain),
     linear-gradient(150deg, #f4ecff 0%, #fbe1ec 55%, #fdd6b5 100%);
   background-blend-mode: soft-light, normal;
   color: var(--lp-plum);
 }
-.lp-week-head {
+.lp-report {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.lp-week-head p {
-  font-family: var(--lp-display);
-  font-size: 22px;
-  font-weight: 650;
-}
-.lp-week-head span {
-  padding: 6px 12px;
-  border-radius: 99px;
-  background: #fff;
-  font-size: 12px;
-  font-weight: 650;
-  color: var(--lp-orange-deep);
-}
-.lp-week-arc {
-  align-self: center;
-  width: min(260px, 60%);
-  aspect-ratio: 2 / 1;
-  margin-block: auto 24px;
-  border-radius: 999px 999px 0 0;
-  background:
-    var(--lp-grain),
-    conic-gradient(from 270deg at 50% 100%, #b9a3e6 0deg, #f2b6cf 70deg, #f6c56c 120deg, #ef8746 180deg, transparent 180deg);
-  background-blend-mode: soft-light, normal;
-  -webkit-mask: radial-gradient(circle at 50% 100%, transparent 38%, #000 39%);
-  mask: radial-gradient(circle at 50% 100%, transparent 38%, #000 39%);
-}
-.lp-week ul {
-  display: grid;
+  flex-direction: column;
   gap: 12px;
   padding: 18px;
   border-radius: 22px;
-  background: #ffffffc0;
-  backdrop-filter: blur(6px);
+  background: #fffffff2;
+  box-shadow: 0 1px 2px #2b20360f, 0 24px 48px -20px #2b203640;
+  font-size: 12px;
+  line-height: 1.35;
 }
-.lp-week li {
+.lp-report-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lp-report-head p {
+  font-family: var(--lp-display);
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.lp-report-head span,
+.lp-report-label,
+.lp-report-detail {
+  color: #2b20368c;
+}
+.lp-report-label {
+  font-size: 11px;
+}
+.lp-report-detail {
+  font-size: 10.5px;
+}
+.lp-report-overview {
   display: grid;
-  grid-template-columns: 84px 1fr auto;
-  align-items: center;
-  gap: 14px;
-  font-size: 13px;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 8px;
+}
+.lp-report-overview > div,
+.lp-report-stats li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f7f3fc;
+}
+.lp-report-where > span:last-child {
   font-weight: 600;
 }
+.lp-report-where[data-next='true'] {
+  background: #ece3f8;
+}
+.lp-report-where[data-next='true'] > span:last-child {
+  color: var(--lp-violet);
+}
+.lp-report-meter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lp-report-meter .lp-week-bar {
+  flex: 1;
+}
+.lp-report-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.lp-report-stats strong {
+  font-family: var(--lp-display);
+  font-size: 18px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.lp-report-subhead {
+  margin-bottom: 4px;
+  font-weight: 650;
+  font-size: 13px;
+}
+.lp-report-topics {
+  display: flex;
+  flex-direction: column;
+}
+.lp-report-row {
+  display: grid;
+  grid-template-columns: 76px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding-block: 7px;
+  border-top: 1px solid #2f234012;
+  font-weight: 600;
+}
+.lp-report-cols {
+  padding-block: 4px;
+  border-top: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #2b20368c;
+}
+.lp-report-score {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-weight: 500;
+  color: #2b2036a6;
+  font-variant-numeric: tabular-nums;
+}
+.lp-report-score strong {
+  color: var(--lp-plum);
+}
 .lp-week-bar {
-  height: 10px;
+  display: block;
+  height: 8px;
   border-radius: 99px;
   background: #2f234014;
   overflow: hidden;
@@ -1040,28 +1109,53 @@ body:has(.clinical-home),
   border-radius: inherit;
   background: linear-gradient(90deg, var(--lp-violet), var(--lp-orange));
 }
-.lp-week li em {
-  min-width: 92px;
+.lp-week-bar[data-tone='strong'] > span {
+  background: #5b8f45;
+}
+.lp-week-bar[data-tone='mid'] > span {
+  background: #d98a3a;
+}
+.lp-week-bar[data-tone='weak'] > span {
+  background: #c95353;
+}
+.lp-report-row em {
+  min-width: 84px;
   padding: 3px 10px;
   border-radius: 99px;
   font-style: normal;
-  font-size: 11px;
+  font-size: 10.5px;
   text-align: center;
   background: #e9f3e3;
   color: #3d6b2a;
 }
-.lp-week li em[data-tone='mid'] {
+.lp-report-row em[data-tone='mid'] {
   background: #fff1e0;
   color: #9a5414;
 }
-.lp-week li em[data-tone='weak'] {
+.lp-report-row em[data-tone='weak'] {
   background: #fde4e4;
   color: #a33a3a;
 }
 .lp-week-note {
-  margin-top: 12px;
+  margin-top: 10px;
   font-size: 11px;
   color: #2b203680;
+}
+/* Short desktop screens shrink the pinned frame; keep the whole report inside it. */
+@media (min-width: 1024px) and (max-height: 800px) {
+  .lp-week {
+    padding: 18px;
+  }
+  .lp-report {
+    gap: 8px;
+    padding: 14px;
+  }
+  .lp-report-stats .lp-report-detail {
+    display: none;
+  }
+  .lp-report-row {
+    padding-block: 5px;
+  }
 }
 
 /* ---------- Practice band (dark) ---------- */
@@ -1664,14 +1758,63 @@ body:has(.clinical-home),
     font-size: 13px;
   }
   .lp-week {
-    padding: 20px;
+    padding: 14px;
   }
-  .lp-week li {
-    grid-template-columns: 70px 1fr auto;
+  .lp-report {
+    padding: 14px;
+  }
+  .lp-report-overview {
+    grid-template-columns: 1fr 1fr;
+  }
+  .lp-report-progress {
+    grid-column: 1 / -1;
+  }
+  .lp-report-stats {
+    grid-template-columns: 1fr;
+  }
+  .lp-report-stats li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 8px;
+  }
+  .lp-report-stats strong {
+    grid-row: span 2;
+    align-self: center;
+  }
+  .lp-report-row {
+    grid-template-columns: 64px 1fr auto;
     gap: 8px;
   }
-  .lp-week li em {
+  .lp-report-row em {
     min-width: 0;
+  }
+}
+
+/* Small screens: steps slide up as they scroll in; card, media and text move at
+   different speeds. --enter (0→1) and --p (-1…1, distance from viewport centre)
+   are set by LearningJourney; without them everything sits at rest. */
+@media (max-width: 1023px) and (prefers-reduced-motion: no-preference) {
+  .lp-journey-step,
+  .lp-journey-step[data-active='true'] {
+    opacity: calc(0.15 + var(--enter, 1) * 0.85);
+    transform: translate3d(0, calc((1 - var(--enter, 1)) * 80px), 0);
+    transition: none;
+    will-change: transform, opacity;
+  }
+  .lp-journey-inline {
+    transform: translate3d(0, calc(var(--p, 0) * -28px), 0);
+    will-change: transform;
+  }
+  /* Calipers share the photo's box, so they move with it and stay on the anatomy. */
+  .lp-journey-inline .lp-journey-photo img,
+  .lp-journey-inline .lp-caliper {
+    transform: translate3d(0, calc(var(--p, 0) * 32px), 0) scale(1.16);
+  }
+  .lp-journey-inline .lp-report {
+    transform: translate3d(0, calc(var(--p, 0) * 14px), 0);
+  }
+  .lp-journey-inline .lp-result-card {
+    transform: translate3d(0, calc(var(--p, 0) * -16px), 0);
   }
 }
 
@@ -1679,10 +1822,6 @@ body:has(.clinical-home),
 @media (max-width: 1023px) {
   .lp-journey-inline:has(.lp-week) {
     height: auto;
-  }
-  .lp-journey-inline:has(.lp-week) .lp-week-arc {
-    width: 170px;
-    margin-block: 20px;
   }
   .lp-journey-inline:has(.lp-result) {
     height: 340px;

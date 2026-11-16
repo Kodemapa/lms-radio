@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { type AuthUser } from '../auth/auth-user';
 import { LIVE_LESSON } from '../common/soft-delete';
+import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CoursePermissions } from './course-permissions';
 
@@ -16,6 +17,7 @@ export class AccessService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly permissions: CoursePermissions,
+    private readonly config: AppConfigService,
   ) {}
 
   /**
@@ -73,6 +75,8 @@ export class AccessService {
 
   /** Sequential access: ids of lessons that are locked for this learner. */
   async lockedLessonIds(userId: string, courseId: string): Promise<Set<string>> {
+    // Development switch (DEV_UNLOCK_LESSONS); the env schema refuses it in production.
+    if (this.config.get('DEV_UNLOCK_LESSONS') && !this.config.isProduction) return new Set();
     const [ordered, done, previews] = await Promise.all([
       this.orderedLessonIds(courseId),
       this.prisma.lessonProgress.findMany({

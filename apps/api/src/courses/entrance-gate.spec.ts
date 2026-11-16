@@ -3,6 +3,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { type AuthUser } from '../auth/auth-user';
 import { type PrismaService } from '../prisma/prisma.service';
 import { AccessService } from './access.service';
+import { fakeConfig } from '../test-utils';
 
 const learner: AuthUser = { userId: 'u1', sessionId: 's', role: 'LEARNER' };
 const instructor: AuthUser = { userId: 'i1', sessionId: 's', role: 'FACULTY' };
@@ -33,7 +34,7 @@ function setup({ passed = false, entrance = true }: { passed?: boolean; entrance
     },
     entranceAttempt: { count: jest.fn().mockResolvedValue(passed ? 1 : 0) },
   };
-  return new AccessService(prisma as unknown as PrismaService, new CoursePermissions(prisma as unknown as PrismaService));
+  return new AccessService(prisma as unknown as PrismaService, new CoursePermissions(prisma as unknown as PrismaService), fakeConfig());
 }
 
 describe('entrance test gate', () => {

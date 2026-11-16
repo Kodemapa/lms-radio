@@ -18,8 +18,15 @@ export type JourneyVisual =
   | {
       type: 'report';
       title: string;
-      badge: string;
-      rows: { label: string; status: string; value: number; tone: 'strong' | 'mid' | 'weak' }[];
+      course: string;
+      progress: { label: string; percent: number; detail: string };
+      where: { label: string; lesson: string; next?: boolean }[];
+      stats: { label: string; value: string; detail: string }[];
+      topics: {
+        title: string;
+        columns: { topic: string; score: string; level: string };
+        rows: { label: string; score: number; detail: string; level: string; tone: 'strong' | 'mid' | 'weak' }[];
+      };
       note: string;
     };
 
@@ -47,6 +54,57 @@ export function LearningJourney({ steps }: { steps: JourneyStep[] }) {
     );
     refs.current.forEach((el) => el && io.observe(el));
     return () => io.disconnect();
+  }, []);
+
+  // Small screens: each step slides up as it enters, and its card and the
+  // media inside drift at different speeds (parallax). Progress is written to
+  // CSS variables; the motion itself lives in home.css.
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1023px) and (prefers-reduced-motion: no-preference)');
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+      const vh = window.innerHeight;
+      for (const el of refs.current) {
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        if (rect.bottom < -vh || rect.top > vh * 2) continue;
+        const enter = Math.min(Math.max((vh - rect.top) / (vh * 0.4), 0), 1);
+        const offset = Math.min(Math.max((rect.top + rect.height / 2 - vh / 2) / vh, -1), 1);
+        el.style.setProperty('--enter', enter.toFixed(3));
+        el.style.setProperty('--p', offset.toFixed(3));
+      }
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    const clear = () => {
+      for (const el of refs.current) {
+        el?.style.removeProperty('--enter');
+        el?.style.removeProperty('--p');
+      }
+    };
+    const attach = () => {
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      if (media.matches) {
+        window.addEventListener('scroll', schedule, { passive: true });
+        window.addEventListener('resize', schedule);
+        update();
+      } else {
+        clear();
+      }
+    };
+
+    attach();
+    media.addEventListener('change', attach);
+    return () => {
+      media.removeEventListener('change', attach);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      cancelAnimationFrame(frame);
+    };
   }, []);
 
   return (
@@ -150,23 +208,65 @@ function Visual({ visual }: { visual: JourneyVisual }) {
   }
 
   return (
-    <div className="lp-week" role="img" aria-label={visual.note}>
-      <div className="lp-week-head">
-        <p>{visual.title}</p>
-        <span>{visual.badge}</span>
-      </div>
-      <div className="lp-week-arc" />
-      <ul>
-        {visual.rows.map((row) => (
-          <li key={row.label}>
-            <span>{row.label}</span>
-            <span className="lp-week-bar">
-              <span style={{ width: `${row.value}%` }} />
+    <div className="lp-week" role="img" aria-label={`${visual.title}. ${visual.note}`}>
+      <div className="lp-report">
+        <div className="lp-report-head">
+          <p>{visual.title}</p>
+          <span>{visual.course}</span>
+        </div>
+
+        <div className="lp-report-overview">
+          <div className="lp-report-progress">
+            <span className="lp-report-label">{visual.progress.label}</span>
+            <span className="lp-report-meter">
+              <span className="lp-week-bar">
+                <span style={{ width: `${visual.progress.percent}%` }} />
+              </span>
+              <strong>{visual.progress.percent}%</strong>
             </span>
-            <em data-tone={row.tone}>{row.status}</em>
-          </li>
-        ))}
-      </ul>
+            <span className="lp-report-detail">{visual.progress.detail}</span>
+          </div>
+          {visual.where.map((w) => (
+            <div key={w.label} className="lp-report-where" data-next={w.next ?? false}>
+              <span className="lp-report-label">{w.label}</span>
+              <span>{w.lesson}</span>
+            </div>
+          ))}
+        </div>
+
+        <ul className="lp-report-stats">
+          {visual.stats.map((s) => (
+            <li key={s.label}>
+              <span className="lp-report-label">{s.label}</span>
+              <strong>{s.value}</strong>
+              <span className="lp-report-detail">{s.detail}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="lp-report-topics">
+          <p className="lp-report-subhead">{visual.topics.title}</p>
+          <div className="lp-report-row lp-report-cols">
+            <span>{visual.topics.columns.topic}</span>
+            <span>{visual.topics.columns.score}</span>
+            <span>{visual.topics.columns.level}</span>
+          </div>
+          {visual.topics.rows.map((row) => (
+            <div key={row.label} className="lp-report-row">
+              <span>{row.label}</span>
+              <span className="lp-report-score">
+                <span className="lp-week-bar" data-tone={row.tone}>
+                  <span style={{ width: `${row.score}%` }} />
+                </span>
+                <span>
+                  <strong>{row.score}%</strong> · {row.detail}
+                </span>
+              </span>
+              <em data-tone={row.tone}>{row.level}</em>
+            </div>
+          ))}
+        </div>
+      </div>
       <p className="lp-week-note">{visual.note}</p>
     </div>
   );

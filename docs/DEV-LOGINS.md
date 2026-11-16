@@ -47,6 +47,7 @@ Each account allows **2 devices** (browsers). Shared accounts fill up fast, so i
 | Email + password login | `/login` (API `POST /auth/dev-login`; web `POST /api/auth/dev-login`) |
 | Fixed OTP code `123456` | `DEV_FIXED_OTP` in `apps/api/.env`; the hint on the login page comes from `DEV_FIXED_OTP_HINT` in `apps/web/.env.local` |
 | Skip the entrance test | "Skip entrance test" button (development only) on the course's entrance page |
+| Open any lesson without finishing earlier ones | `DEV_UNLOCK_LESSONS=true` in `apps/api/.env` (on by default locally; restart the API after changing). Set it to `false` to test sequential locks. In-video questions still have to be answered to seek past them |
 | DRM test mode (ClearKey) | `DRM_PROVIDER=clearkey` in `apps/api/.env`. Encrypts videos but does **not** block screen capture |
 
 All of these return 404 or are refused at start-up when `NODE_ENV=production`.

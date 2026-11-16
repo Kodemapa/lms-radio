@@ -35,6 +35,11 @@ export const EnvSchema = z
       .optional()
       .or(z.literal('').transform(() => undefined)),
     MAX_DEVICES_PER_USER: z.coerce.number().int().min(1).max(10).default(2),
+    /**
+     * Development only: turn off sequential lesson locks so any lesson can be
+     * opened without finishing the ones before it. Refused in production.
+     */
+    DEV_UNLOCK_LESSONS: bool.default('false'),
 
     MEDIA_SIGNING_SECRET: secret,
     MEDIA_URL_TTL_SECONDS: z.coerce
@@ -80,6 +85,13 @@ export const EnvSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['DEV_FIXED_OTP'],
+        message: 'must not be set in production',
+      });
+    }
+    if (env.NODE_ENV === 'production' && env.DEV_UNLOCK_LESSONS) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['DEV_UNLOCK_LESSONS'],
         message: 'must not be set in production',
       });
     }

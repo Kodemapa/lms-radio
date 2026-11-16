@@ -245,11 +245,10 @@
         "footer": "Reference overlay unlocked"
       },
       "progress": {
-        "title": "Your progress report",
-        "badge": "Revise Doppler",
-        "strong": "Strong",
-        "mid": "Getting there",
-        "weak": "Needs work"
+        "course": "Certificate Course in Fetal Medicine",
+        "lastLesson": "Uterine artery Doppler",
+        "nextLesson": "Umbilical artery and MCA Doppler",
+        "watchValue": "9 h 40 min"
       }
     },
     "trust": {

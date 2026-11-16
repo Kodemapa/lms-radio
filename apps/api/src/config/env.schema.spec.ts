@@ -24,6 +24,14 @@ describe('validateEnv', () => {
     ).toThrow(/DEV_FIXED_OTP: must not be set in production/);
   });
 
+  it('defaults DEV_UNLOCK_LESSONS to off and refuses it in production', () => {
+    expect(validateEnv({ ...base }).DEV_UNLOCK_LESSONS).toBe(false);
+    expect(validateEnv({ ...base, DEV_UNLOCK_LESSONS: 'true' }).DEV_UNLOCK_LESSONS).toBe(true);
+    expect(() =>
+      validateEnv({ ...base, NODE_ENV: 'production', STORAGE_DRIVER: 's3', S3_BUCKET: 'b', DEV_UNLOCK_LESSONS: 'true' }),
+    ).toThrow(/DEV_UNLOCK_LESSONS: must not be set in production/);
+  });
+
   it('rejects codes that are not 6 digits', () => {
     expect(() => validateEnv({ ...base, DEV_FIXED_OTP: '1234' })).toThrow(/DEV_FIXED_OTP/);
   });
