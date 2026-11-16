@@ -5,7 +5,8 @@ import { Button, Select } from '@obgyn/ui';
 import { CheckCircle2, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { topicsOf, useBank } from './bank-tab';
+import { useBank } from './bank-tab';
+import { useTopics } from './topics';
 
 /**
  * Pick questions from the course bank. Quizzes take several at once; a video
@@ -29,6 +30,7 @@ export function BankPicker({
   const t = useTranslations('Instructor.editor');
   const tCommon = useTranslations('Common');
   const { bank } = useBank(courseId);
+  const { topics } = useTopics(courseId);
   const [topic, setTopic] = useState('');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
@@ -38,7 +40,7 @@ export function BankPicker({
     () =>
       (bank ?? []).filter(
         (q: BankQuestion) =>
-          (!topic || q.topic === topic) && (!query || q.text.toLowerCase().includes(query.toLowerCase())),
+          (!topic || q.topicId === topic) && (!query || q.text.toLowerCase().includes(query.toLowerCase())),
       ),
     [bank, topic, query],
   );
@@ -62,7 +64,7 @@ export function BankPicker({
         <div className="w-48">
           <Select value={topic} onChange={(e) => setTopic(e.target.value)} aria-label={t('bank.topic')}>
             <option value="">{t('bank.allTopics')}</option>
-            {topicsOf(bank).map((name) => <option key={name} value={name}>{name}</option>)}
+            {(topics ?? []).map((x) => <option key={x.id} value={x.id}>{x.name} ({x.bankCount})</option>)}
           </Select>
         </div>
       </div>

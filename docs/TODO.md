@@ -30,6 +30,9 @@ In dev, a lesson page took **8.4 s** to compile on first load. The web dev serve
 - [ ] **PERF-1 Lazy-load imaging UI** · P0 · S
   - Load `ImagingLesson` (`components/player/lesson-view.tsx`) and `ImagingCaseDialog` (`components/instructor/editor/curriculum-tab.tsx`) with `next/dynamic({ ssr: false })` and a skeleton.
   - **Accept:** the lesson page and course editor first-load JS are back to ~200 kB. The DICOM case still works (the e2e flow below passes).
+  - **16 Nov 2026:** done in code. First-load JS: course editor 452 → 242 kB, lesson page 425 → ~206 kB. The instructor case dialog was smoke-tested (it opens and renders the viewer). Still to do before ticking: run the full DICOM e2e flow.
+  - Also added `instructor/loading.tsx` and a pending spinner on sidebar links. Before this, a click during a cold dev compile showed no feedback, and editor tab clicks made before hydration were dropped.
+  - Not yet: `loading.tsx` for the learner area (`/learn`, `/account`) — same cold-compile symptom there.
 - [ ] **PERF-2 Keep dcmjs out of the viewer and workspace** · P0 · M
   - Split `@obgyn/dicom` into entry points: `@obgyn/dicom/geometry` (pure maths, no dcmjs) and `@obgyn/dicom/sr` (dcmjs).
   - The viewer and workspace import only geometry. Load `buildMeasurementReport` with `await import()` at submit time; consider a Web Worker.
@@ -45,6 +48,7 @@ In dev, a lesson page took **8.4 s** to compile on first load. The web dev serve
     - serve codecs from `public/` with `setWasmBasePath`;
     - or upgrade when Next/Turbopack supports `new Worker(new URL(…))` for these packages.
   - **Accept:** `next dev --turbopack` loads the DICOM lesson without hanging; dev first compile < 3 s.
+  - **Seen 16 Nov:** the webpack dev server restarts itself with "approaching the used memory threshold" after many routes are compiled; another reason to move off webpack in dev.
 - [ ] **PERF-5 Bundle analysis in CI** · P1 · S
   - Add `@next/bundle-analyzer` behind `ANALYZE=1`.
   - Add a CI step that fails if any route's first-load JS grows > 10% over the committed baseline (`docs/perf-baseline.json`).
@@ -168,6 +172,17 @@ Still open from the old instructor area:
 - [x] **INS-4 Curriculum trash / restore** · S (done: soft delete, Trash tab, restore, permanent delete, 30-day purge) — Soft-delete chapters and lessons; restore within 30 days.
 - [x] **INS-5 Reviews management** · S (done: /instructor/reviews, public replies, report to admin; admin hide UI is ADM work) — Instructor replies to reviews; reports abusive reviews to admin.
 - [x] **INS-6 Co-instructors (team members)** · M (done: Team tab, editor/grader roles, invitations on dashboard) — Invite by email, roles (editor, grader); grading access to submissions.
+- [x] **INS-7 Question topics + bank redesign** · M (done 2026-11-16) — `QuestionTopic` records (create, rename, describe, reorder, delete); topic side panel; add single question; bulk move / delete; import picks a default topic; quiz and in-video questions take a topic. Migration carried the old free-text topics over.
+- [x] **INS-8 Student progress report** · M (done 2026-11-16) — Students tab shows the current lesson and links to a per-student report: where they are, views, video watch time, in-video tries, quiz/DICOM attempt history, strengths per topic. Learners see the same report from My learning.
+- [x] **INS-9 DICOM calculators + learners' working** · M (done 2026-11-16) — Calculator links per lesson (open beside the case, sandboxed), "Calculate with" on report fields, working (explanation + photos/PDFs) Off/Optional/Required, faculty verify/return with feedback in Reports.
+- [ ] **INS-10 Tag existing in-video questions with topics** · P1 · S — Content task: the seeded videos' in-video questions have no topic, so reports show them under "Questions without a topic". Set topics in each video's question editor (or a one-off script outside the repo).
+- [ ] **INS-11 Calculator links on every lesson type** · P1 · S — Resources are stored on `Lesson` and shown for any kind, but only the DICOM case editor can edit them. Add `ResourceLinksEditor` to the lesson dialog in `curriculum-tab.tsx` (validate with `ResourceLinksSchema` in the lesson DTO).
+- [ ] **INS-12 Working review queue** · P1 · S — Pending DICOM working appears only per case in Reports. Add it to `/instructor/submissions` (Assignments) with a count on the dashboard; notify the learner on verify/return (NOT-*).
+- [ ] **INS-13 Weak-topic recommendations** · P2 · M — In the report, list lessons whose questions carry each "Needs work" topic ("Revise: class 7, Module 2 MCQ").
+- [ ] **INS-14 Report export** · P2 · S — Print-friendly / PDF progress report for sharing with the learner; course-wide topic heatmap (students × topics).
+- [ ] **INS-15 Per-course mastery thresholds** · P2 · S — `MASTERY` (80 / 60 / min 3 answers) is global; make it a course setting if faculty ask.
+- [ ] **INS-16 Imaging working in the progress report** · P2 · S — Show each DICOM attempt's working status in the lesson-by-lesson report.
+- [ ] **CALC-1 Built-in calculators** · P2 · L · **DECISION** — Our own EFW / centile / GA calculators as versioned, faculty-reviewed content records (CLAUDE.md rule 5), so results can be checked automatically against the learner's inputs. Needs the formulas and reference tables chosen and signed off by faculty.
 
 ## P1 — Commerce (Phase 3)
 

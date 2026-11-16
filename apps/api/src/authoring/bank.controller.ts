@@ -16,6 +16,7 @@ import {
   type CertificateTemplate,
   type EntranceSettings,
   type InstructorQuestion,
+  type QuestionTopic,
 } from '@obgyn/types';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsInt, IsOptional, IsUUID, Max, Min, ValidateIf } from 'class-validator';
 import { type AuthUser } from '../auth/auth-user';
@@ -64,6 +65,44 @@ export class BankController {
   @Post('courses/:id/bank/import')
   import(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string, @Body() body: unknown): Promise<BankQuestion[]> {
     return this.bank.import(user, id, body);
+  }
+
+  /** One question: { topicId, text, explanation, options } */
+  @Post('courses/:id/bank')
+  create(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string, @Body() body: unknown): Promise<BankQuestion[]> {
+    return this.bank.create(user, id, body);
+  }
+
+  /** { action: 'move', ids, topicId } or { action: 'delete', ids } */
+  @Post('courses/:id/bank/bulk')
+  bulk(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string, @Body() body: unknown): Promise<BankQuestion[]> {
+    return this.bank.bulk(user, id, body);
+  }
+
+  @Get('courses/:id/topics')
+  topics(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string): Promise<QuestionTopic[]> {
+    return this.bank.topics(user, id);
+  }
+
+  @Post('courses/:id/topics')
+  createTopic(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string, @Body() body: unknown): Promise<QuestionTopic[]> {
+    return this.bank.createTopic(user, id, body);
+  }
+
+  /** { ids: [...] } in the new order (every topic of the course). */
+  @Put('courses/:id/topics/order')
+  reorderTopics(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string, @Body() body: unknown): Promise<QuestionTopic[]> {
+    return this.bank.reorderTopics(user, id, body);
+  }
+
+  @Patch('topics/:id')
+  updateTopic(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string, @Body() body: unknown): Promise<QuestionTopic[]> {
+    return this.bank.updateTopic(user, id, body);
+  }
+
+  @Delete('topics/:id')
+  deleteTopic(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string): Promise<QuestionTopic[]> {
+    return this.bank.deleteTopic(user, id);
   }
 
   @Patch('bank/:id')

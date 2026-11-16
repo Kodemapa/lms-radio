@@ -9,7 +9,7 @@ import { countByDay, istDay, summariseAttempts, toStudentsCsv } from './insights
 
 const student = (over: Partial<CourseStudent> = {}): CourseStudent => ({
   userId: 'u1', displayName: 'Asha Rao', email: 'as***@x.in', enrolledAt: '2026-11-01T10:00:00.000Z', completedLessons: 3,
-  totalLessons: 10, progressPercent: 30, lastActivityAt: null, entrancePassed: true, certificateSerial: null, ...over,
+  totalLessons: 10, progressPercent: 30, lastActivityAt: null, currentLesson: { id: 'l1', title: 'Dating scan' }, entrancePassed: true, certificateSerial: null, ...over,
 });
 
 describe('students CSV', () => {
@@ -17,7 +17,8 @@ describe('students CSV', () => {
     const csv = toStudentsCsv([student({ displayName: '=HYPERLINK("x")' }), student({ displayName: 'रवि "R" कुमार' })]);
     expect(csv.charCodeAt(0)).toBe(0xfeff);
     const lines = csv.slice(1).trim().split('\r\n');
-    expect(lines[0]).toBe('"Name","Email","Enrolled","Completed lessons","Total lessons","Progress %","Last activity","Entrance passed","Certificate"');
+    expect(lines[0]).toBe('"Name","Email","Enrolled","Completed lessons","Total lessons","Progress %","Last activity","Current lesson","Entrance passed","Certificate"');
+    expect(lines[1]).toContain('"Dating scan"');
     expect(lines[1]).toContain(`"'=HYPERLINK(""x"")"`);
     expect(lines[2]).toContain('"रवि ""R"" कुमार"');
     expect(lines[1]).toContain('"yes"');
@@ -49,7 +50,7 @@ describe('analytics helpers', () => {
       new Map([['u1', 'Asha']]),
     );
     expect(rows).toEqual([
-      { userId: 'u1', displayName: 'Asha', attempts: 3, bestScore: 90, lastScore: 70, passed: true, lastAttemptAt: t(3).toISOString(), lastAttemptId: 'a3' },
+      { userId: 'u1', displayName: 'Asha', attempts: 3, bestScore: 90, lastScore: 70, passed: true, lastAttemptAt: t(3).toISOString(), lastAttemptId: 'a3', workingStatus: null },
     ]);
   });
 });

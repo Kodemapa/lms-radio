@@ -2,10 +2,11 @@
 
 import { CourseStudentsSchema, type CourseStudents } from '@obgyn/types';
 import { Button, Input, Select } from '@obgyn/ui';
-import { Download } from 'lucide-react';
+import { BarChart3, Download } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Meter } from '@/components/charts/day-bars';
+import { Link } from '@/i18n/navigation';
 import { bffFetch } from '@/lib/client-fetch';
 import { api } from '@/lib/instructor-api';
 
@@ -88,15 +89,19 @@ export function StudentsTab({ courseId }: { courseId: string }) {
                     <th scope="col" className="px-3 py-2">{t('enrolled')}</th>
                     <th scope="col" className="px-3 py-2">{t('progress')}</th>
                     <th scope="col" className="px-3 py-2">{t('lastActivity')}</th>
+                    <th scope="col" className="px-3 py-2">{t('currentLesson')}</th>
                     <th scope="col" className="px-3 py-2">{t('entrance')}</th>
                     <th scope="col" className="px-3 py-2">{t('certificate')}</th>
+                    <th scope="col" className="px-3 py-2"><span className="sr-only">{t('viewReport')}</span></th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.items.map((s) => (
                     <tr key={s.userId} className="border-t border-border">
                       <td className="px-3 py-2">
-                        <span className="block font-medium">{s.displayName}</span>
+                        <Link href={`/instructor/courses/${courseId}/students/${s.userId}`} className="block font-medium text-primary hover:underline">
+                          {s.displayName}
+                        </Link>
                         <span className="text-xs text-muted-foreground">{s.email ?? ''}</span>
                       </td>
                       <td className="px-3 py-2">{date(s.enrolledAt)}</td>
@@ -105,8 +110,15 @@ export function StudentsTab({ courseId }: { courseId: string }) {
                         <span className="text-xs text-muted-foreground">{t('lessonsDone', { done: s.completedLessons, total: s.totalLessons })}</span>
                       </td>
                       <td className="px-3 py-2">{date(s.lastActivityAt)}</td>
+                      <td className="max-w-56 px-3 py-2"><span className="line-clamp-2">{s.currentLesson?.title ?? '—'}</span></td>
                       <td className="px-3 py-2">{s.entrancePassed === null ? '—' : s.entrancePassed ? t('passed') : t('notYet')}</td>
                       <td className="px-3 py-2 font-mono text-xs">{s.certificateSerial ?? '—'}</td>
+                      <td className="px-3 py-2">
+                        <Link href={`/instructor/courses/${courseId}/students/${s.userId}`} className="flex items-center gap-1 whitespace-nowrap text-sm font-medium text-primary hover:underline">
+                          <BarChart3 aria-hidden className="size-4" />
+                          {t('viewReport')}
+                        </Link>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { CertificateTemplateSchema } from './assessment.js';
 import { CourseSummarySchema, LessonKindSchema } from './course.js';
 import { ImagingCasePublicSchema } from './imaging.js';
+import { ResourceLinkSchema } from './resources.js';
 
 // ---- Player -----------------------------------------------------------------
 
@@ -150,6 +151,8 @@ export const PlayerLessonDetailSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
   description: z.string().nullable(),
+  /** Links to use alongside the lesson, e.g. calculators. */
+  resources: z.array(ResourceLinkSchema).default([]),
   kind: LessonKindSchema,
   durationSec: z.number().int().nullable(),
   isPreview: z.boolean(),
@@ -245,6 +248,8 @@ export const QuestionInputSchema = z
   .object({
     /** In-video questions only: when it appears (seconds). */
     atSec: z.number().int().min(0).max(24 * 3600).nullable().optional(),
+    /** Topic for strengths / weaknesses reports. */
+    topicId: z.string().uuid().nullable().optional(),
     text: z.string().trim().min(1).max(1000),
     explanation: z.string().trim().max(2000).nullable(),
     allowMultiple: z.boolean(),
@@ -267,6 +272,7 @@ export const InstructorQuestionSchema = z.object({
   position: z.number().int(),
   atSec: z.number().int().nullable(),
   bankQuestionId: z.string().uuid().nullable(),
+  topicId: z.string().uuid().nullable(),
   text: z.string(),
   explanation: z.string().nullable(),
   allowMultiple: z.boolean(),

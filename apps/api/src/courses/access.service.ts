@@ -152,7 +152,7 @@ export class AccessService {
     if (owned > 0) return;
     const courseSelect = { select: { id: true, status: true, instructorId: true } } as const;
     const lessonCourse = { select: { id: true, status: true, instructorId: true, entranceTestEnabled: true } } as const;
-    const [lessons, previews, submissions, caseImages, imagingAttempts, references] = await Promise.all([
+    const [lessons, previews, submissions, caseImages, imagingAttempts, workingFiles, references] = await Promise.all([
       this.prisma.lesson.findMany({
         where: { mediaAssetId: assetId, ...LIVE_LESSON },
         select: { isPreview: true, course: lessonCourse },
@@ -175,6 +175,11 @@ export class AccessService {
         where: { srAssetId: assetId },
         select: { userId: true, lesson: { select: { course: courseSelect } } },
       }),
+      // Photos / PDFs of a learner's working on a DICOM case: theirs, or their course staff's to check.
+      this.prisma.imagingAttempt.findMany({
+        where: { workingAssetIds: { has: assetId } },
+        select: { userId: true, lesson: { select: { course: courseSelect } } },
+      }),
       // Reference SRs are the answer key: course staff only.
       this.prisma.imagingCase.findMany({
         where: { referenceSrAssetId: assetId },
@@ -182,13 +187,13 @@ export class AccessService {
       }),
     ]);
     if (
-      lessons.length + previews.length + submissions.length + caseImages.length + imagingAttempts.length + references.length ===
+      lessons.length + previews.length + submissions.length + caseImages.length + imagingAttempts.length + workingFiles.length + references.length ===
       0
     ) {
       throw new NotFoundException();
     }
 
-    for (const attempt of imagingAttempts) {
+    for (const attempt of [...imagingAttempts, ...workingFiles]) {
       if (attempt.userId === user.userId || await this.isManager(user, attempt.lesson.course)) return;
     }
     for (const reference of references) {

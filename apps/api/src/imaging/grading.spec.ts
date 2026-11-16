@@ -1,5 +1,5 @@
 import { ellipseCoords, measureMm, regionPolygon, type ParsedAnnotation } from '@obgyn/dicom';
-import { type AnnotationTerm, type AnnotationTool, type Calibration, type Point } from '@obgyn/types';
+import { DEFAULT_WORKING, type AnnotationTerm, type AnnotationTool, type Calibration, type Point } from '@obgyn/types';
 import { gradeImaging, readKey, type CaseKey, type GradingImage, type KeyAnnotation } from './grading';
 
 const ASSET = '6f1c2a3b-0000-4000-8000-000000000001';
@@ -31,7 +31,8 @@ const key: CaseKey = {
     { id: 'ddx', label: 'Differentials', multiple: true, maxWrong: 1, marks: 1, teachingPoint: null, correctOptionIds: ['a', 'b'],
       options: ['a', 'b', 'c', 'd'].map((id) => ({ id, label: id.toUpperCase(), assetId: null, credit: 0 })) },
   ],
-  reportFields: [{ id: 'ga', label: 'GA', unit: 'd', value: 140, tolerance: 3, marks: 1, teachingPoint: null }],
+  reportFields: [{ id: 'ga', label: 'GA', unit: 'd', value: 140, tolerance: 3, marks: 1, teachingPoint: null, resourceId: null }],
+  working: DEFAULT_WORKING,
 };
 
 const code = (label: string) => {
@@ -81,7 +82,7 @@ describe('gradeImaging', () => {
 
   it('pin radius as % of image width works without calibration', () => {
     const uncalibrated = new Map<string, GradingImage>([[ASSET, { sopInstanceUID: SOP, calibration: null, columns: 800 }]]);
-    const pinKey: CaseKey = { annotations: [keyItem({ id: 'p', label: 'CSP', tool: 'POINT', coords: [[200, 200]], radiusPercent: 5 })], findings: [], reportFields: [] };
+    const pinKey: CaseKey = { annotations: [keyItem({ id: 'p', label: 'CSP', tool: 'POINT', coords: [[200, 200]], radiusPercent: 5 })], findings: [], reportFields: [], working: DEFAULT_WORKING };
     const near = gradeImaging(pinKey, uncalibrated, report([ann('CSP', 'POINT', [[230, 200]])], [], []), 70, dictionary); // 30 px = 3.75%
     expect(near.items[0]!.passed).toBe(true);
     const far = gradeImaging(pinKey, uncalibrated, report([ann('CSP', 'POINT', [[250, 200]])], [], []), 70, dictionary); // 6.25%

@@ -65,7 +65,8 @@ Legend: ✅ done · 🟡 partial · ❌ missing · 🔨 this iteration.
 |---|---|---|
 | 3 | In-video checkpoints | 🟡 Text questions exist in videos; image questions in videos later |
 | 14 | Discussion threads on images | ❌ (Phase 4 course Q&A) |
-| 1, 2, 4–13 | Live annotate-along, Plane of the Day, spot-the-difference, case of the week, gallery, peer review, skills dashboard, report builder, calculators, mock practical, role-play, AI pre-check | ❌ Later phases, all built on the same viewer and grader |
+| — | Calculators | 🟡 External calculators (FMF, perinatology.com) open beside the case and their results are typed into report fields (value ± tolerance); learners attach their working for faculty to verify. Our own reviewed calculators: later (TODO CALC-1) |
+| 1, 2, 4–13 | Live annotate-along, Plane of the Day, spot-the-difference, case of the week, gallery, peer review, skills dashboard, report builder, mock practical, role-play, AI pre-check | ❌ Later phases, all built on the same viewer and grader |
 
 ## Done on 2026-11-16 (verified in Chrome with the synthetic M2-A2 head image)
 

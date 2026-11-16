@@ -6,7 +6,8 @@ import { AlertTriangle, Info } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { ApiClientError, api } from '@/lib/instructor-api';
-import { topicsOf, useBank } from './bank-tab';
+import { useBank } from './bank-tab';
+import { useTopics } from './topics';
 
 type Loaded = EntranceSettings & { poolSize: number };
 
@@ -14,6 +15,7 @@ export function EntranceTab({ courseId, locked }: { courseId: string; locked: bo
   const t = useTranslations('Instructor.editor.entrance');
   const tCommon = useTranslations('Common');
   const { bank } = useBank(courseId);
+  const { topics } = useTopics(courseId);
   const [settings, setSettings] = useState<EntranceSettings | null>(null);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -25,8 +27,8 @@ export function EntranceTab({ courseId, locked }: { courseId: string; locked: bo
       .catch(() => setError(tCommon('genericError')));
   }, [courseId, tCommon]);
 
-  if (!settings || !bank) return <p role="status">{error ?? tCommon('loading')}</p>;
-  const pool = bank.filter((q) => !settings.topic || q.topic === settings.topic).length;
+  if (!settings || !bank || !topics) return <p role="status">{error ?? tCommon('loading')}</p>;
+  const pool = bank.filter((q) => !settings.topicId || q.topicId === settings.topicId).length;
   const set = (patch: Partial<EntranceSettings>) => {
     setSettings({ ...settings, ...patch });
     setStatus('idle');
@@ -73,9 +75,9 @@ export function EntranceTab({ courseId, locked }: { courseId: string; locked: bo
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="entrance-topic">{t('topic')}</Label>
-          <Select id="entrance-topic" value={settings.topic ?? ''} onChange={(e) => set({ topic: e.target.value || null })}>
+          <Select id="entrance-topic" value={settings.topicId ?? ''} onChange={(e) => set({ topicId: e.target.value || null })}>
             <option value="">{t('wholeBank')}</option>
-            {topicsOf(bank).map((topic) => <option key={topic} value={topic}>{topic}</option>)}
+            {topics.map((topic) => <option key={topic.id} value={topic.id}>{topic.name} ({topic.bankCount})</option>)}
           </Select>
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Info aria-hidden className="size-4" />

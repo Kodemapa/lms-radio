@@ -40,6 +40,7 @@ export class AssessmentsService {
       position: row.position,
       atSec: row.atSec,
       bankQuestionId: row.bankQuestionId,
+      topicId: row.topicId,
       text: row.text,
       explanation: row.explanation,
       allowMultiple: row.allowMultiple,
@@ -50,6 +51,7 @@ export class AssessmentsService {
   async addQuestion(user: AuthUser, lessonId: string, dto: QuestionDto): Promise<InstructorQuestion[]> {
     const lesson = await this.ownedQuizLesson(user, lessonId, { editable: true });
     const input = this.validate(dto, lesson.kind);
+    await this.assertTopic(lesson.courseId, input.topicId);
     const last = await this.prisma.quizQuestion.findFirst({
       where: { lessonId },
       orderBy: { position: 'desc' },
@@ -60,6 +62,7 @@ export class AssessmentsService {
         lessonId,
         position: (last?.position ?? 0) + 1,
         atSec: input.atSec ?? null,
+        topicId: input.topicId ?? null,
         text: input.text,
         explanation: input.explanation,
         allowMultiple: input.allowMultiple,
@@ -73,12 +76,14 @@ export class AssessmentsService {
     const question = await this.ownedQuestion(user, questionId);
     const lesson = await this.prisma.lesson.findUniqueOrThrow({ where: { id: question.lessonId } });
     const input = this.validate(dto, lesson.kind);
+    await this.assertTopic(lesson.courseId, input.topicId);
     await this.prisma.$transaction([
       this.prisma.quizOption.deleteMany({ where: { questionId } }),
       this.prisma.quizQuestion.update({
         where: { id: questionId },
         data: {
           atSec: input.atSec ?? null,
+          ...(input.topicId !== undefined ? { topicId: input.topicId } : {}),
           text: input.text,
           explanation: input.explanation,
           allowMultiple: input.allowMultiple,
@@ -176,6 +181,12 @@ export class AssessmentsService {
   // ---- Helpers ------------------------------------------------------------------
 
   /** Video questions need a time; quiz questions never have one. */
+  private async assertTopic(courseId: string, topicId: string | null | undefined) {
+    if (topicId && !(await this.prisma.questionTopic.count({ where: { id: topicId, courseId } }))) {
+      throw new BadRequestException('Unknown topic');
+    }
+  }
+
   private validate(dto: QuestionDto, kind: string) {
     const parsed = QuestionInputSchema.safeParse(dto);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues.map((i) => i.message));

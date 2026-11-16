@@ -9,6 +9,7 @@ import {
   DialogTitle,
   Input,
   Label,
+  Select,
   Switch,
   Textarea,
 } from '@obgyn/ui';
@@ -19,10 +20,12 @@ import { z } from 'zod';
 import { api } from '@/lib/instructor-api';
 import { ProtectedPlayer, type PlayerApi } from '../../protected-player';
 import { BankPicker } from './bank-picker';
+import { useTopics } from './topics';
 
-type Draft = { at: string; text: string; explanation: string; allowMultiple: boolean; options: { text: string; isCorrect: boolean }[] };
+type Draft = { at: string; topicId: string; text: string; explanation: string; allowMultiple: boolean; options: { text: string; isCorrect: boolean }[] };
 const EMPTY: Draft = {
   at: '',
+  topicId: '',
   text: '',
   explanation: '',
   allowMultiple: false,
@@ -68,6 +71,7 @@ export function QuestionsDialog({
   const t = useTranslations('Instructor.editor');
   const tCommon = useTranslations('Common');
   const [questions, setQuestions] = useState<InstructorQuestion[] | null>(null);
+  const { topics } = useTopics(courseId);
   const [editing, setEditing] = useState<{ id: string | null; draft: Draft } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -82,6 +86,7 @@ export function QuestionsDialog({
       id: question.id,
       draft: {
         at: question.atSec !== null ? clock(question.atSec) : '',
+        topicId: question.topicId ?? '',
         text: question.text,
         explanation: question.explanation ?? '',
         allowMultiple: question.allowMultiple,
@@ -109,6 +114,7 @@ export function QuestionsDialog({
     if (video && atSec === null) return setError(t('atTimeInvalid'));
     const input = {
       atSec,
+      topicId: editing.draft.topicId || null,
       text: editing.draft.text,
       explanation: editing.draft.explanation.trim() || null,
       allowMultiple: editing.draft.allowMultiple,
@@ -227,6 +233,15 @@ export function QuestionsDialog({
               </div>
             ) : null}
             <div className="flex flex-col gap-2">
+              <Label htmlFor="q-topic">{t('bank.topic')}</Label>
+              <Select id="q-topic" value={editing.draft.topicId} aria-describedby="q-topic-hint"
+                onChange={(e) => setEditing({ ...editing, draft: { ...editing.draft, topicId: e.target.value } })}>
+                <option value="">{t('bank.noTopic')}</option>
+                {(topics ?? []).map((topic) => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
+              </Select>
+              <p id="q-topic-hint" className="text-xs text-muted-foreground">{t('topicHint')}</p>
+            </div>
+            <div className="flex flex-col gap-2">
               <Label htmlFor="q-text">{t('questionText')}</Label>
               <Textarea id="q-text" rows={3} maxLength={1000} autoFocus={!showPlayer} value={editing.draft.text}
                 onChange={(e) => setEditing({ ...editing, draft: { ...editing.draft, text: e.target.value } })} />
@@ -311,6 +326,11 @@ export function QuestionsDialog({
                           `${question.position}. `
                         )}
                         {question.text}
+                        {question.topicId ? (
+                          <span className="ms-2 rounded-full bg-primary-light px-2 py-0.5 text-xs font-normal text-primary">
+                            {topics?.find((topic) => topic.id === question.topicId)?.name}
+                          </span>
+                        ) : null}
                       </p>
                       {!locked ? (
                         <>

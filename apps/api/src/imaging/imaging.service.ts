@@ -18,6 +18,9 @@ import {
   type ImagingResult,
   type ImagingResultItem,
   type InstructorImagingCase,
+  readResources,
+  WorkingReviewSchema,
+  type AttemptWorking,
 } from '@obgyn/types';
 import { type ImagingAttempt, type Lesson, type MediaAsset } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
@@ -161,12 +164,15 @@ export class ImagingService {
     await this.ownedLesson(user, lessonId);
     const [row, images] = await Promise.all([this.prisma.imagingCase.findUnique({ where: { lessonId } }), this.images(lessonId)]);
     const key = readKey(row?.key);
+    const lesson = await this.prisma.lesson.findUniqueOrThrow({ where: { id: lessonId }, select: { resources: true } });
     return {
       instructions: row?.instructions ?? '',
       images,
       annotations: key.annotations,
       findings: key.findings,
       reportFields: key.reportFields,
+      resources: readResources(lesson.resources),
+      working: key.working,
       referenceSrAssetId: row?.referenceSrAssetId ?? null,
     };
   }
@@ -211,11 +217,13 @@ export class ImagingService {
         ...input.annotations.flatMap((a) => [a.label, a.teachingPoint]),
         ...input.findings.flatMap((f) => [f.label, f.teachingPoint, ...f.options.map((o) => o.label)]),
         ...input.reportFields.flatMap((f) => [f.label, f.teachingPoint]),
+        ...input.resources.flatMap((r) => [r.title, r.note]),
+        input.working.prompt,
       ],
       'Case text',
     );
 
-    const key: CaseKey = { annotations, findings: input.findings, reportFields: input.reportFields };
+    const key: CaseKey = { annotations, findings: input.findings, reportFields: input.reportFields, working: input.working };
     const reference = buildMeasurementReport({
       images: input.images.map((i) => metaById.get(i.assetId)!),
       patient: dicomPseudonym(input.images[0]!.assetId),
@@ -244,6 +252,7 @@ export class ImagingService {
         create: { lessonId, instructions: input.instructions, key: key as object, referenceSrAssetId: referenceAsset.id },
         update: { instructions: input.instructions, key: key as object, referenceSrAssetId: referenceAsset.id },
       }),
+      this.prisma.lesson.update({ where: { id: lessonId }, data: { resources: input.resources as object[] } }),
       this.prisma.imagingImage.deleteMany({ where: { lessonId } }),
       this.prisma.imagingImage.createMany({
         data: input.images.map((image, index) => ({ lessonId, assetId: image.assetId, label: image.label, position: index + 1 })),
@@ -285,8 +294,9 @@ export class ImagingService {
         multiple: f.multiple,
         options: f.options.map((o) => ({ id: o.id, label: o.label, assetId: o.assetId })),
       })),
-      reportFields: key.reportFields.map((f) => ({ id: f.id, label: f.label, unit: f.unit })),
-      lastResult: attempt ? this.toResult(attempt, passPercent) : null,
+      reportFields: key.reportFields.map((f) => ({ id: f.id, label: f.label, unit: f.unit, resourceId: f.resourceId })),
+      working: key.working,
+      lastResult: attempt ? await this.toResult(attempt, passPercent) : null,
     };
   }
 
@@ -294,12 +304,20 @@ export class ImagingService {
     const { lesson, enrolled, manager } = await this.access.getAccessibleLesson(user, lessonId);
     if (lesson.kind !== 'IMAGING') throw new BadRequestException('Not an imaging case');
     if (!enrolled && !manager) throw new ForbiddenException({ code: 'NOT_ENROLLED' });
-    const { sr } = zodOrThrow(ImagingSubmitSchema, body);
+    const { sr, explanation, workingAssetIds } = zodOrThrow(ImagingSubmitSchema, body);
     const bytes = Buffer.from(sr, 'base64');
     if (bytes.byteLength > MAX_SR_BYTES) throw new BadRequestException({ code: 'SR_TOO_LARGE' });
 
     const row = await this.prisma.imagingCase.findUnique({ where: { lessonId } });
     if (!row) throw new ConflictException({ code: 'CASE_EMPTY' });
+    const { working: settings } = readKey(row.key);
+    const hasWorking = !!explanation || workingAssetIds.length > 0;
+    if (settings.mode === 'REQUIRED' && !hasWorking) {
+      throw new BadRequestException({ code: 'WORKING_REQUIRED', message: 'Explain how you got your values, or attach a photo of your working' });
+    }
+    if (settings.mode === 'OFF' && hasWorking) throw new BadRequestException({ code: 'WORKING_OFF' });
+    await this.assertWorkingFiles(user, workingAssetIds);
+    if (explanation) assertNoFetalSex([explanation], 'Your explanation');
     let report;
     try {
       report = parseMeasurementReport(bytes);
@@ -325,6 +343,9 @@ export class ImagingService {
         scorePercent: graded.scorePercent,
         passed: graded.passed,
         result: graded.items as object[],
+        explanation,
+        workingAssetIds,
+        workingStatus: hasWorking ? 'PENDING' : null,
       },
     });
     if (graded.passed) {
@@ -339,9 +360,57 @@ export class ImagingService {
       action: 'imaging.attempt_graded',
       resource: 'lesson',
       resourceId: lessonId,
-      metadata: { scorePercent: graded.scorePercent, passed: graded.passed },
+      metadata: { scorePercent: graded.scorePercent, passed: graded.passed, workingFiles: workingAssetIds.length },
     });
     return this.toResult(attempt, passPercent);
+  }
+
+  /** Course team: verify a learner's working, or return it with what to correct. */
+  async reviewWorking(user: AuthUser, attemptId: string, body: unknown): Promise<AttemptWorking> {
+    const attempt = await this.prisma.imagingAttempt.findUnique({
+      where: { id: attemptId },
+      select: { workingStatus: true, lesson: { select: { course: { select: { id: true, instructorId: true } } } } },
+    });
+    if (!attempt) throw new NotFoundException();
+    if (!(await this.permissions.can(user, attempt.lesson.course, 'grade'))) throw new ForbiddenException();
+    if (!attempt.workingStatus) throw new ConflictException({ code: 'NO_WORKING', message: 'This attempt has no working to check' });
+    const review = zodOrThrow(WorkingReviewSchema, body);
+    const updated = await this.prisma.imagingAttempt.update({
+      where: { id: attemptId },
+      data: { workingStatus: review.status, workingFeedback: review.feedback, workingReviewedById: user.userId, workingReviewedAt: new Date() },
+    });
+    await this.audit.log({ actorId: user.userId, action: 'imaging.working_reviewed', resource: 'imaging_attempt', resourceId: attemptId, metadata: { status: review.status } });
+    return (await this.working(updated))!;
+  }
+
+  /** The working on an attempt, with file names and the reviewer's name. */
+  async working(attempt: ImagingAttempt): Promise<AttemptWorking | null> {
+    if (!attempt.workingStatus) return null;
+    const [files, reviewer] = await Promise.all([
+      this.prisma.mediaAsset.findMany({ where: { id: { in: attempt.workingAssetIds } }, select: { id: true, originalName: true, kind: true } }),
+      attempt.workingReviewedById ? this.prisma.user.findUnique({ where: { id: attempt.workingReviewedById }, select: { displayName: true } }) : null,
+    ]);
+    return {
+      explanation: attempt.explanation,
+      // Keep the learner's order.
+      files: attempt.workingAssetIds.flatMap((id) => {
+        const f = files.find((x) => x.id === id);
+        return f && (f.kind === 'IMAGE' || f.kind === 'PDF') ? [{ assetId: f.id, name: f.originalName ?? 'file', kind: f.kind }] : [];
+      }),
+      status: attempt.workingStatus,
+      feedback: attempt.workingFeedback,
+      reviewedAt: attempt.workingReviewedAt?.toISOString() ?? null,
+      reviewedBy: reviewer?.displayName ?? null,
+    };
+  }
+
+  /** Working files must be the learner's own finished image / PDF uploads. */
+  private async assertWorkingFiles(user: AuthUser, ids: string[]) {
+    if (!ids.length) return;
+    const ok = await this.prisma.mediaAsset.count({
+      where: { id: { in: ids }, ownerId: user.userId, status: 'READY', kind: { in: ['IMAGE', 'PDF'] } },
+    });
+    if (ok !== new Set(ids).size) throw new BadRequestException({ code: 'BAD_WORKING_FILE', message: 'Attach your own uploaded photos or PDFs' });
   }
 
   // ---- Helpers -----------------------------------------------------------------------
@@ -372,8 +441,9 @@ export class ImagingService {
     });
   }
 
-  private toResult(attempt: ImagingAttempt, passPercent: number): ImagingResult {
+  private async toResult(attempt: ImagingAttempt, passPercent: number): Promise<ImagingResult> {
     return {
+      working: await this.working(attempt),
       attemptId: attempt.id,
       scorePercent: attempt.scorePercent,
       passed: attempt.passed,

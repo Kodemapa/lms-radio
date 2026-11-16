@@ -11,7 +11,7 @@ const LESSON = { id: 'l1', kind: 'VIDEO', courseId: 'c1' };
 const Q30 = { id: 'q30', atSec: 30, text: 'A?', explanation: 'because', allowMultiple: false, options: [{ id: 'a', text: 'a', isCorrect: true }, { id: 'b', text: 'b', isCorrect: false }] };
 const Q90 = { id: 'q90', atSec: 90, text: 'B?', explanation: null, allowMultiple: false, options: [{ id: 'c', text: 'c', isCorrect: true }, { id: 'd', text: 'd', isCorrect: false }] };
 
-function setup(passed: string[]) {
+function setup(passed: string[], previous: { positionSec: number; furthestSec: number; updatedAt: Date } | null = null) {
   const passedSet = new Set(passed);
   const prisma = {
     quizQuestion: {
@@ -25,7 +25,7 @@ function setup(passed: string[]) {
         return Promise.resolve({ attempts: 1 });
       }),
     },
-    lessonProgress: { upsert: jest.fn().mockResolvedValue({}) },
+    lessonProgress: { upsert: jest.fn().mockResolvedValue({}), findUnique: jest.fn().mockResolvedValue(previous) },
   };
   const access = { getAccessibleLesson: jest.fn().mockResolvedValue({ lesson: LESSON, enrolled: true, manager: false }) };
   const service = new LearningService(
@@ -72,5 +72,14 @@ describe('in-video questions', () => {
       explanation: 'because',
       unlockedUntilSec: 90,
     });
+  });
+
+  it('adds watch time for forward playback, capped by real time, and counts views', async () => {
+    const { service, prisma } = setup(['q30', 'q90'], { positionSec: 40, furthestSec: 40, updatedAt: new Date(Date.now() - 10_000) });
+    await service.updateProgress(user, 'l1', { positionSec: 600, opened: true });
+    const { update } = prisma.lessonProgress.upsert.mock.calls[0][0];
+    expect(update.watchedSec.increment).toBeLessThanOrEqual(16); // 10 s elapsed + slack, not the 560 s seek
+    expect(update.furthestSec).toBe(600);
+    expect(update.views).toEqual({ increment: 1 });
   });
 });

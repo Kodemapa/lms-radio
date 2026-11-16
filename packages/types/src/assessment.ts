@@ -14,10 +14,53 @@ export const BankQuestionInputSchema = z
   .refine((q) => q.options.some((o) => o.isCorrect), { message: 'Mark at least one correct answer', path: ['options'] });
 export type BankQuestionInput = z.infer<typeof BankQuestionInputSchema>;
 
+/** Import: topics are given by name and created when they don't exist yet. */
 export const BankImportSchema = z.object({ questions: z.array(BankQuestionInputSchema).min(1).max(1000) });
+
+/** Create or edit one bank question; the topic is picked from the course's topics. */
+export const BankQuestionSaveSchema = z
+  .object({
+    topicId: z.string().uuid().nullable(),
+    text: z.string().trim().min(1).max(1000),
+    explanation: z.string().trim().max(2000).nullable(),
+    options: z.array(BankOptionSchema).min(2, 'Needs at least two options').max(8, 'At most eight options'),
+  })
+  .refine((q) => q.options.some((o) => o.isCorrect), { message: 'Mark at least one correct answer', path: ['options'] });
+export type BankQuestionSave = z.infer<typeof BankQuestionSaveSchema>;
+
+/** Bulk actions on selected bank questions. `topicId: null` moves them to "No topic". */
+export const BankBulkSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('move'), ids: z.array(z.string().uuid()).min(1).max(1000), topicId: z.string().uuid().nullable() }),
+  z.object({ action: z.literal('delete'), ids: z.array(z.string().uuid()).min(1).max(1000) }),
+]);
+export type BankBulk = z.infer<typeof BankBulkSchema>;
+
+// ---- Question topics ------------------------------------------------------------
+
+export const TopicInputSchema = z.object({
+  name: z.string().trim().min(1, 'Name the topic').max(80),
+  description: z.string().trim().max(300).nullable(),
+});
+export type TopicInput = z.infer<typeof TopicInputSchema>;
+
+export const TopicOrderSchema = z.object({ ids: z.array(z.string().uuid()).max(500) });
+
+export const QuestionTopicSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  position: z.number().int(),
+  /** Bank questions in this topic. */
+  bankCount: z.number().int(),
+  /** Quiz and in-video questions tagged with this topic. */
+  lessonCount: z.number().int(),
+});
+export type QuestionTopic = z.infer<typeof QuestionTopicSchema>;
 
 export const BankQuestionSchema = z.object({
   id: z.string().uuid(),
+  topicId: z.string().uuid().nullable(),
+  /** Topic name, for display. */
   topic: z.string().nullable(),
   text: z.string(),
   explanation: z.string().nullable(),
@@ -134,7 +177,8 @@ export const EntranceSettingsSchema = z.object({
   questionCount: z.number().int().min(1).max(100),
   passPercent: z.number().int().min(1).max(100),
   maxAttempts: z.number().int().min(1).max(20).nullable(),
-  topic: z.string().trim().max(80).nullable(),
+  /** Draw only from this topic (null = whole bank). */
+  topicId: z.string().uuid().nullable(),
 });
 export type EntranceSettings = z.infer<typeof EntranceSettingsSchema>;
 

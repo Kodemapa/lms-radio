@@ -9,7 +9,9 @@ import {
 } from '@nestjs/common';
 import {
   progressPercent,
+  readResources,
   unlockedUntilSec,
+  watchedDelta,
   type CheckpointResult,
   type MyCourse,
   type MySubmission,
@@ -170,6 +172,7 @@ export class LearningService {
       id: lesson.id,
       title: lesson.title,
       description: lesson.description,
+      resources: readResources(lesson.resources),
       kind: lesson.kind,
       durationSec: lesson.durationSec,
       isPreview: lesson.isPreview,
@@ -231,6 +234,15 @@ export class LearningService {
       }
     }
     const completedAt = dto.completed === undefined ? undefined : dto.completed ? new Date() : null;
+    // Watch time: forward playback since the last report, capped by real time elapsed.
+    const previous =
+      lesson.kind === 'VIDEO' && positionSec !== undefined
+        ? await this.prisma.lessonProgress.findUnique({
+            where: { userId_lessonId: { userId: user.userId, lessonId } },
+            select: { positionSec: true, furthestSec: true, updatedAt: true },
+          })
+        : null;
+    const watched = previous && positionSec !== undefined ? watchedDelta(previous.positionSec, positionSec, Date.now() - previous.updatedAt.getTime()) : 0;
     await this.prisma.lessonProgress.upsert({
       where: { userId_lessonId: { userId: user.userId, lessonId } },
       create: {
@@ -238,10 +250,15 @@ export class LearningService {
         lessonId,
         courseId: lesson.courseId,
         positionSec: positionSec ?? 0,
+        furthestSec: positionSec ?? 0,
+        views: dto.opened ? 1 : 0,
         completedAt: completedAt ?? null,
       },
       update: {
         ...(positionSec !== undefined ? { positionSec } : {}),
+        ...(positionSec !== undefined && positionSec > (previous?.furthestSec ?? 0) ? { furthestSec: positionSec } : {}),
+        ...(watched > 0 ? { watchedSec: { increment: watched } } : {}),
+        ...(dto.opened ? { views: { increment: 1 } } : {}),
         // Never un-complete by accident: only an explicit `completed: false` does.
         ...(completedAt !== undefined ? { completedAt, skipped: false } : {}),
       },

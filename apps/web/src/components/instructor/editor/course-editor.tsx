@@ -32,14 +32,28 @@ const OWNER_TABS = new Set<Tab>(['pricing', 'publish']);
  * site) plus the course team's teaching tools. Tabs follow the viewer's role:
  * graders see only teaching tabs; editors see everything but pricing/publish.
  */
-export function CourseEditor({ initial, categories, myUserId }: { initial: InstructorCourse; categories: CategoryNode[]; myUserId: string | null }) {
+export function CourseEditor({
+  initial,
+  categories,
+  myUserId,
+  initialTab,
+}: {
+  initial: InstructorCourse;
+  categories: CategoryNode[];
+  myUserId: string | null;
+  /** From ?tab=, e.g. returning from a student's report. */
+  initialTab?: string;
+}) {
   const t = useTranslations('Instructor');
   const [course, setCourse] = useState(initial);
   const canEdit = canEditCourse(course.myRole);
   const isOwner = ownsCourse(course.myRole);
   const buildTabs = canEdit ? BUILD_TABS.filter((tab) => isOwner || !OWNER_TABS.has(tab)) : [];
   const teachTabs = TEACH_TABS.filter((tab) => tab !== 'trash' || canEdit);
-  const [tab, setTab] = useState<Tab>(canEdit ? 'details' : 'students');
+  const allowed: Tab[] = [...buildTabs, ...teachTabs];
+  const [tab, setTab] = useState<Tab>(
+    initialTab && allowed.includes(initialTab as Tab) ? (initialTab as Tab) : canEdit ? 'details' : 'students',
+  );
   const locked = course.status === 'IN_REVIEW' || course.status === 'RETIRED';
 
   return (

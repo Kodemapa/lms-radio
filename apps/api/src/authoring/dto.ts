@@ -203,6 +203,12 @@ export class QuestionDto {
   @Max(24 * 3600)
   atSec?: number | null;
 
+  /** Topic for strengths / weaknesses reports. */
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsUUID()
+  topicId?: string | null;
+
   @IsString()
   @MinLength(1)
   @MaxLength(1000)
