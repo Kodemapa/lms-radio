@@ -15,6 +15,7 @@ import { OTP_SENDER, type OtpSender } from './otp-sender';
 export const MAX_OTP_ATTEMPTS = 5;
 export const MAX_CHALLENGES_PER_WINDOW = 5;
 const CHALLENGE_WINDOW_MS = 10 * 60 * 1000;
+export const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
 
 export function generateOtpCode(): string {
   return randomInt(0, 1_000_000).toString().padStart(6, '0');
@@ -32,16 +33,26 @@ export class OtpService {
     channel: OtpChannel,
     target: string,
   ): Promise<{ challengeId: string; expiresAt: Date }> {
+    const now = new Date();
     const recent = await this.prisma.otpChallenge.count({
-      where: { target, createdAt: { gte: new Date(Date.now() - CHALLENGE_WINDOW_MS) } },
+      where: { target, createdAt: { gte: new Date(now.getTime() - CHALLENGE_WINDOW_MS) } },
     });
     if (recent >= MAX_CHALLENGES_PER_WINDOW) {
       throw new HttpException('Too many codes requested. Try again later.', HttpStatus.TOO_MANY_REQUESTS);
     }
 
+    const latest = await this.prisma.otpChallenge.findFirst({
+      where: { target },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    });
+    if (latest && now.getTime() - latest.createdAt.getTime() < OTP_RESEND_COOLDOWN_MS) {
+      throw new HttpException('Wait before requesting another code.', HttpStatus.TOO_MANY_REQUESTS);
+    }
+
     const id = randomUUID();
     const code = generateOtpCode();
-    const expiresAt = new Date(Date.now() + this.config.get('OTP_TTL_SECONDS') * 1000);
+    const expiresAt = new Date(now.getTime() + this.config.get('OTP_TTL_SECONDS') * 1000);
 
     await this.prisma.otpChallenge.create({
       data: {
@@ -52,7 +63,15 @@ export class OtpService {
         expiresAt,
       },
     });
-    await this.sender.send({ channel, target, code, expiresAt });
+    try {
+      await this.sender.send({ channel, target, code, expiresAt });
+    } catch (error) {
+      await this.prisma.otpChallenge.update({
+        where: { id },
+        data: { consumedAt: new Date(), expiresAt: now },
+      });
+      throw error;
+    }
     return { challengeId: id, expiresAt };
   }
 

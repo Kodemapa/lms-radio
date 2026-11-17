@@ -10,6 +10,7 @@ export function fakeConfig(overrides: Partial<Env> = {}): AppConfigService {
     REFRESH_TOKEN_TTL_DAYS: 30,
     OTP_SECRET: 'b'.repeat(32),
     OTP_TTL_SECONDS: 300,
+    TWOFACTOR_OTP_TEMPLATE: 'OTP1',
     MAX_DEVICES_PER_USER: 2,
     MEDIA_SIGNING_SECRET: 'c'.repeat(32),
     MEDIA_URL_TTL_SECONDS: 300,

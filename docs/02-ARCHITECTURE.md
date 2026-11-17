@@ -15,8 +15,11 @@
 
 ## Authentication
 
-1. `POST /auth/otp/request` sends a 6-digit OTP (HMAC-hashed at rest, 5-minute TTL,
-   5 attempts, 5 requests per 10 min per target).
+1. `POST /auth/otp/request` generates a 6-digit OTP and stores only its HMAC
+   (5-minute default TTL, 5 attempts, 60-second resend cooldown, 5 requests per
+   10 min per target). When `TWOFACTOR_API_KEY` is configured, SMS uses 2Factor.in's
+   custom-OTP endpoint and the approved `TWOFACTOR_OTP_TEMPLATE`; verification and
+   expiry remain local. Without a key, only development uses the console fallback.
 2. `POST /auth/otp/verify` signs in an existing user and **binds the device** (at most
    `MAX_DEVICES_PER_USER`, default 2), creates a `Session` and returns:
    - an access JWT (15 min) with `sub`, `sid`, `role`
@@ -210,7 +213,7 @@ question is passed. Wrong answers never reveal the solution. Instructors add the
 | 2026-11-15 | Account deletion erases personal fields, reviews and wishlist, and revokes all sessions/devices; progress stays, anonymised | DPDP Act right to erasure while keeping course statistics correct. Instructors with live courses are blocked until courses are handed over |
 | 2026-11-15 | PDFs are shown in the browser's viewer under the watermark for now | TODO: render with pdf.js to canvas so the browser's download button is never exposed |
 | 2026-11-15 | Course discussion (Q&A) moves to Phase 4 with the help desk | Same moderation and reporting needs |
-| 2026-11-17 | OTP codes are random in development and logged by `DevConsoleOtpSender`; production fails closed until an OTP provider is configured | No provider has been selected; don't ship a fixed code or log OTPs in production |
+| 2026-11-17 | SMS OTP uses 2Factor.in when `TWOFACTOR_API_KEY` and an approved template are configured; code generation, hashing, expiry and verification remain local | Reuses the existing OTP security flow and the custom-OTP API; the key stays API-side and provider responses are not logged |
 | 2026-11-15 | Demo catalogue replaced by the Certificate Course in Fetal Medicine (GIFS brochure): 10 modules, 120 classes, an MCQ test and a scan-image submission per module | Requested by the user |
 | 2026-11-15 | Test videos are openly licensed Wikimedia Commons clips (DW "The Placenta", CC BY-SA 4.0; CDC "Prenatal Radiation Exposure", public domain) played through our protected player, not YouTube embeds | YouTube can't do signed URLs or watermarking, and the "can't skip past an unanswered question" lock only holds on a player we control. Download with `apps/api/prisma/fetch-sample-media.sh` |
 | 2026-11-15 | In-video question locks are enforced on the client (no seeking) and the server (position clamp, completion refused); bytes past the lock aren't withheld | Progressive video can't be cut by time. HLS segment gating can come with the DRM work |

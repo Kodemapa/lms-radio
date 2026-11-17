@@ -8,6 +8,22 @@ const base = {
 };
 
 describe('validateEnv', () => {
+  it('accepts optional 2Factor settings and defaults the approved OTP template name', () => {
+    const defaults = validateEnv({ ...base });
+    expect(defaults.TWOFACTOR_API_KEY).toBeUndefined();
+    expect(defaults.TWOFACTOR_OTP_TEMPLATE).toBe('OTP1');
+    expect(
+      validateEnv({
+        ...base,
+        TWOFACTOR_API_KEY: ' test-key ',
+        TWOFACTOR_OTP_TEMPLATE: ' ApprovedTemplate ',
+      }),
+    ).toMatchObject({
+      TWOFACTOR_API_KEY: 'test-key',
+      TWOFACTOR_OTP_TEMPLATE: 'ApprovedTemplate',
+    });
+  });
+
   it('no longer knows a fixed development sign-in code', () => {
     expect(validateEnv({ ...base, DEV_FIXED_OTP: '123456' })).not.toHaveProperty('DEV_FIXED_OTP');
   });

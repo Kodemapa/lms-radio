@@ -11,10 +11,18 @@ They do not have a shared/default password. Use the email OTP sign-in flow at
 | `instructor2@example.com` | Instructor | Co-instructor and team permissions |
 | `learner@example.com` | Learner | Course enrolment and learner experience |
 
-In development, `DevConsoleOtpSender` prints the randomly generated code in the
-API process output. Codes expire after the configured `OTP_TTL_SECONDS`; there is
-no fixed `123456` code and no code shown on the login page. Production refuses
-OTP delivery until a real provider is configured.
+Without `TWOFACTOR_API_KEY`, development logs the randomly generated code in the
+API process output. With a key configured, SMS codes are sent through 2Factor.in;
+the application still verifies the HMAC-hashed code and enforces its own expiry.
+Set `TWOFACTOR_OTP_TEMPLATE` to your approved 2Factor template (defaults to
+`OTP1`). SMS requests have a 60-second resend cooldown and a limit of five codes
+per target in ten minutes. Production SMS fails closed if no API key is configured;
+production email OTP delivery is not configured.
+
+To test a real SMS, set `TWOFACTOR_API_KEY` and `TWOFACTOR_OTP_TEMPLATE` in
+`apps/api/.env`, restart the API, then choose SMS sign-in and enter an Indian
+mobile number in `+91XXXXXXXXXX` format. Do not commit the API key. Real SMS may
+incur provider charges.
 
 ## Sign-up and passwords
 

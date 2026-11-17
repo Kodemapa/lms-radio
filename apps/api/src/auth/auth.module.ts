@@ -4,7 +4,7 @@ import { AppConfigService } from '../config/app-config.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { DevConsoleOtpSender, OTP_SENDER } from './otp-sender';
+import { ConfiguredOtpSender, OTP_SENDER } from './otp-sender';
 import { OtpService } from './otp.service';
 import { RolesGuard } from './roles.guard';
 import { TokenService } from './token.service';
@@ -35,7 +35,7 @@ const JWT_AUDIENCE = 'obgyn-elms-clients';
     TokenService,
     JwtAuthGuard,
     RolesGuard,
-    { provide: OTP_SENDER, useClass: DevConsoleOtpSender },
+    { provide: OTP_SENDER, useClass: ConfiguredOtpSender },
   ],
   exports: [JwtModule, JwtAuthGuard, RolesGuard],
 })

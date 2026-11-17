@@ -28,6 +28,8 @@ export const EnvSchema = z
     REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
     OTP_SECRET: secret,
     OTP_TTL_SECONDS: z.coerce.number().int().min(60).max(600).default(300),
+    TWOFACTOR_API_KEY: z.string().trim().min(1).optional().or(z.literal('').transform(() => undefined)),
+    TWOFACTOR_OTP_TEMPLATE: z.string().trim().min(1).max(100).default('OTP1'),
     MAX_DEVICES_PER_USER: z.coerce.number().int().min(1).max(10).default(2),
     /**
      * Development only: turn off sequential lesson locks so any lesson can be

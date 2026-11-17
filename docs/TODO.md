@@ -231,10 +231,11 @@ Still open from the old instructor area:
   - Organisation, seat purchase, invite learners, admin view of progress.
   - **DECISION:** in scope?
 - [ ] **ACC-3 Exam certificates** · S — A certificate tied to a final exam result (separate template/serial).
-- [ ] **ACC-4 Production login policy** · S
+- [~] **ACC-4 Production login policy** · S
   - Current: email + password and OTP sign-in; sign-up verifies email by OTP.
-  - Choose and configure a production OTP delivery provider before launch; keys
-    belong in API-side secrets, not web environment variables.
+  - 2Factor.in SMS delivery is implemented; remaining: configure the API key and
+    approved template, complete account/DLT setup, and verify production delivery.
+    Keep the key in API-side secrets, not web environment variables.
 
 ## P1 — Platform & quality
 
