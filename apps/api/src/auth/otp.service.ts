@@ -16,6 +16,7 @@ export const MAX_OTP_ATTEMPTS = 5;
 export const MAX_CHALLENGES_PER_WINDOW = 5;
 const CHALLENGE_WINDOW_MS = 10 * 60 * 1000;
 export const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
+export type OtpPurpose = 'AUTH' | 'PASSWORD_RESET' | 'PASSWORD_CHANGE';
 
 export function generateOtpCode(): string {
   return randomInt(0, 1_000_000).toString().padStart(6, '0');
@@ -32,13 +33,17 @@ export class OtpService {
   async createChallenge(
     channel: OtpChannel,
     target: string,
+    purpose: OtpPurpose = 'AUTH',
   ): Promise<{ challengeId: string; expiresAt: Date }> {
     const now = new Date();
     const recent = await this.prisma.otpChallenge.count({
       where: { target, createdAt: { gte: new Date(now.getTime() - CHALLENGE_WINDOW_MS) } },
     });
     if (recent >= MAX_CHALLENGES_PER_WINDOW) {
-      throw new HttpException('Too many codes requested. Try again later.', HttpStatus.TOO_MANY_REQUESTS);
+      throw new HttpException(
+        'Too many codes requested. Try again later.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
 
     const latest = await this.prisma.otpChallenge.findFirst({
@@ -59,6 +64,7 @@ export class OtpService {
         id,
         channel: channel === 'sms' ? 'SMS' : 'EMAIL',
         target,
+        purpose,
         codeHash: this.hash(id, code),
         expiresAt,
       },
@@ -76,12 +82,17 @@ export class OtpService {
   }
 
   /** Consumes the challenge on success. Each challenge allows MAX_OTP_ATTEMPTS guesses. */
-  async verify(challengeId: string, code: string): Promise<{ channel: OtpChannel; target: string }> {
+  async verify(
+    challengeId: string,
+    code: string,
+    purpose: OtpPurpose = 'AUTH',
+  ): Promise<{ channel: OtpChannel; target: string }> {
     const invalid = new UnauthorizedException({ code: AUTH_ERROR_CODES.otpInvalid });
     const challenge = await this.prisma.otpChallenge.findUnique({ where: { id: challengeId } });
 
     if (
       !challenge ||
+      challenge.purpose !== purpose ||
       challenge.consumedAt ||
       challenge.expiresAt <= new Date() ||
       challenge.attempts >= MAX_OTP_ATTEMPTS

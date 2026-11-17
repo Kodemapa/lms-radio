@@ -93,15 +93,19 @@ const deviceFields = {
   deviceLabel: z.string().max(100).optional(),
 };
 
-/** Optional Indian mobile in E.164 form; an empty string means none. */
-const optionalMobile = z
-  .union([z.literal(''), z.string().trim().regex(INDIAN_MOBILE_REGEX, 'Enter a mobile number like +919876543210')])
-  .optional();
+const emailAddress = z.string().trim().toLowerCase().email('Enter a valid email address').max(254);
+const mobileNumber = z
+  .string()
+  .trim()
+  .regex(INDIAN_MOBILE_REGEX, 'Enter a mobile number like +919876543210');
+const optionalEmail = z.union([z.literal(''), emailAddress]).optional();
+const optionalMobile = z.union([z.literal(''), mobileNumber]).optional();
+const loginIdentifier = z.union([emailAddress, mobileNumber]);
 
 export const SignupSchema = z.object({
   displayName: z.string().trim().min(2, 'Enter your full name').max(100),
-  email: z.string().trim().toLowerCase().email('Enter a valid email address').max(254),
-  phone: optionalMobile,
+  email: optionalEmail,
+  phone: mobileNumber,
   password: PasswordSchema,
   challengeId: z.string().uuid(),
   code: z.string().regex(OTP_CODE_REGEX, 'Enter the 6-digit code'),
@@ -111,27 +115,58 @@ export const SignupSchema = z.object({
 });
 export type Signup = z.infer<typeof SignupSchema>;
 
-export const PasswordLoginSchema = z.object({
-  email: z.string().trim().toLowerCase().email().max(254),
+const passwordLoginFields = {
   password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
   ...deviceFields,
-});
+};
+
+export const PasswordLoginSchema = z.union([
+  z.object({ identifier: loginIdentifier, ...passwordLoginFields }),
+  z.object({ email: emailAddress, ...passwordLoginFields }),
+]);
 export type PasswordLogin = z.infer<typeof PasswordLoginSchema>;
 
 export const ChangePasswordSchema = z
   .object({
-    /** Required when the account already has a password. */
     currentPassword: z.string().max(PASSWORD_MAX_LENGTH).optional(),
+    challengeId: z.string().uuid().optional(),
+    code: z.string().regex(OTP_CODE_REGEX).optional(),
     newPassword: PasswordSchema,
   })
+  .refine((value) => Boolean(value.currentPassword) || Boolean(value.challengeId && value.code), {
+    message: 'Enter your current password or verify with a one-time code',
+  })
+  .refine(
+    (value) => Boolean(value.currentPassword) || Boolean(value.challengeId) === Boolean(value.code),
+    {
+      message: 'Enter the complete one-time code verification',
+    },
+  )
   .refine((v) => v.currentPassword !== v.newPassword, {
     path: ['newPassword'],
     message: 'Choose a password different from the current one',
   });
 export type ChangePassword = z.infer<typeof ChangePasswordSchema>;
 
+export const PasswordResetRequestSchema = z.object({ target: loginIdentifier });
+export type PasswordResetRequest = z.infer<typeof PasswordResetRequestSchema>;
+
+export const PasswordResetSchema = z.object({
+  challengeId: z.string().uuid(),
+  code: z.string().regex(OTP_CODE_REGEX),
+  newPassword: PasswordSchema,
+});
+export type PasswordReset = z.infer<typeof PasswordResetSchema>;
+
+export const PasswordChangeOtpRequestSchema = z.object({
+  channel: OtpChannelSchema,
+});
+
 /** What the web BFF returns after sign-in or sign-up, so the page can route by role. */
-export const SignedInSchema = z.object({ ok: z.literal(true), role: z.enum(['LEARNER', 'FACULTY', 'ADMIN']) });
+export const SignedInSchema = z.object({
+  ok: z.literal(true),
+  role: z.enum(['LEARNER', 'FACULTY', 'ADMIN']),
+});
 export type SignedIn = z.infer<typeof SignedInSchema>;
 
 /** Admin creates an instructor account directly, without an application. */

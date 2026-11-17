@@ -172,6 +172,7 @@ model OtpChallenge {
   id         String     @id @db.Uuid
   channel    OtpChannel
   target     String
+  purpose    String     @default("AUTH")
   codeHash   String
   attempts   Int        @default(0)
   expiresAt  DateTime

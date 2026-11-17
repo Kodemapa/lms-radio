@@ -16,6 +16,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
+    "db:configure-dev-passwords": "node --env-file=.env --import tsx scripts/configure-dev-passwords.ts",
     "drm:package": "node dist/drm/package-cli.js"
   },
   "prisma": {

@@ -3,6 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   Equals,
+  IsIn,
   IsBoolean,
   IsEmail,
   IsOptional,
@@ -15,7 +16,8 @@ import {
 } from 'class-validator';
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
-const lowerTrim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim().toLowerCase() : value);
+const lowerTrim = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim().toLowerCase() : value;
 
 /** Mirrors PasswordSchema in @obgyn/types: 8–128 characters with a letter and a number. */
 export function IsStrongPassword(): PropertyDecorator {
@@ -49,18 +51,21 @@ export class SignupDto extends DeviceFields {
   @MaxLength(100)
   displayName: string;
 
-  @ApiProperty({ format: 'email' })
+  @ApiPropertyOptional({
+    format: 'email',
+    description: 'Optional; mobile verification is required',
+  })
   @Transform(lowerTrim)
+  @ValidateIf((_, value) => value !== undefined && value !== '')
   @IsEmail()
   @MaxLength(254)
-  email: string;
+  email?: string;
 
-  @ApiPropertyOptional({ example: '+919876543210' })
-  @IsOptional()
+  @ApiProperty({ example: '+919876543210' })
   @Transform(trim)
-  @ValidateIf((_, value) => value !== '')
+  @IsString()
   @Matches(INDIAN_MOBILE_REGEX, { message: 'phone must look like +919876543210' })
-  phone?: string;
+  phone: string;
 
   @ApiProperty({ minLength: PASSWORD_MIN_LENGTH, maxLength: PASSWORD_MAX_LENGTH })
   @IsStrongPassword()
@@ -82,11 +87,19 @@ export class SignupDto extends DeviceFields {
 }
 
 export class PasswordLoginDto extends DeviceFields {
-  @ApiProperty({ format: 'email' })
+  @ApiPropertyOptional({ description: 'Email or Indian mobile number in +91XXXXXXXXXX form' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(254)
+  identifier?: string;
+
+  /** Kept for existing API clients that still send `email`. */
+  @ApiPropertyOptional({ format: 'email', deprecated: true })
+  @IsOptional()
   @Transform(lowerTrim)
   @IsEmail()
   @MaxLength(254)
-  email: string;
+  email?: string;
 
   @ApiProperty({ maxLength: PASSWORD_MAX_LENGTH })
   @IsString()
@@ -96,13 +109,52 @@ export class PasswordLoginDto extends DeviceFields {
 }
 
 export class ChangePasswordDto {
-  @ApiPropertyOptional({ description: 'Required when the account already has a password' })
+  @ApiPropertyOptional({ description: 'Use either this or a one-time verification code' })
   @IsOptional()
   @IsString()
   @MaxLength(PASSWORD_MAX_LENGTH)
   currentPassword?: string;
 
+  @ApiPropertyOptional({ format: 'uuid', description: 'From the password-change OTP request' })
+  @IsOptional()
+  @IsUUID()
+  challengeId?: string;
+
+  @ApiPropertyOptional({ pattern: '^\\d{6}$' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{6}$/)
+  code?: string;
+
   @ApiProperty({ minLength: PASSWORD_MIN_LENGTH, maxLength: PASSWORD_MAX_LENGTH })
   @IsStrongPassword()
   newPassword: string;
+}
+
+export class PasswordResetRequestDto {
+  @ApiProperty({ description: 'Registered email address or Indian mobile number' })
+  @IsString()
+  @MaxLength(254)
+  target: string;
+}
+
+export class PasswordResetDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  challengeId: string;
+
+  @ApiProperty({ pattern: '^\\d{6}$' })
+  @IsString()
+  @Matches(/^\d{6}$/)
+  code: string;
+
+  @ApiProperty({ minLength: PASSWORD_MIN_LENGTH, maxLength: PASSWORD_MAX_LENGTH })
+  @IsStrongPassword()
+  newPassword: string;
+}
+
+export class PasswordChangeOtpRequestDto {
+  @ApiProperty({ enum: ['sms', 'email'] })
+  @IsIn(['sms', 'email'])
+  channel: 'sms' | 'email';
 }

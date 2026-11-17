@@ -3,9 +3,7 @@
 import {
   AUTH_ERROR_CODES,
   OtpRequestResponseSchema,
-  OtpRequestSchema,
-  PasswordSchema,
-  SignupSchema,
+  PASSWORD_MIN_LENGTH,
   UserProfileSchema,
   type OtpChannel,
 } from '@obgyn/types';
@@ -13,16 +11,64 @@ import { Button, Input, Label } from '@obgyn/ui';
 import { Eye, EyeOff } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
+import { RequiredLabel } from '@/components/admin/required-label';
+import { Link } from '@/i18n/navigation';
 import { getDeviceId } from '@/lib/device';
 import { safeNextPath } from '@/lib/paths';
 
+/** 10 digits after +91, starting 6–9 (Indian mobile numbers). */
+const MOBILE_DIGITS = /^[6-9]\d{9}$/;
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CODE = /^\d{6}$/;
+/** Matches the API's per-number resend cooldown. */
+const RESEND_SECONDS = 60;
+
+type Challenge = { challengeId: string; target: string; expiresAt: string };
 type Step =
   | { kind: 'password' }
   | { kind: 'otp-request' }
-  | { kind: 'otp-verify'; challengeId: string; target: string }
+  | ({ kind: 'otp-verify' } & Challenge)
+  | { kind: 'forgot-request' }
+  | ({ kind: 'forgot-verify' } & Challenge)
   | { kind: 'signup' }
-  | { kind: 'signup-verify'; challengeId: string; target: string };
+  | ({ kind: 'signup-verify' } & Challenge);
+
+type FieldKey =
+  | 'identifier'
+  | 'password'
+  | 'name'
+  | 'email'
+  | 'phone'
+  | 'confirmPassword'
+  | 'terms'
+  | 'code'
+  | 'target';
+type FieldErrors = Partial<Record<FieldKey, string>>;
+
+/** Keep only the 10 local digits; a pasted "+91 98765-43210" or "919876543210" also works. */
+function mobileDigits(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  return digits.length > 10 && digits.startsWith('91') ? digits.slice(2, 12) : digits.slice(0, 10);
+}
+
+/** Email as typed (lower-cased), or a mobile number in +91XXXXXXXXXX form. */
+function normaliseIdentifier(raw: string): string {
+  const value = raw.trim();
+  if (value.includes('@')) return value.toLowerCase();
+  const digits = value.replace(/\D/g, '');
+  if (/^\d{10}$/.test(digits)) return `+91${digits}`;
+  if (/^91\d{10}$/.test(digits)) return `+${digits}`;
+  return value;
+}
+
+function isIdentifier(value: string): boolean {
+  return EMAIL.test(value) || /^\+91[6-9]\d{9}$/.test(value);
+}
+
+function minutesLeft(expiresAt: string): number {
+  return Math.max(1, Math.round((new Date(expiresAt).getTime() - Date.now()) / 60_000));
+}
 
 export function LoginForm({ next, register = false }: { next: string | null; register?: boolean }) {
   const t = useTranslations('Login');
@@ -32,7 +78,6 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
     target: useId(),
     code: useId(),
     error: useId(),
-    hint: useId(),
     email: useId(),
     password: useId(),
     name: useId(),
@@ -41,10 +86,9 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
     terms: useId(),
   };
 
-  const [step, setStep] = useState<Step>(register ? { kind: 'signup' } : { kind: 'otp-request' });
+  const [step, setStep] = useState<Step>(register ? { kind: 'signup' } : { kind: 'password' });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [channel, setChannel] = useState<OtpChannel>('sms');
   const [target, setTarget] = useState('');
   const [code, setCode] = useState('');
@@ -53,243 +97,415 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
 
-  async function errorFor(res: Response): Promise<string> {
-    if (res.status === 429) return t('errors.tooMany');
-    const body = (await res.json().catch(() => null)) as { code?: string } | null;
-    if (body?.code === AUTH_ERROR_CODES.deviceLimit) return t('errors.deviceLimit');
-    if (body?.code === AUTH_ERROR_CODES.deviceRevoked) return t('errors.deviceRevoked');
-    if (body?.code === AUTH_ERROR_CODES.accountBlocked) return t('errors.accountBlocked');
-    if (body?.code === AUTH_ERROR_CODES.accountExists) return t('errors.accountExists');
-    if (body?.code === AUTH_ERROR_CODES.noAccount) return t('errors.noAccount');
-    if (body?.code === AUTH_ERROR_CODES.invalidCredentials) return t('errors.invalidPassword');
-    if (res.status === 400) return t('errors.invalidInput');
-    if (res.status === 401) return t('errors.invalidCode');
-    return t('errors.generic');
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendIn]);
+
+  function go(nextStep: Step) {
+    setStep(nextStep);
+    setError(null);
+    setFieldErrors({});
+    setNotice(null);
   }
 
-  async function continueAfterAuthentication(roleOverride?: 'LEARNER' | 'FACULTY' | 'ADMIN') {
-    if (roleOverride) {
-      router.replace(`/${locale}/courses`);
-    } else if (next) {
+  function passwordProblem(value: string): string | undefined {
+    if (!value) return t('errors.passwordRequired');
+    if (value.length < PASSWORD_MIN_LENGTH) return t('errors.passwordTooShort', { min: PASSWORD_MIN_LENGTH });
+    if (!/[A-Za-z]/.test(value)) return t('errors.passwordNeedsLetter');
+    if (!/\d/.test(value)) return t('errors.passwordNeedsNumber');
+    return undefined;
+  }
+
+  /** Show validation errors under their fields; returns true when there are none. */
+  function check(errors: FieldErrors): boolean {
+    const clean = Object.fromEntries(Object.entries(errors).filter(([, v]) => v)) as FieldErrors;
+    setFieldErrors(clean);
+    setError(null);
+    return Object.keys(clean).length === 0;
+  }
+
+  /** Turn an API/BFF failure into a message, placed on the field it concerns when possible. */
+  async function showFailure(res: Response, codeField: FieldKey = 'code') {
+    const body = (await res.json().catch(() => null)) as { code?: string; message?: string | string[] } | null;
+    const fail = (message: string, field?: FieldKey) => {
+      if (field) {
+        setFieldErrors({ [field]: message });
+        setError(null);
+      } else {
+        setFieldErrors({});
+        setError(message);
+      }
+    };
+    if (res.status === 429) return fail(t('errors.tooMany'));
+    if (res.status === 503) return fail(t('errors.deliveryUnavailable'));
+    switch (body?.code) {
+      case AUTH_ERROR_CODES.deviceLimit:
+        return fail(t('errors.deviceLimit'));
+      case AUTH_ERROR_CODES.deviceRevoked:
+        return fail(t('errors.deviceRevoked'));
+      case AUTH_ERROR_CODES.accountBlocked:
+        return fail(t('errors.accountBlocked'));
+      case AUTH_ERROR_CODES.accountExists:
+        return fail(t('errors.accountExists'));
+      case AUTH_ERROR_CODES.noAccount:
+        return fail(t('errors.noAccount'));
+      case AUTH_ERROR_CODES.invalidCredentials:
+        return fail(t('errors.invalidPassword'));
+      case AUTH_ERROR_CODES.otpInvalid:
+        return fail(t('errors.invalidCode'), codeField);
+    }
+    if (res.status === 400) {
+      // class-validator messages name the field, e.g. "phone must look like +919876543210".
+      const text = [body?.message ?? []].flat().join(' ').toLowerCase();
+      if (text.includes('password')) return fail(t('errors.passwordWeak'), step.kind === 'signup-verify' ? undefined : 'password');
+      if (text.includes('phone') || text.includes('mobile')) return fail(t('errors.phoneInvalid'));
+      if (text.includes('email')) return fail(t('errors.emailInvalid'));
+      if (text.includes('displayname')) return fail(t('errors.nameRequired'));
+      if (text.includes('code')) return fail(t('errors.codeRequired'), codeField);
+      return fail(t('errors.invalidInput'));
+    }
+    if (res.status === 401) return fail(t('errors.invalidCode'), codeField);
+    return fail(t('errors.generic'));
+  }
+
+  async function post(url: string, body: unknown): Promise<Response> {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async function run(action: () => Promise<void>) {
+    setPending(true);
+    try {
+      await action();
+    } catch {
+      setError(t('errors.generic'));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const device = () => ({ deviceId: getDeviceId(), deviceLabel: navigator.userAgent.slice(0, 100) });
+
+  async function continueAfterAuthentication() {
+    if (next) {
       router.replace(safeNextPath(next, `/${locale}/courses`));
     } else {
       const res = await fetch('/api/proxy/users/me', { cache: 'no-store' });
-      if (!res.ok) throw new Error(t('errors.generic'));
-      const profile = UserProfileSchema.parse(await res.json());
-      const destination =
-        profile.role === 'ADMIN'
-          ? `/${locale}/admin`
-          : profile.role === 'FACULTY'
-            ? `/${locale}/instructor`
-            : `/${locale}/courses`;
-      router.replace(destination);
+      const profile = res.ok ? UserProfileSchema.safeParse(await res.json()) : null;
+      const role = profile?.success ? profile.data.role : 'LEARNER';
+      router.replace(
+        role === 'ADMIN' ? `/${locale}/admin` : role === 'FACULTY' ? `/${locale}/instructor` : `/${locale}/courses`,
+      );
     }
     router.refresh();
   }
 
-  async function requestCode(event: FormEvent) {
-    event.preventDefault();
-    const payload = { channel, target: target.trim() };
-    if (!OtpRequestSchema.safeParse(payload).success) {
-      setError(t('errors.invalidInput'));
-      return;
-    }
-    setPending(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/auth/otp/request', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) return setError(await errorFor(res));
-      const { challengeId } = OtpRequestResponseSchema.parse(await res.json());
-      setStep({ kind: 'otp-verify', challengeId, target: payload.target });
-      setCode('');
-    } catch {
-      setError(t('errors.generic'));
-    } finally {
-      setPending(false);
-    }
-  }
+  // ---- Password sign-in (default) -------------------------------------------------------
 
   async function passwordLogin(event: FormEvent) {
     event.preventDefault();
-    setPending(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-          deviceId: getDeviceId(),
-          deviceLabel: navigator.userAgent.slice(0, 100),
-        }),
-      });
-      if (!res.ok) return setError(await errorFor(res));
+    const identifier = normaliseIdentifier(target);
+    if (
+      !check({
+        identifier: !target.trim()
+          ? t('errors.identifierRequired')
+          : !isIdentifier(identifier)
+            ? t('errors.identifierInvalid')
+            : undefined,
+        password: password ? undefined : t('errors.passwordRequired'),
+      })
+    )
+      return;
+    await run(async () => {
+      const res = await post('/api/auth/login', { identifier, password, ...device() });
+      if (!res.ok) return showFailure(res);
       await continueAfterAuthentication();
-    } catch {
-      setError(t('errors.generic'));
-    } finally {
-      setPending(false);
-    }
+    });
   }
 
-  async function verifyCode(event: FormEvent) {
+  // ---- One-time codes (OTP sign-in, sign-up, forgot password) --------------------------
+
+  /** Request a code; on success moves to `verifyKind` (or stays there on resend). */
+  async function sendCode(
+    url: string,
+    body: unknown,
+    shownTarget: string,
+    verifyKind: 'otp-verify' | 'signup-verify' | 'forgot-verify',
+    targetField: FieldKey,
+  ) {
+    await run(async () => {
+      const res = await post(url, body);
+      if (!res.ok) return showFailure(res, targetField);
+      const { challengeId, expiresAt } = OtpRequestResponseSchema.parse(await res.json());
+      const resend = step.kind === verifyKind;
+      setStep({ kind: verifyKind, challengeId, target: shownTarget, expiresAt });
+      setCode('');
+      setFieldErrors({});
+      setError(null);
+      setNotice(resend ? t('codeResent') : null);
+      setResendIn(RESEND_SECONDS);
+    });
+  }
+
+  function otpTarget(): { value: string; problem?: string } {
+    if (channel === 'sms') {
+      return {
+        value: `+91${phone}`,
+        problem: !phone ? t('errors.phoneRequired') : !MOBILE_DIGITS.test(phone) ? t('errors.phoneInvalid') : undefined,
+      };
+    }
+    const value = email.trim().toLowerCase();
+    return {
+      value,
+      problem: !value ? t('errors.emailRequired') : !EMAIL.test(value) ? t('errors.emailInvalid') : undefined,
+    };
+  }
+
+  async function requestLoginCode(event?: FormEvent) {
+    event?.preventDefault();
+    const { value, problem } = otpTarget();
+    if (!check({ [channel === 'sms' ? 'phone' : 'email']: problem })) return;
+    await sendCode('/api/auth/otp/request', { channel, target: value }, value, 'otp-verify', channel === 'sms' ? 'phone' : 'email');
+  }
+
+  async function verifyLoginCode(event: FormEvent) {
     event.preventDefault();
     if (step.kind !== 'otp-verify') return;
-    setPending(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/auth/otp/verify', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          challengeId: step.challengeId,
-          code,
-          deviceId: getDeviceId(),
-          deviceLabel: navigator.userAgent.slice(0, 100),
-        }),
-      });
-      if (!res.ok) return setError(await errorFor(res));
+    if (!check({ code: CODE.test(code) ? undefined : t('errors.codeRequired') })) return;
+    await run(async () => {
+      const res = await post('/api/auth/otp/verify', { challengeId: step.challengeId, code, ...device() });
+      if (!res.ok) return showFailure(res);
       await continueAfterAuthentication();
-    } catch {
-      setError(t('errors.generic'));
-    } finally {
-      setPending(false);
-    }
+    });
   }
 
-  async function requestSignupCode(event: FormEvent) {
-    event.preventDefault();
-    setError(null);
-    const emailRequest = OtpRequestSchema.safeParse({ channel: 'email', target: email.trim() });
-    const passwordResult = PasswordSchema.safeParse(password);
-    if (displayName.trim().length < 2 || !emailRequest.success || !passwordResult.success) {
-      setError(t('errors.invalidInput'));
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError(t('errors.passwordMismatch'));
-      return;
-    }
-    if (!acceptTerms) {
-      setError(t('errors.termsRequired'));
-      return;
-    }
+  // ---- Sign-up: details → SMS code → account -----------------------------------------
 
-    setPending(true);
-    try {
-      const res = await fetch('/api/auth/otp/request', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(emailRequest.data),
-      });
-      if (!res.ok) return setError(await errorFor(res));
-      const { challengeId } = OtpRequestResponseSchema.parse(await res.json());
-      setStep({ kind: 'signup-verify', challengeId, target: emailRequest.data.target });
-      setCode('');
-    } catch {
-      setError(t('errors.generic'));
-    } finally {
-      setPending(false);
-    }
+  async function requestSignupCode(event?: FormEvent) {
+    event?.preventDefault();
+    const trimmedEmail = email.trim();
+    const ok = check({
+      name: displayName.trim().length < 2 ? t('errors.nameRequired') : undefined,
+      phone: !phone ? t('errors.phoneRequired') : !MOBILE_DIGITS.test(phone) ? t('errors.phoneInvalid') : undefined,
+      email: trimmedEmail && !EMAIL.test(trimmedEmail) ? t('errors.emailInvalid') : undefined,
+      password: passwordProblem(password),
+      confirmPassword: !confirmPassword
+        ? t('errors.confirmRequired')
+        : confirmPassword !== password
+          ? t('errors.passwordMismatch')
+          : undefined,
+      terms: acceptTerms ? undefined : t('errors.termsRequired'),
+    });
+    if (!ok) return;
+    const mobile = `+91${phone}`;
+    await sendCode('/api/auth/otp/request', { channel: 'sms', target: mobile }, mobile, 'signup-verify', 'phone');
   }
 
   async function finishSignup(event: FormEvent) {
     event.preventDefault();
     if (step.kind !== 'signup-verify') return;
-    const parsed = SignupSchema.safeParse({
-      displayName,
-      email,
-      phone,
-      password,
-      challengeId: step.challengeId,
-      code,
-      acceptTerms,
-      deviceId: getDeviceId(),
-      deviceLabel: navigator.userAgent.slice(0, 100),
-    });
-    if (!parsed.success) {
-      setError(t('errors.invalidInput'));
-      return;
-    }
-    setPending(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(parsed.data),
+    if (!check({ code: CODE.test(code) ? undefined : t('errors.codeRequired') })) return;
+    await run(async () => {
+      const res = await post('/api/auth/signup', {
+        displayName: displayName.trim(),
+        email: email.trim() ? email.trim().toLowerCase() : undefined,
+        phone: `+91${phone}`,
+        password,
+        challengeId: step.challengeId,
+        code,
+        acceptTerms: true,
+        ...device(),
       });
-      if (!res.ok) return setError(await errorFor(res));
-      await continueAfterAuthentication('LEARNER');
-    } catch {
-      setError(t('errors.generic'));
-    } finally {
-      setPending(false);
-    }
+      if (!res.ok) return showFailure(res);
+      await continueAfterAuthentication();
+    });
   }
+
+  // ---- Forgot password ----------------------------------------------------------------
+
+  async function requestPasswordReset(event?: FormEvent) {
+    event?.preventDefault();
+    const identifier = normaliseIdentifier(target);
+    if (
+      !check({
+        target: !target.trim()
+          ? t('errors.identifierRequired')
+          : !isIdentifier(identifier)
+            ? t('errors.identifierInvalid')
+            : undefined,
+      })
+    )
+      return;
+    setPassword('');
+    setConfirmPassword('');
+    await sendCode('/api/auth/password/forgot', { target: identifier }, identifier, 'forgot-verify', 'target');
+  }
+
+  async function finishPasswordReset(event: FormEvent) {
+    event.preventDefault();
+    if (step.kind !== 'forgot-verify') return;
+    const ok = check({
+      code: CODE.test(code) ? undefined : t('errors.codeRequired'),
+      password: passwordProblem(password),
+      confirmPassword: !confirmPassword
+        ? t('errors.confirmRequired')
+        : confirmPassword !== password
+          ? t('errors.passwordMismatch')
+          : undefined,
+    });
+    if (!ok) return;
+    await run(async () => {
+      const res = await post('/api/auth/password/reset', {
+        challengeId: step.challengeId,
+        code,
+        newPassword: password,
+      });
+      if (!res.ok) return showFailure(res);
+      go({ kind: 'password' });
+      setCode('');
+      setPassword('');
+      setConfirmPassword('');
+      setNotice(t('resetSuccess'));
+    });
+  }
+
+  // ---- Rendering ------------------------------------------------------------------------
 
   const errorBox = error ? (
     <p id={ids.error} role="alert" className="text-sm text-destructive">
       {error}
     </p>
   ) : null;
+  const noticeBox = notice ? (
+    <p role="status" className="text-sm text-success">
+      {notice}
+    </p>
+  ) : null;
+
+  const field = (key: FieldKey, id: string, label: ReactNode, required: boolean, control: ReactNode, hint?: string) => (
+    <div className="flex flex-col gap-2">
+      {required ? <RequiredLabel htmlFor={id}>{label}</RequiredLabel> : <Label htmlFor={id}>{label}</Label>}
+      {control}
+      {hint ? (
+        <p id={`${id}-hint`} className="text-xs text-muted-foreground">
+          {hint}
+        </p>
+      ) : null}
+      {fieldErrors[key] ? (
+        <p id={`${id}-error`} role="alert" className="text-sm text-destructive">
+          {fieldErrors[key]}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  /** aria props tying an input to its hint and error text. */
+  const aria = (key: FieldKey, id: string, hint = false) => ({
+    'aria-invalid': !!fieldErrors[key] || undefined,
+    'aria-describedby': [hint ? `${id}-hint` : '', fieldErrors[key] ? `${id}-error` : ''].join(' ').trim() || undefined,
+  });
+
+  const mobileInput = (autoFocus = false) => (
+    <div className="flex items-stretch">
+      <span
+        aria-hidden
+        className="flex items-center rounded-s-md border border-e-0 border-input bg-muted px-3 text-sm font-medium text-muted-foreground"
+      >
+        +91
+      </span>
+      <Input
+        id={ids.phone}
+        type="tel"
+        inputMode="numeric"
+        autoComplete="tel-national"
+        placeholder="9876543210"
+        maxLength={10}
+        required
+        autoFocus={autoFocus}
+        className="rounded-s-none"
+        aria-label={`${t('phoneLabel')} (+91)`}
+        value={phone}
+        {...aria('phone', ids.phone, true)}
+        onChange={(e) => setPhone(mobileDigits(e.target.value))}
+      />
+    </div>
+  );
+
+  const passwordInput = (
+    key: 'password' | 'confirmPassword',
+    id: string,
+    value: string,
+    setValue: (v: string) => void,
+    autoComplete: string,
+    hint = false,
+  ) => <PasswordInput id={id} value={value} onChange={setValue} autoComplete={autoComplete} labels={t} {...aria(key, id, hint)} />;
+
+  const codeInput = (
+    <Input
+      id={ids.code}
+      inputMode="numeric"
+      autoComplete="one-time-code"
+      pattern="\d{6}"
+      maxLength={6}
+      required
+      autoFocus
+      value={code}
+      {...aria('code', ids.code)}
+      onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+    />
+  );
+
+  const codeSentBlock = (challenge: Challenge, message: string, resend: () => void) => (
+    <>
+      <p className="text-sm">{message}</p>
+      <p className="text-xs text-muted-foreground">{t('codeExpires', { minutes: minutesLeft(challenge.expiresAt) })}</p>
+      {field('code', ids.code, t('codeLabel'), true, codeInput)}
+      <Button type="button" variant="outline" disabled={pending || resendIn > 0} onClick={resend}>
+        {resendIn > 0 ? t('resendIn', { seconds: resendIn }) : t('resendCode')}
+      </Button>
+    </>
+  );
 
   if (step.kind === 'password') {
     return (
       <form onSubmit={passwordLogin} className="flex flex-col gap-4" noValidate>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={ids.email}>{t('emailLabel')}</Label>
+        {field(
+          'identifier',
+          ids.target,
+          t('identifierLabel'),
+          true,
           <Input
-            id={ids.email}
-            type="email"
+            id={ids.target}
+            type="text"
             autoComplete="username"
-            placeholder="you@example.com"
+            placeholder={t('identifierPlaceholder')}
             required
             autoFocus
-            value={email}
-            aria-invalid={!!error}
-            aria-describedby={error ? ids.error : undefined}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={ids.password}>{t('passwordLabel')}</Label>
-          <div className="relative">
-            <Input
-              id={ids.password}
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              required
-              className="pe-11"
-              value={password}
-              aria-invalid={!!error}
-              aria-describedby={error ? ids.error : undefined}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button
-              type="button"
-              className="absolute inset-y-0 end-0 flex w-11 items-center justify-center rounded-e-md text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-              aria-pressed={showPassword}
-              aria-controls={ids.password}
-              onClick={() => setShowPassword((value) => !value)}
-            >
-              {showPassword ? <EyeOff aria-hidden className="size-4" /> : <Eye aria-hidden className="size-4" />}
-            </button>
-          </div>
-        </div>
+            value={target}
+            {...aria('identifier', ids.target)}
+            onChange={(e) => setTarget(e.target.value)}
+          />,
+        )}
+        {field('password', ids.password, t('passwordLabel'), true, passwordInput('password', ids.password, password, setPassword, 'current-password'))}
+        {noticeBox}
         {errorBox}
-        <Button type="submit" disabled={pending || !email.trim() || !password}>
+        <Button type="submit" disabled={pending}>
           {pending ? t('working') : t('signIn')}
         </Button>
-        <Button type="button" variant="ghost" onClick={() => { setStep({ kind: 'otp-request' }); setError(null); }}>
+        <Button type="button" variant="ghost" onClick={() => go({ kind: 'forgot-request' })}>
+          {t('forgotPassword')}
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => go({ kind: 'otp-request' })}>
           {t('useOtp')}
         </Button>
       </form>
@@ -298,29 +514,14 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
 
   if (step.kind === 'otp-verify') {
     return (
-      <form onSubmit={verifyCode} className="flex flex-col gap-4" noValidate>
-        <p className="text-sm">{t('codeSentTo', { target: step.target })}</p>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={ids.code}>{t('codeLabel')}</Label>
-          <Input
-            id={ids.code}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="\d{6}"
-            maxLength={6}
-            required
-            autoFocus
-            value={code}
-            aria-invalid={!!error}
-            aria-describedby={error ? ids.error : undefined}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-          />
-        </div>
+      <form onSubmit={verifyLoginCode} className="flex flex-col gap-4" noValidate>
+        {codeSentBlock(step, t('codeSentTo', { target: step.target }), () => void requestLoginCode())}
+        {noticeBox}
         {errorBox}
-        <Button type="submit" disabled={pending || code.length !== 6}>
+        <Button type="submit" disabled={pending}>
           {pending ? t('working') : t('verify')}
         </Button>
-        <Button type="button" variant="ghost" onClick={() => { setStep({ kind: 'otp-request' }); setError(null); }}>
+        <Button type="button" variant="ghost" onClick={() => go({ kind: 'otp-request' })}>
           {t('changeTarget')}
         </Button>
       </form>
@@ -330,35 +531,87 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
   if (step.kind === 'signup') {
     return (
       <form onSubmit={requestSignupCode} className="flex flex-col gap-4" noValidate>
+        {field(
+          'name',
+          ids.name,
+          t('nameLabel'),
+          true,
+          <Input
+            id={ids.name}
+            autoComplete="name"
+            required
+            autoFocus
+            maxLength={100}
+            value={displayName}
+            {...aria('name', ids.name)}
+            onChange={(e) => setDisplayName(e.target.value)}
+          />,
+        )}
+        {field('phone', ids.phone, t('phoneLabel'), true, mobileInput(), t('phoneHint'))}
+        {field(
+          'email',
+          ids.email,
+          t('emailOptional'),
+          false,
+          <Input
+            id={ids.email}
+            type="email"
+            autoComplete="email"
+            maxLength={254}
+            value={email}
+            {...aria('email', ids.email)}
+            onChange={(e) => setEmail(e.target.value)}
+          />,
+        )}
+        {field(
+          'password',
+          ids.password,
+          t('passwordLabel'),
+          true,
+          passwordInput('password', ids.password, password, setPassword, 'new-password', true),
+          t('passwordHint'),
+        )}
+        {field(
+          'confirmPassword',
+          ids.confirmPassword,
+          t('confirmPassword'),
+          true,
+          passwordInput('confirmPassword', ids.confirmPassword, confirmPassword, setConfirmPassword, 'new-password'),
+        )}
         <div className="flex flex-col gap-2">
-          <Label htmlFor={ids.name}>{t('nameLabel')}</Label>
-          <Input id={ids.name} autoComplete="name" required maxLength={100} value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+          <label htmlFor={ids.terms} className="flex items-start gap-2 text-sm">
+            <input
+              id={ids.terms}
+              type="checkbox"
+              className="mt-1 size-4"
+              required
+              checked={acceptTerms}
+              {...aria('terms', ids.terms)}
+              onChange={(e) => setAcceptTerms(e.target.checked)}
+            />
+            <span>
+              {t('acceptTerms')}
+              <span aria-hidden="true" className="ms-1 text-destructive">
+                *
+              </span>
+            </span>
+          </label>
+          {fieldErrors.terms ? (
+            <p id={`${ids.terms}-error`} role="alert" className="text-sm text-destructive">
+              {fieldErrors.terms}
+            </p>
+          ) : null}
         </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={ids.email}>{t('emailLabel')}</Label>
-          <Input id={ids.email} type="email" autoComplete="email" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={ids.phone}>{t('phoneOptional')}</Label>
-          <Input id={ids.phone} type="tel" autoComplete="tel" placeholder="+919876543210" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={ids.password}>{t('passwordLabel')}</Label>
-          <Input id={ids.password} type="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-          <p className="text-xs text-muted-foreground">{t('passwordHint')}</p>
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={ids.confirmPassword}>{t('confirmPassword')}</Label>
-          <Input id={ids.confirmPassword} type="password" autoComplete="new-password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-        </div>
-        <label htmlFor={ids.terms} className="flex items-start gap-2 text-sm">
-          <input id={ids.terms} type="checkbox" className="mt-1 size-4" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} />
-          <span>{t('acceptTerms')}</span>
-        </label>
         {errorBox}
-        <Button type="submit" disabled={pending || !displayName.trim() || !email.trim() || !password || !confirmPassword || !acceptTerms}>
+        <Button type="submit" disabled={pending}>
           {pending ? t('working') : t('sendCode')}
         </Button>
+        <p className="text-xs text-muted-foreground">
+          {t('instructorHint')}{' '}
+          <Link href="/become-instructor" className="font-medium text-primary hover:underline">
+            {t('becomeInstructor')}
+          </Link>
+        </p>
       </form>
     );
   }
@@ -366,36 +619,85 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
   if (step.kind === 'signup-verify') {
     return (
       <form onSubmit={finishSignup} className="flex flex-col gap-4" noValidate>
-        <p className="text-sm">{t('codeSentTo', { target: step.target })}</p>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor={ids.code}>{t('codeLabel')}</Label>
-          <Input
-            id={ids.code}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="\d{6}"
-            maxLength={6}
-            required
-            autoFocus
-            value={code}
-            aria-invalid={!!error}
-            aria-describedby={error ? ids.error : undefined}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-          />
-        </div>
+        {codeSentBlock(step, t('codeSentTo', { target: step.target }), () => void requestSignupCode())}
+        {noticeBox}
         {errorBox}
-        <Button type="submit" disabled={pending || code.length !== 6}>
+        <Button type="submit" disabled={pending}>
           {pending ? t('working') : t('createAccount')}
         </Button>
-        <Button type="button" variant="ghost" onClick={() => { setStep({ kind: 'signup' }); setError(null); }}>
+        <Button type="button" variant="ghost" onClick={() => go({ kind: 'signup' })}>
+          {t('editDetails')}
+        </Button>
+      </form>
+    );
+  }
+
+  if (step.kind === 'forgot-request') {
+    return (
+      <form onSubmit={requestPasswordReset} className="flex flex-col gap-4" noValidate>
+        <p className="text-sm text-muted-foreground">{t('forgotIntro')}</p>
+        {field(
+          'target',
+          ids.target,
+          t('identifierLabel'),
+          true,
+          <Input
+            id={ids.target}
+            type="text"
+            autoComplete="username"
+            placeholder={t('identifierPlaceholder')}
+            required
+            autoFocus
+            value={target}
+            {...aria('target', ids.target)}
+            onChange={(e) => setTarget(e.target.value)}
+          />,
+        )}
+        {errorBox}
+        <Button type="submit" disabled={pending}>
+          {pending ? t('working') : t('sendCode')}
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => go({ kind: 'password' })}>
+          {t('usePassword')}
+        </Button>
+      </form>
+    );
+  }
+
+  if (step.kind === 'forgot-verify') {
+    return (
+      <form onSubmit={finishPasswordReset} className="flex flex-col gap-4" noValidate>
+        {codeSentBlock(step, t('resetCodeIfRegistered', { target: step.target }), () => void requestPasswordReset())}
+        {field(
+          'password',
+          ids.password,
+          t('newPasswordLabel'),
+          true,
+          passwordInput('password', ids.password, password, setPassword, 'new-password', true),
+          t('passwordHint'),
+        )}
+        {field(
+          'confirmPassword',
+          ids.confirmPassword,
+          t('confirmPassword'),
+          true,
+          passwordInput('confirmPassword', ids.confirmPassword, confirmPassword, setConfirmPassword, 'new-password'),
+        )}
+        {noticeBox}
+        {errorBox}
+        <Button type="submit" disabled={pending}>
+          {pending ? t('working') : t('resetPassword')}
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => go({ kind: 'forgot-request' })}>
           {t('changeTarget')}
         </Button>
       </form>
     );
   }
 
+  // OTP sign-in: choose SMS or email.
   return (
-    <form onSubmit={requestCode} className="flex flex-col gap-4" noValidate>
+    <form onSubmit={requestLoginCode} className="flex flex-col gap-4" noValidate>
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 text-sm font-medium">{t('channelLabel')}</legend>
         <div className="flex gap-4">
@@ -406,35 +708,87 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
                 name="channel"
                 value={value}
                 checked={channel === value}
-                onChange={() => { setChannel(value); setTarget(''); setError(null); }}
+                onChange={() => {
+                  setChannel(value);
+                  setFieldErrors({});
+                  setError(null);
+                }}
               />
               {value === 'sms' ? t('channelSms') : t('channelEmail')}
             </label>
           ))}
         </div>
       </fieldset>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={ids.target}>{channel === 'sms' ? t('phoneLabel') : t('emailLabel')}</Label>
-        <Input
-          id={ids.target}
-          type={channel === 'sms' ? 'tel' : 'email'}
-          autoComplete={channel === 'sms' ? 'tel' : 'email'}
-          placeholder={channel === 'sms' ? '+919876543210' : 'you@example.com'}
-          required
-          value={target}
-          aria-invalid={!!error}
-          aria-describedby={[channel === 'sms' ? ids.hint : '', error ? ids.error : ''].join(' ').trim() || undefined}
-          onChange={(e) => setTarget(e.target.value)}
-        />
-        {channel === 'sms' ? <p id={ids.hint} className="text-xs text-muted-foreground">{t('phoneHint')}</p> : null}
-      </div>
+      {channel === 'sms'
+        ? field('phone', ids.phone, t('phoneLabel'), true, mobileInput(true), t('phoneHint'))
+        : field(
+            'email',
+            ids.email,
+            t('emailLabel'),
+            true,
+            <Input
+              id={ids.email}
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              required
+              autoFocus
+              value={email}
+              {...aria('email', ids.email)}
+              onChange={(e) => setEmail(e.target.value)}
+            />,
+          )}
       {errorBox}
-      <Button type="submit" disabled={pending || !target.trim()}>
+      <Button type="submit" disabled={pending}>
         {pending ? t('working') : t('sendCode')}
       </Button>
-      <Button type="button" variant="ghost" onClick={() => { setStep({ kind: 'password' }); setError(null); }}>
+      <Button type="button" variant="ghost" onClick={() => go({ kind: 'password' })}>
         {t('usePassword')}
       </Button>
     </form>
+  );
+}
+
+/** Password box with a show/hide eye toggle. */
+function PasswordInput({
+  id,
+  value,
+  onChange,
+  autoComplete,
+  labels,
+  ...rest
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  autoComplete: string;
+  labels: (key: 'showPassword' | 'hidePassword') => string;
+  'aria-invalid'?: boolean;
+  'aria-describedby'?: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <Input
+        id={id}
+        type={visible ? 'text' : 'password'}
+        autoComplete={autoComplete}
+        required
+        className="pe-11"
+        value={value}
+        {...rest}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <button
+        type="button"
+        className="absolute inset-y-0 end-0 flex w-11 items-center justify-center rounded-e-md text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label={visible ? labels('hidePassword') : labels('showPassword')}
+        aria-pressed={visible}
+        aria-controls={id}
+        onClick={() => setVisible((v) => !v)}
+      >
+        {visible ? <EyeOff aria-hidden className="size-4" /> : <Eye aria-hidden className="size-4" />}
+      </button>
+    </div>
   );
 }

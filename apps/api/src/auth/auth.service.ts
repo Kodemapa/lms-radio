@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import {
@@ -13,6 +14,7 @@ import {
   type TokenPair,
 } from '@obgyn/types';
 import { Prisma, type Device, type User } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { AuditService } from '../audit/audit.service';
 import { safeEqual } from '../common/crypto';
 import { dummyPasswordHash, hashPassword, verifyPassword } from '../common/password';
@@ -20,7 +22,11 @@ import { type RequestContext } from '../common/request-context';
 import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { type AuthUser } from './auth-user';
-import { type ChangePasswordDto, type PasswordLoginDto, type SignupDto } from './dto/password-auth.dto';
+import {
+  type ChangePasswordDto,
+  type PasswordLoginDto,
+  type SignupDto,
+} from './dto/password-auth.dto';
 import { type RefreshDto } from './dto/refresh.dto';
 import { type RequestOtpDto } from './dto/request-otp.dto';
 import { type VerifyOtpDto } from './dto/verify-otp.dto';
@@ -67,6 +73,57 @@ export class AuthService {
     return { challengeId, expiresAt: expiresAt.toISOString() };
   }
 
+  async requestPasswordReset(targetInput: string): Promise<OtpRequestResponse> {
+    const channel: OtpChannel = targetInput.includes('@') ? 'email' : 'sms';
+    const parsed = OtpRequestSchema.safeParse({
+      channel,
+      target: normaliseTarget(channel, targetInput),
+    });
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues.map((issue) => issue.message));
+    }
+
+    const { channel: verifiedChannel, target } = parsed.data;
+    if (
+      this.config.isProduction &&
+      (verifiedChannel === 'email' || !this.config.get('TWOFACTOR_API_KEY'))
+    ) {
+      throw new ServiceUnavailableException('OTP delivery is not configured for this channel');
+    }
+    const user = await this.prisma.user.findUnique({
+      where: verifiedChannel === 'sms' ? { phone: target } : { email: target },
+      select: { id: true, deletedAt: true },
+    });
+    if (!user || user.deletedAt) {
+      return {
+        challengeId: randomUUID(),
+        expiresAt: new Date(Date.now() + this.config.get('OTP_TTL_SECONDS') * 1000).toISOString(),
+      };
+    }
+    const challenge = await this.otp.createChallenge(verifiedChannel, target, 'PASSWORD_RESET');
+    return { challengeId: challenge.challengeId, expiresAt: challenge.expiresAt.toISOString() };
+  }
+
+  async requestPasswordChangeOtp(
+    actor: AuthUser,
+    channel: OtpChannel,
+  ): Promise<OtpRequestResponse> {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: actor.userId },
+      select: { email: true, phone: true },
+    });
+    const target = channel === 'sms' ? user.phone : user.email;
+    if (!target)
+      throw new BadRequestException('No registered contact is available for this channel.');
+
+    const challenge = await this.otp.createChallenge(
+      channel,
+      normaliseTarget(channel, target),
+      'PASSWORD_CHANGE',
+    );
+    return { challengeId: challenge.challengeId, expiresAt: challenge.expiresAt.toISOString() };
+  }
+
   /**
    * One-time-code sign-in for an EXISTING account. It never creates accounts:
    * new users sign up with `signup`.
@@ -76,16 +133,17 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: channel === 'sms' ? { phone: target } : { email: target },
     });
-    if (!user || user.deletedAt) throw new UnauthorizedException({ code: AUTH_ERROR_CODES.noAccount });
+    if (!user || user.deletedAt)
+      throw new UnauthorizedException({ code: AUTH_ERROR_CODES.noAccount });
     return this.startSession(user, dto, ctx, 'otp');
   }
 
-  /** Create a learner account with email + password and sign it in. */
+  /** Create a learner account after verifying its required mobile number. */
   async signup(dto: SignupDto, ctx: RequestContext): Promise<TokenPair> {
-    const email = normaliseTarget('email', dto.email);
-    const phone = dto.phone ? normaliseTarget('sms', dto.phone) : null;
-    const verified = await this.otp.verify(dto.challengeId, dto.code);
-    if (verified.channel !== 'email' || verified.target !== email) {
+    const email = dto.email?.trim() ? normaliseTarget('email', dto.email) : null;
+    const phone = normaliseTarget('sms', dto.phone);
+    const verified = await this.otp.verify(dto.challengeId, dto.code, 'AUTH');
+    if (verified.channel !== 'sms' || verified.target !== phone) {
       throw new UnauthorizedException({ code: AUTH_ERROR_CODES.otpInvalid });
     }
     const passwordHash = await hashPassword(dto.password);
@@ -98,6 +156,7 @@ export class AuthService {
           displayName: dto.displayName.trim(),
           email,
           phone,
+          role: 'LEARNER',
           passwordHash,
           passwordChangedAt: now,
           termsAcceptedAt: now,
@@ -118,34 +177,101 @@ export class AuthService {
       resource: 'user',
       resourceId: user.id,
       ...ctx,
-      metadata: { withPhone: !!phone },
+      metadata: { verifiedMobile: true, withEmail: !!email },
     });
     return this.startSession(user, dto, ctx, 'signup');
   }
 
-  /** Email + password sign-in. Wrong email and wrong password look identical. */
+  /** Email or mobile + password sign-in. Wrong identifiers and passwords look identical. */
   async passwordLogin(dto: PasswordLoginDto, ctx: RequestContext): Promise<TokenPair> {
-    const user = await this.prisma.user.findUnique({ where: { email: normaliseTarget('email', dto.email) } });
-    // Always run one scrypt check so response time does not reveal whether the email exists.
-    const valid = await verifyPassword(dto.password, user?.passwordHash ?? (await dummyPasswordHash()));
+    const identifier = dto.identifier ?? dto.email;
+    if (!identifier) throw new BadRequestException('Enter an email or mobile number.');
+    const channel: OtpChannel = identifier.includes('@') ? 'email' : 'sms';
+    const parsed = OtpRequestSchema.safeParse({
+      channel,
+      target: normaliseTarget(channel, identifier),
+    });
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.issues.map((issue) => issue.message));
+    }
+    const { channel: loginChannel, target } = parsed.data;
+    const user = await this.prisma.user.findUnique({
+      where: loginChannel === 'email' ? { email: target } : { phone: target },
+    });
+    // Always run one scrypt check so response time does not reveal whether the account exists.
+    const valid = await verifyPassword(
+      dto.password,
+      user?.passwordHash ?? (await dummyPasswordHash()),
+    );
     if (!user || !user.passwordHash || user.deletedAt || !valid) {
       throw new UnauthorizedException({ code: AUTH_ERROR_CODES.invalidCredentials });
     }
     return this.startSession(user, dto, ctx, 'password');
   }
 
+  async resetPassword(
+    dto: { challengeId: string; code: string; newPassword: string },
+    ctx: RequestContext,
+  ): Promise<void> {
+    const verified = await this.otp.verify(dto.challengeId, dto.code, 'PASSWORD_RESET');
+    const user = await this.prisma.user.findUnique({
+      where: verified.channel === 'sms' ? { phone: verified.target } : { email: verified.target },
+    });
+    if (!user || user.deletedAt)
+      throw new UnauthorizedException({ code: AUTH_ERROR_CODES.otpInvalid });
+
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: await hashPassword(dto.newPassword), passwordChangedAt: now },
+      }),
+      this.prisma.session.updateMany({
+        where: { userId: user.id, revokedAt: null },
+        data: { revokedAt: now, revokedReason: 'PASSWORD_RESET' },
+      }),
+    ]);
+    await this.audit.log({
+      actorId: user.id,
+      action: 'auth.password_reset',
+      resource: 'user',
+      resourceId: user.id,
+      ...ctx,
+    });
+  }
+
   /**
    * Change (or, for accounts that never had one, set) the password. Every
    * other session is signed out; this device stays signed in.
    */
-  async changePassword(actor: AuthUser, dto: ChangePasswordDto, ctx: RequestContext): Promise<void> {
+  async changePassword(
+    actor: AuthUser,
+    dto: ChangePasswordDto,
+    ctx: RequestContext,
+  ): Promise<void> {
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: actor.userId } });
-    if (user.passwordHash) {
-      const valid = dto.currentPassword ? await verifyPassword(dto.currentPassword, user.passwordHash) : false;
+    if (dto.currentPassword) {
+      const valid = user.passwordHash
+        ? await verifyPassword(dto.currentPassword, user.passwordHash)
+        : false;
       if (!valid) throw new BadRequestException({ code: AUTH_ERROR_CODES.wrongPassword });
-      if (await verifyPassword(dto.newPassword, user.passwordHash)) {
-        throw new BadRequestException({ message: 'Choose a password different from the current one' });
+    } else {
+      if (!dto.challengeId || !dto.code) {
+        throw new BadRequestException({ code: AUTH_ERROR_CODES.wrongPassword });
       }
+      const verified = await this.otp.verify(dto.challengeId, dto.code, 'PASSWORD_CHANGE');
+      const expectedTarget = verified.channel === 'sms' ? user.phone : user.email;
+      if (
+        !expectedTarget ||
+        normaliseTarget(verified.channel, expectedTarget) !== verified.target
+      ) {
+        throw new UnauthorizedException({ code: AUTH_ERROR_CODES.otpInvalid });
+      }
+    }
+    if (user.passwordHash && (await verifyPassword(dto.newPassword, user.passwordHash))) {
+      throw new BadRequestException({
+        message: 'Choose a password different from the current one',
+      });
     }
     const now = new Date();
     await this.prisma.$transaction([
@@ -173,7 +299,8 @@ export class AuthService {
     ctx: RequestContext,
     method: LoginMethod,
   ): Promise<TokenPair> {
-    if (user.deletedAt) throw new UnauthorizedException({ code: AUTH_ERROR_CODES.invalidCredentials });
+    if (user.deletedAt)
+      throw new UnauthorizedException({ code: AUTH_ERROR_CODES.invalidCredentials });
     if (user.blockedAt) {
       throw new ForbiddenException({
         code: AUTH_ERROR_CODES.accountBlocked,
@@ -255,7 +382,10 @@ export class AuthService {
       return this.issue(session.user, session.id, nextSecret, session.expiresAt);
     }
 
-    if (session.previousRefreshTokenHash && safeEqual(presented, session.previousRefreshTokenHash)) {
+    if (
+      session.previousRefreshTokenHash &&
+      safeEqual(presented, session.previousRefreshTokenHash)
+    ) {
       const withinGrace =
         session.rotatedAt && now.getTime() - session.rotatedAt.getTime() < REFRESH_REUSE_GRACE_MS;
       if (!withinGrace) {
@@ -290,7 +420,11 @@ export class AuthService {
     });
   }
 
-  private async bindDevice(userId: string, clientDeviceId: string, label?: string): Promise<Device> {
+  private async bindDevice(
+    userId: string,
+    clientDeviceId: string,
+    label?: string,
+  ): Promise<Device> {
     const existing = await this.prisma.device.findUnique({
       where: { userId_clientDeviceId: { userId, clientDeviceId } },
     });
@@ -325,7 +459,11 @@ export class AuthService {
     refreshExpiresAt: Date,
   ): Promise<TokenPair> {
     return {
-      accessToken: await this.tokens.signAccessToken({ sub: user.id, sid: sessionId, role: user.role }),
+      accessToken: await this.tokens.signAccessToken({
+        sub: user.id,
+        sid: sessionId,
+        role: user.role,
+      }),
       refreshToken: this.tokens.composeRefreshToken(sessionId, secret),
       accessTokenExpiresIn: this.tokens.accessTtlSeconds,
       refreshTokenExpiresAt: refreshExpiresAt.toISOString(),
