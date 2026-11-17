@@ -1,11 +1,12 @@
 'use client';
 
 import { type Role } from '@obgyn/types';
-import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Label, Select, Textarea } from '@obgyn/ui';
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Select, Textarea } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { ApiClientError, api } from '@/lib/instructor-api';
+import { RequiredLabel } from './required-label';
 
 type Action = 'block' | 'unblock' | 'role' | 'delete';
 
@@ -104,8 +105,8 @@ export function AdminUserActions({
               </DialogHeader>
               {action === 'role' ? (
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="admin-user-role">{t('role')}</Label>
-                  <Select id="admin-user-role" value={nextRole} onChange={(event) => setNextRole(event.target.value as Role)}>
+                  <RequiredLabel htmlFor="admin-user-role">{t('role')}</RequiredLabel>
+                  <Select id="admin-user-role" required value={nextRole} onChange={(event) => setNextRole(event.target.value as Role)}>
                     <option value="LEARNER">{t('roles.LEARNER')}</option>
                     <option value="FACULTY">{t('roles.FACULTY')}</option>
                     <option value="ADMIN">{t('roles.ADMIN')}</option>
@@ -113,7 +114,7 @@ export function AdminUserActions({
                 </div>
               ) : null}
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="admin-user-reason">{t('reason')}</Label>
+                <RequiredLabel htmlFor="admin-user-reason">{t('reason')}</RequiredLabel>
                 <Textarea
                   id="admin-user-reason"
                   required

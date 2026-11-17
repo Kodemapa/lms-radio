@@ -74,6 +74,7 @@ export async function SiteHeader() {
                 wishlist: t('wishlist'),
                 account: t('account'),
                 instructorDashboard: t('instructorDashboard'),
+                adminDashboard: t('adminDashboard'),
                 becomeInstructor: t('becomeInstructor'),
                 signOut: t('signOut'),
                 myAccount: t('myAccount'),

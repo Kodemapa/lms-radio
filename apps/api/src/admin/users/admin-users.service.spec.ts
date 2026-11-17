@@ -34,6 +34,7 @@ function setup(targetOverrides: Record<string, unknown> = {}) {
   const prisma = {
     $transaction: jest.fn((work: (transaction: typeof tx) => Promise<unknown>) => work(tx)),
     user: {
+      create: jest.fn().mockResolvedValue({ id: TARGET_ID }),
       findMany: jest.fn().mockResolvedValue([
         {
           id: TARGET_ID,
@@ -61,6 +62,36 @@ function setup(targetOverrides: Record<string, unknown> = {}) {
 }
 
 describe('AdminUsersService', () => {
+  it('creates an instructor with a password hash and audits without exposing the password', async () => {
+    const { service, prisma, audit } = setup();
+    const password = 'Temporary1pass';
+
+    await service.createInstructor(ADMIN, {
+      displayName: ' Dr Asha Rao ',
+      email: 'ASHA@EXAMPLE.COM ',
+      phone: '',
+      headline: 'Fetal medicine',
+      password,
+    });
+
+    const create = prisma.user.create.mock.calls[0]?.[0];
+    expect(create).toMatchObject({
+      data: {
+        displayName: 'Dr Asha Rao',
+        email: 'asha@example.com',
+        phone: null,
+        role: 'FACULTY',
+      },
+      select: { id: true },
+    });
+    expect(create?.data.passwordHash).toMatch(/^scrypt\$/);
+    expect(JSON.stringify(create?.data)).not.toContain(password);
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'admin.instructor_created', resourceId: TARGET_ID }),
+    );
+    expect(JSON.stringify(audit.log.mock.calls)).not.toContain(password);
+  });
+
   it('masks contact details in the paged user list', async () => {
     const { service, prisma } = setup();
     const result = await service.list(AdminUsersQuerySchema.parse({}));

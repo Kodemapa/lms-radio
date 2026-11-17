@@ -113,6 +113,8 @@ export class UsersService {
           bio: null,
           learnerType: null,
           role: 'LEARNER',
+          passwordHash: null,
+          passwordChangedAt: null,
           deletedAt: now,
           blockedAt: null,
           blockedReason: null,

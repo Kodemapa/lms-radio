@@ -1,12 +1,12 @@
 import { Body, Controller, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { SkipThrottle, Throttle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { type Request } from 'express';
 import { requestContext } from '../common/request-context';
 import { type AuthUser } from './auth-user';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
-import { DevLoginDto } from './dto/dev-login.dto';
+import { ChangePasswordDto, PasswordLoginDto, SignupDto } from './dto/password-auth.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { OtpChallengeResponseDto, RequestOtpDto } from './dto/request-otp.dto';
 import { TokenPairDto } from './dto/token-pair.dto';
@@ -34,12 +34,34 @@ export class AuthController {
     return this.auth.verifyOtp(dto, requestContext(req));
   }
 
-  /** Development only: email + fixed dev password. 404 in production. */
-  @Post('dev-login')
+  /** Create a learner account with email + password; signs the new account in. 409 if it exists. */
+  @Post('signup')
+  @HttpCode(201)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  signup(@Body() dto: SignupDto, @Req() req: Request): Promise<TokenPairDto> {
+    return this.auth.signup(dto, requestContext(req));
+  }
+
+  /** Email + password sign-in. 401 for a wrong email or password, 403 for a blocked account. */
+  @Post('login')
   @HttpCode(200)
-  @SkipThrottle()
-  devLogin(@Body() dto: DevLoginDto, @Req() req: Request): Promise<TokenPairDto> {
-    return this.auth.devLogin(dto, requestContext(req));
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  login(@Body() dto: PasswordLoginDto, @Req() req: Request): Promise<TokenPairDto> {
+    return this.auth.passwordLogin(dto, requestContext(req));
+  }
+
+  /** Change the password; signs out every other session of this user. */
+  @Post('password')
+  @HttpCode(204)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async changePassword(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: ChangePasswordDto,
+    @Req() req: Request,
+  ): Promise<void> {
+    await this.auth.changePassword(user, dto, requestContext(req));
   }
 
   /** Rotate the refresh token and get a new access token. */

@@ -128,11 +128,11 @@ Plan: `docs/IMAGE-TASKS-GAP-ANALYSIS.md`. Done: dictionary, pin/box/outline/cali
 
 ## P1 — Admin essentials
 
-- [x] **ADM-1 Users management** · M (implemented; migrations `20261116150000_admin_user_management` and `20261116160000_admin_content_and_fields` are applied locally; `prisma migrate status` reports up to date)
+- [x] **ADM-1 Users management** · M (migration `20261116150000_admin_user_management`)
   - List, search, filter by role; view a user's enrolments and devices.
   - Block/unblock (revokes sessions); change role; soft-delete.
   - Every change is audit-logged.
-- [x] **ADM-2 Categories CRUD + sub-categories + ordering** · M — Admin can create, edit, move and order categories (two levels); learner-facing nested browse routes remain separate work.
+- [~] **ADM-2 Categories CRUD + sub-categories + ordering** · M — Admin can create, edit, move and order categories (two levels). Remaining: the learner catalogue routes `courses/[main]/[sub]`.
 - [x] **ADM-3 Admin dashboard** · M — User/course/enrolment/certificate totals, pending queues and 30-day enrolment/sign-up charts. Revenue and refund queues wait for COM-*.
 - [x] **ADM-4 CSV exports** · S — Courses, enrolments, instructors, quiz attempts and imaging attempts; streamed, optional course filter, contacts masked unless requested, downloads audit-logged.
 - [x] **ADM-5 Instructor application custom fields** · S — Admin-defined fields render on the application form; answers are validated, PC-PNDT screened, saved and shown in review.
@@ -232,13 +232,14 @@ Still open from the old instructor area:
   - **DECISION:** in scope?
 - [ ] **ACC-3 Exam certificates** · S — A certificate tied to a final exam result (separate template/serial).
 - [ ] **ACC-4 Production login policy** · S
-  - **DECISION:** OTP only, or also email + password?
-  - Today email + password is dev-only (`/auth/dev-login`, 404 in production).
+  - Current: email + password and OTP sign-in; sign-up verifies email by OTP.
+  - Choose and configure a production OTP delivery provider before launch; keys
+    belong in API-side secrets, not web environment variables.
 
 ## P1 — Platform & quality
 
 - [ ] **QA-1 E2E suite in the repo** · M
-  - Move the Playwright flows used so far (login via dev-login, DRM playback, DICOM case authoring and learner pass/fail, entrance test) into `apps/web/e2e/`.
+  - Add Playwright flows for OTP sign-in/sign-up, DRM playback, DICOM case authoring and learner pass/fail, and the entrance test to `apps/web/e2e/`.
   - Generate fixtures at test time; no patient images.
 - [ ] **QA-2 CI** · M — GitHub Actions: install, typecheck, lint, unit tests, Prisma migrate on a Postgres service, e2e on PRs.
 - [ ] **QA-3 Pre-commit** · S — lint-staged + Prettier.
@@ -258,7 +259,7 @@ Still open from the old instructor area:
     - TID 1500 SR;
     - grading recomputed from drawings;
     - webpack dev;
-    - dev-login;
+    - OTP request and verification;
     - PNG/JPG to Secondary Capture.
 - [ ] **DOC-2 Missing docs** · M — `docs/01-PRD.md` and `03`–`10` are referenced by `CLAUDE.md` but don't exist yet.
 

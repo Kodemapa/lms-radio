@@ -17,19 +17,25 @@
 
 1. `POST /auth/otp/request` sends a 6-digit OTP (HMAC-hashed at rest, 5-minute TTL,
    5 attempts, 5 requests per 10 min per target).
-2. `POST /auth/otp/verify` finds or creates the user, **binds the device** (at most
+2. `POST /auth/otp/verify` signs in an existing user and **binds the device** (at most
    `MAX_DEVICES_PER_USER`, default 2), creates a `Session` and returns:
    - an access JWT (15 min) with `sub`, `sid`, `role`
    - a refresh token `<sessionId>.<secret>`; only a SHA-256 of the secret is stored
-3. `POST /auth/refresh` rotates the refresh token. It only works with the device id it
+3. Sign-up first verifies an email OTP, then creates a learner account with a password
+   and records acceptance of the terms/privacy notice. Email + password sign-in is
+   available to accounts that have set a password; OTP sign-in remains available.
+4. `POST /auth/password` changes or sets the password and revokes every other session.
+   The signed-in session is kept.
+5. `POST /auth/refresh` rotates the refresh token. It only works with the device id it
    was issued to. Replaying the previous token after a 10-second grace window revokes
    the session (theft detection).
-4. `JwtAuthGuard` checks the JWT **and** that the session is live and the account is
+6. `JwtAuthGuard` checks the JWT **and** that the session is live and the account is
    neither blocked nor deleted, so logout, device removal, blocking, and deletion take
    effect immediately.
 
 On the web, tokens never reach page JavaScript: the BFF sets them as httpOnly,
-`SameSite=Strict` cookies, and middleware refreshes them for protected pages.
+`SameSite=Strict` cookies. Middleware refreshes them for signed-in site pages and
+protected admin, instructor, account, and learning pages.
 
 ## Protected media (CLAUDE.md rule 2)
 
@@ -85,10 +91,7 @@ The admin tools also provide:
 - admin-defined instructor application fields, client/server answer validation, PC-PNDT screening
   and reviewer display of saved answers;
 - CMS page and FAQ editors, published public pages/FAQ, English fallback, legal footer links,
-  and non-secret SEO/contact settings used by page metadata and the footer.
-
-The migrations for user management and admin content/fields are in
-`apps/api/prisma/migrations/`; the local database was verified up to date on 16 Nov 2026.
+  and non-secret SEO/contact settings used by page metadata and the footer;
 - a public contact form (`/contact` → BFF `/api/contact` → `POST /content/contact`, consent
   required, honeypot, 5/min per IP) feeding the admin inbox at `/admin/messages`;
 - SEO: Open Graph/Twitter image and a search-indexing switch in Site settings, `app/robots.ts`
@@ -96,6 +99,10 @@ The migrations for user management and admin content/fields are in
 - a language editor at `/admin/languages`: `MessageOverride` rows are fetched by
   `i18n/request.ts` (60 s cache) and merged over `messages/*.json` with
   `applyMessageOverrides`, which drops unknown keys and edits that change ICU arguments.
+
+The schema changes are in three migrations in `apps/api/prisma/migrations/`:
+`20261116150000_admin_user_management`, `20261116160000_admin_content_and_fields` and
+`20261116170000_admin_contact_and_overrides`.
 
 If the API is unreachable, public settings and text overrides fall back to defaults, so
 the site keeps rendering. Home-page CMS sections (content schema not agreed), mail/push
@@ -203,7 +210,7 @@ question is passed. Wrong answers never reveal the solution. Instructors add the
 | 2026-11-15 | Account deletion erases personal fields, reviews and wishlist, and revokes all sessions/devices; progress stays, anonymised | DPDP Act right to erasure while keeping course statistics correct. Instructors with live courses are blocked until courses are handed over |
 | 2026-11-15 | PDFs are shown in the browser's viewer under the watermark for now | TODO: render with pdf.js to canvas so the browser's download button is never exposed |
 | 2026-11-15 | Course discussion (Q&A) moves to Phase 4 with the help desk | Same moderation and reporting needs |
-| 2026-11-15 | `DEV_FIXED_OTP` gives a fixed sign-in code in development; the API refuses to start with it in production | Easier manual testing |
+| 2026-11-17 | OTP codes are random in development and logged by `DevConsoleOtpSender`; production fails closed until an OTP provider is configured | No provider has been selected; don't ship a fixed code or log OTPs in production |
 | 2026-11-15 | Demo catalogue replaced by the Certificate Course in Fetal Medicine (GIFS brochure): 10 modules, 120 classes, an MCQ test and a scan-image submission per module | Requested by the user |
 | 2026-11-15 | Test videos are openly licensed Wikimedia Commons clips (DW "The Placenta", CC BY-SA 4.0; CDC "Prenatal Radiation Exposure", public domain) played through our protected player, not YouTube embeds | YouTube can't do signed URLs or watermarking, and the "can't skip past an unanswered question" lock only holds on a player we control. Download with `apps/api/prisma/fetch-sample-media.sh` |
 | 2026-11-15 | In-video question locks are enforced on the client (no seeking) and the server (position clamp, completion refused); bytes past the lock aren't withheld | Progressive video can't be cut by time. HLS segment gating can come with the DRM work |

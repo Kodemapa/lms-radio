@@ -6,12 +6,13 @@ import {
   type ContentPageInput,
   type ContentLocale,
 } from '@obgyn/types';
-import { Button, Input, Label, Select, Textarea } from '@obgyn/ui';
+import { Button, Input, Select, Textarea } from '@obgyn/ui';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
 import { ApiClientError, api } from '@/lib/instructor-api';
+import { RequiredLabel } from './required-label';
 
 type PageForm = ContentPageInput & { id: string | null };
 const EMPTY: PageForm = {
@@ -114,13 +115,14 @@ export function ContentPagesManager({ initial }: { initial: ContentPage[] }) {
           <h2 className="text-lg font-semibold">{form.id ? t('editTitle') : t('addTitle')}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="content-page-slug">{t('slug')}</Label>
+              <RequiredLabel htmlFor="content-page-slug">{t('slug')}</RequiredLabel>
               <Input id="content-page-slug" required maxLength={80} value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="content-page-locale">{t('language')}</Label>
+              <RequiredLabel htmlFor="content-page-locale">{t('language')}</RequiredLabel>
               <Select
                 id="content-page-locale"
+                required
                 value={form.locale}
                 onChange={(event) => setForm({ ...form, locale: event.target.value as ContentLocale })}
               >
@@ -130,11 +132,11 @@ export function ContentPagesManager({ initial }: { initial: ContentPage[] }) {
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="content-page-title">{t('titleLabel')}</Label>
+            <RequiredLabel htmlFor="content-page-title">{t('titleLabel')}</RequiredLabel>
             <Input id="content-page-title" required maxLength={150} value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="content-page-body">{t('body')}</Label>
+            <RequiredLabel htmlFor="content-page-body">{t('body')}</RequiredLabel>
             <Textarea id="content-page-body" required maxLength={50000} rows={12} value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} />
             <p className="text-xs text-muted-foreground">{t('bodyHint')}</p>
           </div>

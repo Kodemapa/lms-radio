@@ -7,7 +7,7 @@
  * ./prisma/fetch-sample-media.sh first). The first two modules use them, with
  * in-video questions that pause the video until answered correctly.
  *
- * Sign in with email + password 123456 (development only); see docs/DEV-LOGINS.md:
+ * Sign in using the OTP printed by the development API; see docs/DEV-LOGINS.md:
  *   admin@example.com        ADMIN
  *   instructor@example.com   FACULTY (Global Institute of Foetal Science), owns the course
  *   instructor2@example.com  FACULTY (Dr Arjun Mehta), for co-instructor testing

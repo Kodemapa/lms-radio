@@ -6,6 +6,12 @@ export async function bffFetch(input: string, init?: RequestInit): Promise<Respo
   const res = await fetch(input, { ...init, credentials: 'same-origin', cache: 'no-store' });
   if (res.status !== 401) return res;
   const refreshed = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'same-origin' });
-  if (!refreshed.ok) return res;
+  if (!refreshed.ok) {
+    const locale = window.location.pathname.split('/')[1] === 'hi' ? 'hi' : 'en';
+    const login = new URL(`/${locale}/login`, window.location.origin);
+    login.searchParams.set('next', `${window.location.pathname}${window.location.search}`);
+    window.location.replace(login);
+    return res;
+  }
   return fetch(input, { ...init, credentials: 'same-origin', cache: 'no-store' });
 }

@@ -1,8 +1,8 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import {
@@ -12,16 +12,17 @@ import {
   type OtpRequestResponse,
   type TokenPair,
 } from '@obgyn/types';
-import { type Device, type User } from '@prisma/client';
+import { Prisma, type Device, type User } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { safeEqual } from '../common/crypto';
+import { dummyPasswordHash, hashPassword, verifyPassword } from '../common/password';
 import { type RequestContext } from '../common/request-context';
 import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { type AuthUser } from './auth-user';
+import { type ChangePasswordDto, type PasswordLoginDto, type SignupDto } from './dto/password-auth.dto';
 import { type RefreshDto } from './dto/refresh.dto';
 import { type RequestOtpDto } from './dto/request-otp.dto';
-import { type DevLoginDto } from './dto/dev-login.dto';
 import { type VerifyOtpDto } from './dto/verify-otp.dto';
 import { OtpService } from './otp.service';
 import { TokenService } from './token.service';
@@ -38,9 +39,8 @@ function normaliseTarget(channel: OtpChannel, target: string): string {
   return channel === 'email' ? trimmed.toLowerCase() : trimmed.replace(/[\s-]/g, '');
 }
 
-function defaultDisplayName(channel: OtpChannel, target: string): string {
-  return channel === 'email' ? (target.split('@')[0] ?? 'Learner') : `Learner ${target.slice(-4)}`;
-}
+type DeviceInfo = { deviceId: string; deviceLabel?: string };
+type LoginMethod = 'otp' | 'password' | 'signup';
 
 @Injectable()
 export class AuthService {
@@ -67,33 +67,118 @@ export class AuthService {
     return { challengeId, expiresAt: expiresAt.toISOString() };
   }
 
+  /**
+   * One-time-code sign-in for an EXISTING account. It never creates accounts:
+   * new users sign up with `signup`.
+   */
   async verifyOtp(dto: VerifyOtpDto, ctx: RequestContext): Promise<TokenPair> {
     const { channel, target } = await this.otp.verify(dto.challengeId, dto.code);
-    return this.startSession(channel, target, dto, ctx);
+    const user = await this.prisma.user.findUnique({
+      where: channel === 'sms' ? { phone: target } : { email: target },
+    });
+    if (!user || user.deletedAt) throw new UnauthorizedException({ code: AUTH_ERROR_CODES.noAccount });
+    return this.startSession(user, dto, ctx, 'otp');
+  }
+
+  /** Create a learner account with email + password and sign it in. */
+  async signup(dto: SignupDto, ctx: RequestContext): Promise<TokenPair> {
+    const email = normaliseTarget('email', dto.email);
+    const phone = dto.phone ? normaliseTarget('sms', dto.phone) : null;
+    const verified = await this.otp.verify(dto.challengeId, dto.code);
+    if (verified.channel !== 'email' || verified.target !== email) {
+      throw new UnauthorizedException({ code: AUTH_ERROR_CODES.otpInvalid });
+    }
+    const passwordHash = await hashPassword(dto.password);
+    const now = new Date();
+
+    let user: User;
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          displayName: dto.displayName.trim(),
+          email,
+          phone,
+          passwordHash,
+          passwordChangedAt: now,
+          termsAcceptedAt: now,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException({
+          code: AUTH_ERROR_CODES.accountExists,
+          message: 'An account with this email or mobile number already exists.',
+        });
+      }
+      throw error;
+    }
+    await this.audit.log({
+      actorId: user.id,
+      action: 'auth.signup',
+      resource: 'user',
+      resourceId: user.id,
+      ...ctx,
+      metadata: { withPhone: !!phone },
+    });
+    return this.startSession(user, dto, ctx, 'signup');
+  }
+
+  /** Email + password sign-in. Wrong email and wrong password look identical. */
+  async passwordLogin(dto: PasswordLoginDto, ctx: RequestContext): Promise<TokenPair> {
+    const user = await this.prisma.user.findUnique({ where: { email: normaliseTarget('email', dto.email) } });
+    // Always run one scrypt check so response time does not reveal whether the email exists.
+    const valid = await verifyPassword(dto.password, user?.passwordHash ?? (await dummyPasswordHash()));
+    if (!user || !user.passwordHash || user.deletedAt || !valid) {
+      throw new UnauthorizedException({ code: AUTH_ERROR_CODES.invalidCredentials });
+    }
+    return this.startSession(user, dto, ctx, 'password');
   }
 
   /**
-   * Development only: sign in with email + the fixed dev password
-   * (DEV_FIXED_OTP), skipping the OTP round trip and its rate limit.
-   * The route does not exist in production or when DEV_FIXED_OTP is unset.
+   * Change (or, for accounts that never had one, set) the password. Every
+   * other session is signed out; this device stays signed in.
    */
-  async devLogin(dto: DevLoginDto, ctx: RequestContext): Promise<TokenPair> {
-    const fixed = this.config.get('DEV_FIXED_OTP');
-    if (this.config.isProduction || !fixed) throw new NotFoundException();
-    if (!safeEqual(dto.password, fixed)) throw new UnauthorizedException({ code: 'INVALID_PASSWORD' });
-    return this.startSession('email', normaliseTarget('email', dto.email), dto, ctx, 'dev-password');
+  async changePassword(actor: AuthUser, dto: ChangePasswordDto, ctx: RequestContext): Promise<void> {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: actor.userId } });
+    if (user.passwordHash) {
+      const valid = dto.currentPassword ? await verifyPassword(dto.currentPassword, user.passwordHash) : false;
+      if (!valid) throw new BadRequestException({ code: AUTH_ERROR_CODES.wrongPassword });
+      if (await verifyPassword(dto.newPassword, user.passwordHash)) {
+        throw new BadRequestException({ message: 'Choose a password different from the current one' });
+      }
+    }
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: await hashPassword(dto.newPassword), passwordChangedAt: now },
+      }),
+      this.prisma.session.updateMany({
+        where: { userId: user.id, revokedAt: null, id: { not: actor.sessionId } },
+        data: { revokedAt: now, revokedReason: 'PASSWORD_CHANGED' },
+      }),
+    ]);
+    await this.audit.log({
+      actorId: user.id,
+      action: user.passwordHash ? 'auth.password_changed' : 'auth.password_set',
+      resource: 'user',
+      resourceId: user.id,
+      ...ctx,
+    });
   }
 
   private async startSession(
-    channel: OtpChannel,
-    target: string,
-    dto: { deviceId: string; deviceLabel?: string },
+    user: User,
+    dto: DeviceInfo,
     ctx: RequestContext,
-    method: 'otp' | 'dev-password' = 'otp',
+    method: LoginMethod,
   ): Promise<TokenPair> {
-    const user = await this.findOrCreateUser(channel, target);
-    if (user.blockedAt || user.deletedAt) {
-      throw new UnauthorizedException({ code: 'ACCOUNT_UNAVAILABLE' });
+    if (user.deletedAt) throw new UnauthorizedException({ code: AUTH_ERROR_CODES.invalidCredentials });
+    if (user.blockedAt) {
+      throw new ForbiddenException({
+        code: AUTH_ERROR_CODES.accountBlocked,
+        message: 'This account has been blocked. Contact support.',
+      });
     }
     const device = await this.bindDevice(user.id, dto.deviceId, dto.deviceLabel);
 
@@ -116,7 +201,7 @@ export class AuthService {
       resource: 'session',
       resourceId: session.id,
       ...ctx,
-      metadata: { channel, method, deviceId: device.id },
+      metadata: { method, deviceId: device.id },
     });
 
     return this.issue(user, session.id, secret, expiresAt);
@@ -203,21 +288,6 @@ export class AuthService {
       ...ctx,
       metadata: { reason },
     });
-  }
-
-  private findOrCreateUser(channel: OtpChannel, target: string): Promise<User> {
-    const create = { displayName: defaultDisplayName(channel, target) };
-    return channel === 'sms'
-      ? this.prisma.user.upsert({
-          where: { phone: target },
-          update: {},
-          create: { ...create, phone: target },
-        })
-      : this.prisma.user.upsert({
-          where: { email: target },
-          update: {},
-          create: { ...create, email: target },
-        });
   }
 
   private async bindDevice(userId: string, clientDeviceId: string, label?: string): Promise<Device> {

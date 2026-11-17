@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Button } from './button';
-import { Input } from './input';
+import { DebouncedSearchInput } from './debounced-search-input';
 import { Label } from './label';
 import { Select } from './select';
 
@@ -41,6 +41,7 @@ export function AdminTable<T>({
   filters = [],
   hiddenFields = [],
   pagination,
+  searchOnType = false,
 }: {
   ariaLabel: string;
   action: string;
@@ -54,18 +55,20 @@ export function AdminTable<T>({
   filters?: readonly AdminTableFilter[];
   hiddenFields?: readonly { name: string; value: string }[];
   pagination?: AdminTablePagination;
+  searchOnType?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-4">
       <form action={action} method="get" className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 md:flex-row md:items-end">
         <div className="flex min-w-56 flex-1 flex-col gap-1.5">
           <Label htmlFor="admin-table-search">{searchLabel}</Label>
-          <Input
+          <DebouncedSearchInput
             id="admin-table-search"
             name="q"
-            type="search"
             placeholder={searchPlaceholder}
-            defaultValue={searchValue}
+            value={searchValue}
+            label={searchLabel}
+            autoSubmit={searchOnType}
           />
         </div>
         {filters.map((filter) => (

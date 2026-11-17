@@ -5,9 +5,6 @@ import { LoginForm } from '@/components/login-form';
 import facultyTeaching from '@/components/home/images/faculty-teaching.webp';
 import { Link } from '@/i18n/navigation';
 
-/** Mirrors the API's DEV_FIXED_OTP so testers know the code. Never shown in production. */
-const DEV_OTP_HINT = process.env.NODE_ENV === 'production' ? undefined : process.env.DEV_FIXED_OTP_HINT;
-
 type Props = {
   params: Promise<{ locale: string }>;
   searchParams: Promise<{ next?: string; mode?: string }>;
@@ -54,17 +51,12 @@ export default async function LoginPage({ params, searchParams }: Props) {
           <div className="flex flex-col justify-center gap-4 p-6 sm:p-10">
             <h1 className="!text-4xl font-bold">{register ? t('registerTitle') : t('title')}</h1>
             <p className="text-muted-foreground">{register ? t('registerIntro') : t('intro')}</p>
-            {DEV_OTP_HINT ? (
-              <p role="note" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-100">
-                {t('devPasswordHint', { code: DEV_OTP_HINT })}
-              </p>
-            ) : null}
-            <LoginForm next={next ?? null} devPassword={!!DEV_OTP_HINT} />
+            <LoginForm key={register ? 'register' : 'login'} next={next ?? null} register={register} />
             <p className="text-sm text-muted-foreground">
               {register ? t('haveAccount') : t('noAccount')}{' '}
               <Link
                 href={register ? `/login?${keep.slice(1)}` : `/login?mode=register${keep}`}
-                className="font-medium text-primary hover:underline"
+                className="inline-flex rounded-full bg-secondary px-3 py-1 font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80 focus-visible:outline-2 focus-visible:outline-ring"
               >
                 {register ? t('title') : t('registerTitle')}
               </Link>

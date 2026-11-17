@@ -19,6 +19,7 @@ import { useTranslations } from 'next-intl';
 import { type FormEvent, useMemo, useState } from 'react';
 import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
 import { ApiClientError, api } from '@/lib/instructor-api';
+import { RequiredLabel } from './required-label';
 
 type Form = { id: string | null; name: string; slug: string; description: string; parentId: string };
 const EMPTY: Form = { id: null, name: '', slug: '', description: '', parentId: '' };
@@ -218,7 +219,7 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
                 <DialogDescription>{t('formHint')}</DialogDescription>
               </DialogHeader>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="category-name">{t('name')}</Label>
+                <RequiredLabel htmlFor="category-name">{t('name')}</RequiredLabel>
                 <Input id="category-name" required maxLength={80} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </div>
               <div className="flex flex-col gap-1.5">

@@ -55,6 +55,7 @@ export default async function InstructorLayout({
                 wishlist: tCommon('wishlist'),
                 account: tCommon('account'),
                 instructorDashboard: tCommon('instructorDashboard'),
+                adminDashboard: tCommon('adminDashboard'),
                 becomeInstructor: tCommon('becomeInstructor'),
                 signOut: tCommon('signOut'),
                 myAccount: tCommon('myAccount'),

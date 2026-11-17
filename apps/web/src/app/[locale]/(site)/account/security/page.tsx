@@ -1,6 +1,7 @@
 import { DeviceSchema } from '@obgyn/types';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { z } from 'zod';
+import { PasswordChangeForm } from '@/components/account/password-change-form';
 import { SecurityPanel } from '@/components/account/security-panel';
 import { apiGet } from '@/lib/server-api';
 
@@ -14,6 +15,7 @@ export default async function SecurityPage({ params }: { params: Promise<{ local
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold md:text-3xl">{t('securityTitle')}</h1>
+      <PasswordChangeForm />
       <SecurityPanel devices={devices} />
     </div>
   );

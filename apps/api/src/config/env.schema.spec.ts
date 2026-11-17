@@ -8,20 +8,8 @@ const base = {
 };
 
 describe('validateEnv', () => {
-  it('accepts DEV_FIXED_OTP in development', () => {
-    expect(validateEnv({ ...base, DEV_FIXED_OTP: '123456' }).DEV_FIXED_OTP).toBe('123456');
-  });
-
-  it('refuses DEV_FIXED_OTP in production', () => {
-    expect(() =>
-      validateEnv({
-        ...base,
-        NODE_ENV: 'production',
-        STORAGE_DRIVER: 's3',
-        S3_BUCKET: 'b',
-        DEV_FIXED_OTP: '123456',
-      }),
-    ).toThrow(/DEV_FIXED_OTP: must not be set in production/);
+  it('no longer knows a fixed development sign-in code', () => {
+    expect(validateEnv({ ...base, DEV_FIXED_OTP: '123456' })).not.toHaveProperty('DEV_FIXED_OTP');
   });
 
   it('defaults DEV_UNLOCK_LESSONS to off and refuses it in production', () => {
@@ -30,10 +18,6 @@ describe('validateEnv', () => {
     expect(() =>
       validateEnv({ ...base, NODE_ENV: 'production', STORAGE_DRIVER: 's3', S3_BUCKET: 'b', DEV_UNLOCK_LESSONS: 'true' }),
     ).toThrow(/DEV_UNLOCK_LESSONS: must not be set in production/);
-  });
-
-  it('rejects codes that are not 6 digits', () => {
-    expect(() => validateEnv({ ...base, DEV_FIXED_OTP: '1234' })).toThrow(/DEV_FIXED_OTP/);
   });
 
   it('refuses the clearkey DRM adapter in production', () => {

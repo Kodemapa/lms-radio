@@ -1,12 +1,13 @@
 'use client';
 
 import { ContentLocale, FaqInputSchema, type Faq, type FaqInput } from '@obgyn/types';
-import { Button, Input, Label, Select, Textarea } from '@obgyn/ui';
+import { Button, Input, Select, Textarea } from '@obgyn/ui';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
 import { ApiClientError, api } from '@/lib/instructor-api';
+import { RequiredLabel } from './required-label';
 
 type FaqForm = FaqInput & { id: string | null };
 const EMPTY: FaqForm = { id: null, locale: 'en', question: '', answer: '', position: 0, published: true };
@@ -91,23 +92,23 @@ export function FaqsManager({ initial }: { initial: Faq[] }) {
           <h2 className="text-lg font-semibold">{form.id ? t('editTitle') : t('addTitle')}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="faq-locale">{t('language')}</Label>
-              <Select id="faq-locale" value={form.locale} onChange={(event) => setForm({ ...form, locale: event.target.value as ContentLocale })}>
+              <RequiredLabel htmlFor="faq-locale">{t('language')}</RequiredLabel>
+              <Select id="faq-locale" required value={form.locale} onChange={(event) => setForm({ ...form, locale: event.target.value as ContentLocale })}>
                 <option value="en">{t('english')}</option>
                 <option value="hi">{t('hindi')}</option>
               </Select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="faq-position">{t('position')}</Label>
+              <RequiredLabel htmlFor="faq-position">{t('position')}</RequiredLabel>
               <Input id="faq-position" type="number" min={0} max={10000} required value={form.position} onChange={(event) => setForm({ ...form, position: Number(event.target.value) })} />
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="faq-question">{t('question')}</Label>
+            <RequiredLabel htmlFor="faq-question">{t('question')}</RequiredLabel>
             <Input id="faq-question" required maxLength={300} value={form.question} onChange={(event) => setForm({ ...form, question: event.target.value })} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="faq-answer">{t('answer')}</Label>
+            <RequiredLabel htmlFor="faq-answer">{t('answer')}</RequiredLabel>
             <Textarea id="faq-answer" required maxLength={5000} rows={6} value={form.answer} onChange={(event) => setForm({ ...form, answer: event.target.value })} />
           </div>
           <label className="flex items-center gap-2 text-sm">

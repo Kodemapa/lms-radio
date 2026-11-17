@@ -60,6 +60,7 @@ export default async function AdminLayout({
                 wishlist: tCommon('wishlist'),
                 account: tCommon('account'),
                 instructorDashboard: tCommon('instructorDashboard'),
+                adminDashboard: tCommon('adminDashboard'),
                 becomeInstructor: tCommon('becomeInstructor'),
                 signOut: tCommon('signOut'),
                 myAccount: tCommon('myAccount'),

@@ -19,6 +19,7 @@ import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
 import { ApiClientError, api } from '@/lib/instructor-api';
+import { RequiredLabel } from './required-label';
 
 type Form = {
   id: string | null;
@@ -159,7 +160,7 @@ export function ApplicationFieldsManager({ initial }: { initial: ApplicationFiel
                 <DialogDescription>{t('formHint')}</DialogDescription>
               </DialogHeader>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="field-label">{t('label')}</Label>
+                <RequiredLabel htmlFor="field-label">{t('label')}</RequiredLabel>
                 <Input id="field-label" required maxLength={120} value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
               </div>
               <div className="flex flex-col gap-1.5">
@@ -167,7 +168,7 @@ export function ApplicationFieldsManager({ initial }: { initial: ApplicationFiel
                 <Input id="field-label-hi" lang="hi" maxLength={120} value={form.labelHi} onChange={(e) => setForm({ ...form, labelHi: e.target.value })} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="field-key">{t('key')}</Label>
+                <RequiredLabel htmlFor="field-key">{t('key')}</RequiredLabel>
                 <Input
                   id="field-key"
                   required
@@ -180,7 +181,7 @@ export function ApplicationFieldsManager({ initial }: { initial: ApplicationFiel
                 <p id="field-key-hint" className="text-xs text-muted-foreground">{t('keyHint')}</p>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="field-type">{t('type')}</Label>
+                <RequiredLabel htmlFor="field-type">{t('type')}</RequiredLabel>
                 <Select id="field-type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as ApplicationFieldType })}>
                   {APPLICATION_FIELD_TYPES.map((type) => (
                     <option key={type} value={type}>{t(`types.${type}`)}</option>
@@ -189,10 +190,11 @@ export function ApplicationFieldsManager({ initial }: { initial: ApplicationFiel
               </div>
               {form.type === 'SELECT' ? (
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="field-options">{t('options')}</Label>
+                  <RequiredLabel htmlFor="field-options">{t('options')}</RequiredLabel>
                   <Textarea
                     id="field-options"
                     rows={4}
+                    required
                     value={form.options}
                     aria-describedby="field-options-hint"
                     onChange={(e) => setForm({ ...form, options: e.target.value })}

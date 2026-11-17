@@ -89,6 +89,11 @@ model User {
   role        Role         @default(LEARNER)
   learnerType LearnerType?
   locale      String       @default("en")
+  /// scrypt hash ("scrypt$N$r$p$salt$hash"); null for accounts that have never set a password.
+  passwordHash      String?
+  passwordChangedAt DateTime?
+  /// When the user accepted the terms of use and privacy notice at sign-up (DPDP Act).
+  termsAcceptedAt   DateTime?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 

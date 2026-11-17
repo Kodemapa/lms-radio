@@ -19,6 +19,7 @@ export interface UserMenuLabels {
   wishlist: string;
   account: string;
   instructorDashboard: string;
+  adminDashboard: string;
   becomeInstructor: string;
   signOut: string;
   myAccount: string;
@@ -27,6 +28,7 @@ export interface UserMenuLabels {
 export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenuLabels }) {
   const router = useRouter();
   const nextRouter = useNextRouter();
+  const isAdmin = user.role === 'ADMIN';
   const isInstructor = user.role === 'FACULTY' || user.role === 'ADMIN';
 
   return (
@@ -49,20 +51,29 @@ export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenu
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => router.push('/account/learning')}>
-          <BookOpen aria-hidden className="size-4" />
-          {labels.myLearning}
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => router.push('/account/wishlist')}>
-          <Bookmark aria-hidden className="size-4" />
-          {labels.wishlist}
-        </DropdownMenuItem>
+        {!isAdmin ? (
+          <>
+            <DropdownMenuItem onSelect={() => router.push('/account/learning')}>
+              <BookOpen aria-hidden className="size-4" />
+              {labels.myLearning}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => router.push('/account/wishlist')}>
+              <Bookmark aria-hidden className="size-4" />
+              {labels.wishlist}
+            </DropdownMenuItem>
+          </>
+        ) : null}
         <DropdownMenuItem onSelect={() => router.push('/account/profile')}>
           <Settings aria-hidden className="size-4" />
           {labels.account}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        {isInstructor ? (
+        {isAdmin ? (
+          <DropdownMenuItem onSelect={() => router.push('/admin')}>
+            <LayoutDashboard aria-hidden className="size-4" />
+            {labels.adminDashboard}
+          </DropdownMenuItem>
+        ) : isInstructor ? (
           <DropdownMenuItem onSelect={() => router.push('/instructor')}>
             <LayoutDashboard aria-hidden className="size-4" />
             {labels.instructorDashboard}

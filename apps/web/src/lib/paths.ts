@@ -1,7 +1,7 @@
 import { routing } from '@/i18n/routing';
 
 const localeGroup = routing.locales.join('|');
-const PROTECTED = new RegExp(`^/(${localeGroup})/(learn|instructor|account)(/|$)`);
+const PROTECTED = new RegExp(`^/(${localeGroup})/(learn|instructor|account|admin)(/|$)`);
 
 /** Pages that need a signed-in user. */
 export function isProtectedPath(pathname: string): boolean {

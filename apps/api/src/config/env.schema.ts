@@ -28,12 +28,6 @@ export const EnvSchema = z
     REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
     OTP_SECRET: secret,
     OTP_TTL_SECONDS: z.coerce.number().int().min(60).max(600).default(300),
-    /** Development only: every OTP is this code. Refused in production. */
-    DEV_FIXED_OTP: z
-      .string()
-      .regex(/^\d{6}$/, 'must be 6 digits')
-      .optional()
-      .or(z.literal('').transform(() => undefined)),
     MAX_DEVICES_PER_USER: z.coerce.number().int().min(1).max(10).default(2),
     /**
      * Development only: turn off sequential lesson locks so any lesson can be
@@ -81,13 +75,6 @@ export const EnvSchema = z
     SHAKA_PACKAGER_PATH: z.string().default('packager'),
   })
   .superRefine((env, ctx) => {
-    if (env.NODE_ENV === 'production' && env.DEV_FIXED_OTP) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['DEV_FIXED_OTP'],
-        message: 'must not be set in production',
-      });
-    }
     if (env.NODE_ENV === 'production' && env.DEV_UNLOCK_LESSONS) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

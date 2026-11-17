@@ -26,7 +26,7 @@ import { CurrentUser } from '../../auth/current-user.decorator';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { Roles } from '../../auth/roles.decorator';
 import { RolesGuard } from '../../auth/roles.guard';
-import { AdminUserReasonDto, AdminUsersQueryDto, AdminUserRoleDto } from './admin-users.dto';
+import { AdminCreateInstructorDto, AdminUserReasonDto, AdminUsersQueryDto, AdminUserRoleDto } from './admin-users.dto';
 import { AdminUsersService } from './admin-users.service';
 
 @ApiTags('admin users')
@@ -42,6 +42,18 @@ export class AdminUsersController {
   @ApiOkResponse({ description: 'Paged users; contact fields are masked.' })
   list(@Query() query: AdminUsersQueryDto): Promise<AdminUserListResponse> {
     return this.users.list(query);
+  }
+
+  @Post('instructors')
+  @HttpCode(201)
+  @ApiOperation({ summary: 'Create an instructor account with a temporary password' })
+  @ApiBody({ type: AdminCreateInstructorDto })
+  @ApiOkResponse({ description: 'The new user id. 409 if the email or mobile is already used.' })
+  createInstructor(
+    @CurrentUser() admin: AuthUser,
+    @Body() dto: AdminCreateInstructorDto,
+  ): Promise<{ id: string }> {
+    return this.users.createInstructor(admin, dto);
   }
 
   @Get(':id')

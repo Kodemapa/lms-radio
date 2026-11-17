@@ -49,18 +49,10 @@ describe('OtpService', () => {
     for (let i = 0; i < 50; i++) expect(generateOtpCode()).toMatch(/^\d{6}$/);
   });
 
-  it('uses DEV_FIXED_OTP outside production', async () => {
-    const { service, code } = setup({ DEV_FIXED_OTP: '123456' });
+  it('verifies the code it sent', async () => {
+    const { service, code } = setup();
     const { challengeId } = await service.createChallenge('email', 'dr@example.in');
-    expect(code()).toBe('123456');
-    await expect(service.verify(challengeId, '123456')).resolves.toMatchObject({ target: 'dr@example.in' });
-  });
-
-  it('ignores DEV_FIXED_OTP in production', async () => {
-    const { service, code } = setup({ DEV_FIXED_OTP: '123456', NODE_ENV: 'production' });
-    await service.createChallenge('email', 'dr@example.in');
-    expect(code()).toMatch(/^\d{6}$/);
-    expect(code()).not.toBe('123456');
+    await expect(service.verify(challengeId, code())).resolves.toMatchObject({ target: 'dr@example.in' });
   });
 
   it('never stores the code in plain text', async () => {

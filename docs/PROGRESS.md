@@ -76,10 +76,10 @@ All verified in real Chrome against the dev database. Typecheck, lint and tests 
   - Uploaders can open their own assets: faculty draw on a DICOM before the case is saved.
   - Cornerstone `getViewport` typing.
   - The reference label no longer overlaps the learner's.
-- **Dev login without OTP:** email + password `123456`.
-  - Endpoints: `POST /auth/dev-login` (API) and `/api/auth/dev-login` (web BFF).
-  - 404 in production or without `DEV_FIXED_OTP`; not rate-limited.
-  - The login page shows it first in dev.
+- **Authentication update (2026-11-17):** fixed development credentials and the
+  `dev-login` endpoint are removed. OTP codes are random and printed only by the
+  development API console sender. Sign-up verifies an email OTP; existing accounts
+  can use OTP or a password they have set.
 - **Start command:** run `corepack enable` once, then `pnpm turbo run dev --filter=@obgyn/web --filter=@obgyn/api`. Turbo needs `pnpm` on the PATH; `corepack pnpm turbo …` fails with "Unable to find package manager binary".
 - **Checks:** typecheck, lint and test are all green (21/21 tasks).
 - **Still open:**
@@ -247,7 +247,8 @@ The goal comes from the user: faculty upload a DICOM and draw reference measurem
   ```
 - **Web and API:** web on http://localhost:3000, API on :4000.
 - **Database:** `postgresql://elms:elms@localhost:5432/elms`.
-- **Login:** any email + OTP `123456`.
+- **Login:** use the seeded account emails in `DEV-LOGINS.md`; the random OTP is
+  printed in the development API output. New accounts verify email during sign-up.
 
 | Account | Notes |
 |---|---|

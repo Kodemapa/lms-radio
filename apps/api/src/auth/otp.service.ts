@@ -40,8 +40,7 @@ export class OtpService {
     }
 
     const id = randomUUID();
-    // Development convenience; env validation refuses DEV_FIXED_OTP in production.
-    const code = this.config.isProduction ? generateOtpCode() : (this.config.get('DEV_FIXED_OTP') ?? generateOtpCode());
+    const code = generateOtpCode();
     const expiresAt = new Date(Date.now() + this.config.get('OTP_TTL_SECONDS') * 1000);
 
     await this.prisma.otpChallenge.create({

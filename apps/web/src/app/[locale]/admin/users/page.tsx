@@ -10,6 +10,7 @@ import { redirect } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import { apiGet } from '@/lib/server-api';
 import { requireAdmin } from '@/lib/admin-server';
+import { InstructorCreateForm } from '@/components/admin/instructor-create-form';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -129,6 +130,7 @@ export default async function AdminUsersPage({
         <h1 className="text-2xl font-bold md:text-3xl">{t('usersTitle')}</h1>
         <p className="text-muted-foreground">{t('usersIntro')}</p>
       </div>
+      <InstructorCreateForm />
       <AdminTable
         ariaLabel={t('table.title')}
         action={`/${locale}/admin/users`}
@@ -139,6 +141,7 @@ export default async function AdminUsersPage({
         searchLabel={t('search')}
         searchPlaceholder={t('searchPlaceholder')}
         searchValue={query.q}
+        searchOnType
         filters={[
           {
             name: 'status',

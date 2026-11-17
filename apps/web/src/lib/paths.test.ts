@@ -2,7 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { isProtectedPath, localeFromPath, safeNextPath } from './paths';
 
 describe('isProtectedPath', () => {
-  it.each(['/en/learn/abc', '/hi/learn', '/en/learn/', '/en/instructor', '/hi/instructor/courses/x', '/en/account/learning'])('protects %s', (p) =>
+  it.each([
+    '/en/learn/abc',
+    '/hi/learn',
+    '/en/learn/',
+    '/en/instructor',
+    '/hi/instructor/courses/x',
+    '/en/account/learning',
+    '/en/admin',
+    '/hi/admin/categories',
+  ])('protects %s', (p) =>
     expect(isProtectedPath(p)).toBe(true),
   );
   it.each(['/en', '/en/courses', '/en/learning-paths', '/learn/abc', '/en/instructors', '/en/instructors/abc'])('allows %s', (p) =>

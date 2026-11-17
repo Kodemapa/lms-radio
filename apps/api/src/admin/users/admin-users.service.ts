@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import {
+  type AdminCreateInstructor,
   type AdminUserDetail,
   type AdminUserListItem,
   type AdminUserListResponse,
@@ -9,6 +10,7 @@ import {
 } from '@obgyn/types';
 import { AuditService } from '../../audit/audit.service';
 import { type AuthUser } from '../../auth/auth-user';
+import { hashPassword } from '../../common/password';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UsersService } from '../../users/users.service';
 import { pageArgs, pageCount } from '../paging';
@@ -153,6 +155,44 @@ export class AdminUsersService {
         createdAt: entry.createdAt.toISOString(),
       })),
     };
+  }
+
+  /**
+   * Create an instructor (FACULTY) account with a temporary password the
+   * admin shares privately. 409 if the email or mobile is already in use.
+   */
+  async createInstructor(admin: AuthUser, input: AdminCreateInstructor): Promise<{ id: string }> {
+    const now = new Date();
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          displayName: input.displayName.trim(),
+          email: input.email.trim().toLowerCase(),
+          phone: input.phone ? input.phone.trim() : null,
+          headline: input.headline?.trim() || null,
+          role: 'FACULTY',
+          passwordHash: await hashPassword(input.password),
+          passwordChangedAt: now,
+        },
+        select: { id: true },
+      });
+      await this.audit.log({
+        actorId: admin.userId,
+        action: 'admin.instructor_created',
+        resource: 'user',
+        resourceId: user.id,
+        metadata: { withPhone: !!input.phone },
+      });
+      return user;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException({
+          code: 'ACCOUNT_EXISTS',
+          message: 'An account with this email or mobile number already exists.',
+        });
+      }
+      throw error;
+    }
   }
 
   async block(admin: AuthUser, id: string, reason: string): Promise<void> {

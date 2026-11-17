@@ -8,13 +8,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Label,
   Textarea,
 } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useId, useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { ApiClientError, api } from '@/lib/instructor-api';
+import { RequiredLabel } from './required-label';
 
 /** A button that asks for an audit reason (3–500 characters), POSTs it, then refreshes the page. */
 export function ReasonAction({
@@ -80,7 +80,7 @@ export function ReasonAction({
               <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor={`${id}-reason`}>{t('reason')}</Label>
+              <RequiredLabel htmlFor={`${id}-reason`}>{t('reason')}</RequiredLabel>
               <Textarea
                 id={`${id}-reason`}
                 required

@@ -70,8 +70,8 @@ Legend: ✅ in the new platform · 🟡 partly · ❌ missing · ⛔ deliberatel
 | Instructor applications approve/reject | ✅ | Admin page at `/admin/instructor-applications`; custom fields render on the learner form, answers are validated and shown to reviewers. |
 | Course review / publish / reject | ✅ | Admin page at `/admin/courses/review` |
 | **Admin dashboard** (statistics, charts) | ✅ | User/course/enrolment/certificate totals, pending application/course/review/video queues and 30-day enrolment/sign-up charts. Revenue awaits commerce. |
-| **Users management** (list, search, block, delete, change role) | ✅ | Admin list/detail, masked contact fields, reasoned/audited actions, session revocation and last-admin/self protections. Local migration status is up to date. |
-| **Categories CRUD + ordering** | ✅ | Create/edit/delete, two-level parent/child categories, move and keyboard-accessible ordering. Learner-facing nested browse routes remain separate. |
+| **Users management** (list, search, block, delete, change role) | ✅ | Admin list/detail, masked contact fields, reasoned/audited actions, session revocation and last-admin/self protections. |
+| **Categories CRUD + ordering** | 🟡 | Admin create/edit/delete, two-level parent/child categories, move and keyboard-accessible ordering. Learner catalogue routes `courses/[main]/[sub]` are not built yet. |
 | Course list / enrolments / instructors / quiz attempts / DICOM attempts with **CSV export** | ✅ | Streamed exports, optional course filter, contacts masked unless explicitly included, downloads logged. |
 | Revenue, sales, commission reports + export | ❌ | With §3 |
 | Withdrawal requests, refund settings, taxes, promo codes | ❌ | With §3 |

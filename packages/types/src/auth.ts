@@ -62,7 +62,88 @@ export const AUTH_ERROR_CODES = {
   deviceLimit: 'DEVICE_LIMIT',
   deviceRevoked: 'DEVICE_REVOKED',
   otpInvalid: 'OTP_INVALID',
+  /** Wrong email or password (deliberately does not say which). */
+  invalidCredentials: 'INVALID_CREDENTIALS',
+  /** The account exists but an administrator has blocked it. */
+  accountBlocked: 'ACCOUNT_BLOCKED',
+  /** Sign-up with an email or mobile number that already has an account. */
+  accountExists: 'ACCOUNT_EXISTS',
+  /** OTP sign-in for an email or mobile number that has no account. */
+  noAccount: 'NO_ACCOUNT',
+  /** Change password: the current password is wrong. */
+  wrongPassword: 'WRONG_PASSWORD',
 } as const;
+
+// ---- Email + password accounts --------------------------------------------------------
+
+export const PASSWORD_MIN_LENGTH = 8;
+export const PASSWORD_MAX_LENGTH = 128;
+
+/** At least 8 characters, with a letter and a number. */
+export const PasswordSchema = z
+  .string()
+  .min(PASSWORD_MIN_LENGTH, `Use at least ${PASSWORD_MIN_LENGTH} characters`)
+  .max(PASSWORD_MAX_LENGTH)
+  .regex(/[A-Za-z]/, 'Include at least one letter')
+  .regex(/\d/, 'Include at least one number');
+
+const deviceFields = {
+  /** Stable per-install identifier used for device binding. */
+  deviceId: z.string().uuid(),
+  deviceLabel: z.string().max(100).optional(),
+};
+
+/** Optional Indian mobile in E.164 form; an empty string means none. */
+const optionalMobile = z
+  .union([z.literal(''), z.string().trim().regex(INDIAN_MOBILE_REGEX, 'Enter a mobile number like +919876543210')])
+  .optional();
+
+export const SignupSchema = z.object({
+  displayName: z.string().trim().min(2, 'Enter your full name').max(100),
+  email: z.string().trim().toLowerCase().email('Enter a valid email address').max(254),
+  phone: optionalMobile,
+  password: PasswordSchema,
+  challengeId: z.string().uuid(),
+  code: z.string().regex(OTP_CODE_REGEX, 'Enter the 6-digit code'),
+  /** Terms of use and privacy notice accepted (DPDP Act consent). */
+  acceptTerms: z.literal(true),
+  ...deviceFields,
+});
+export type Signup = z.infer<typeof SignupSchema>;
+
+export const PasswordLoginSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+  password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
+  ...deviceFields,
+});
+export type PasswordLogin = z.infer<typeof PasswordLoginSchema>;
+
+export const ChangePasswordSchema = z
+  .object({
+    /** Required when the account already has a password. */
+    currentPassword: z.string().max(PASSWORD_MAX_LENGTH).optional(),
+    newPassword: PasswordSchema,
+  })
+  .refine((v) => v.currentPassword !== v.newPassword, {
+    path: ['newPassword'],
+    message: 'Choose a password different from the current one',
+  });
+export type ChangePassword = z.infer<typeof ChangePasswordSchema>;
+
+/** What the web BFF returns after sign-in or sign-up, so the page can route by role. */
+export const SignedInSchema = z.object({ ok: z.literal(true), role: z.enum(['LEARNER', 'FACULTY', 'ADMIN']) });
+export type SignedIn = z.infer<typeof SignedInSchema>;
+
+/** Admin creates an instructor account directly, without an application. */
+export const AdminCreateInstructorSchema = z.object({
+  displayName: z.string().trim().min(2).max(100),
+  email: z.string().trim().toLowerCase().email().max(254),
+  phone: optionalMobile,
+  headline: z.string().trim().max(160).optional(),
+  /** Temporary password the admin shares with the instructor privately. */
+  password: PasswordSchema,
+});
+export type AdminCreateInstructor = z.infer<typeof AdminCreateInstructorSchema>;
 
 /** Cookie names used by the web BFF. All are httpOnly. */
 export const ACCESS_TOKEN_COOKIE = 'elms_at';
