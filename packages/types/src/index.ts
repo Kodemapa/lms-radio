@@ -13,3 +13,5 @@ export * from './submission.js';
 export * from './user.js';
 export * from './progress.js';
 export * from './resources.js';
+export * from './admin-users.js';
+export * from './admin.js';

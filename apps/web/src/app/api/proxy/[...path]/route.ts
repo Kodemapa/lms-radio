@@ -10,6 +10,8 @@ import { API_URL } from '@/lib/env';
  */
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const SLUG = '[a-z0-9-]+';
+/** Admin records edited with PATCH and removed with DELETE. */
+const ADMIN_RECORD = `admin/(categories|application-fields|content/pages|content/faqs|content/contact)/${UUID}`;
 const ALLOWED: Record<string, RegExp> = {
   GET: new RegExp(
     `^(media/${UUID}/(url|playback)|users/me|users/me/devices|users/me/learning|users/me/wishlist(/ids)?|courses/${SLUG}/enrollment|courses/${SLUG}/reviews|courses/${SLUG}/entrance|learn/.+|instructor-applications/me|instructor/.+|admin/.+)$`,
@@ -19,10 +21,13 @@ const ALLOWED: Record<string, RegExp> = {
     `^(courses/${SLUG}/enroll|courses/${SLUG}/entrance/(attempts(/${UUID})?|dev-skip)|learn/.+|uploads|uploads/${UUID}/complete|instructor-applications|instructor/.+|admin/.+)$`,
     'i',
   ),
-  PUT: new RegExp(`^(learn/lessons/${UUID}/(progress|assignment)|users/me/wishlist/${UUID}|courses/${SLUG}/review|instructor/.+)$`, 'i'),
-  PATCH: /^(users\/me|instructor\/.+)$/i,
+  PUT: new RegExp(
+    `^(learn/lessons/${UUID}/(progress|assignment)|users/me/wishlist/${UUID}|courses/${SLUG}/review|instructor/.+|admin/(categories|application-fields)/order|admin/content/(settings|messages))$`,
+    'i',
+  ),
+  PATCH: new RegExp(`^(users/me|instructor/.+|admin/users/${UUID}/role|${ADMIN_RECORD})$`, 'i'),
   DELETE: new RegExp(
-    `^(users/me|users/me/devices/${UUID}|users/me/wishlist/${UUID}|courses/${SLUG}/review|instructor/.+)$`,
+    `^(users/me|users/me/devices/${UUID}|users/me/wishlist/${UUID}|courses/${SLUG}/review|instructor/.+|admin/users/${UUID}|${ADMIN_RECORD})$`,
     'i',
   ),
 };
@@ -45,7 +50,7 @@ async function handle(req: Request, { params }: Ctx) {
     const upstream = await fetch(`${API_URL}/${path}${search}`, {
       method: req.method,
       headers: forwardHeaders(req, { authorization: `Bearer ${token}` }),
-      body: req.method === 'GET' || req.method === 'DELETE' ? undefined : await req.text(),
+      body: req.method === 'GET' ? undefined : await req.text(),
       cache: 'no-store',
     });
     return passThrough(upstream);

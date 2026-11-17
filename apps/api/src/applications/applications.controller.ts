@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { type InstructorApplication } from '@obgyn/types';
+import { type ApplicationField, type InstructorApplication } from '@obgyn/types';
 import { type AuthUser } from '../auth/auth-user';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -13,6 +13,12 @@ import { InstructorApplicationDto } from './dto';
 @Controller('instructor-applications')
 export class ApplicationsController {
   constructor(private readonly applications: ApplicationsService) {}
+
+  /** Extra questions an admin added to the form (active ones, in order). */
+  @Get('fields')
+  fields(): Promise<ApplicationField[]> {
+    return this.applications.activeFields();
+  }
 
   @Get('me')
   mine(@CurrentUser() user: AuthUser): Promise<InstructorApplication> {

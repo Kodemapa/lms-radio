@@ -5,6 +5,7 @@ The working backlog for the GIFS e-LMS. Read `CLAUDE.md` first: the stack, the n
 **How to use this list**
 - Take a task by putting your name and branch next to it, e.g. `[ ] PERF-1 … — @name, feat/perf-lazy-imaging`. Tick it when merged.
 - One branch per task, conventional commits, a PR with tests. Definition of done is at the bottom.
+- `[~]` means the core flow is shipped but one or more listed requirements remain; the note must name the remaining work.
 - Priorities: **P0** now · **P1** next · **P2** later · **P3** nice to have. Sizes: **S** ≤ 1 day · **M** 2–4 days · **L** 1–2 weeks.
 - Items marked **DECISION** need the product owner before work starts.
 
@@ -127,19 +128,16 @@ Plan: `docs/IMAGE-TASKS-GAP-ANALYSIS.md`. Done: dictionary, pin/box/outline/cali
 
 ## P1 — Admin essentials
 
-- [ ] **ADM-1 Users management** · M
+- [x] **ADM-1 Users management** · M (implemented; migrations `20261116150000_admin_user_management` and `20261116160000_admin_content_and_fields` are applied locally; `prisma migrate status` reports up to date)
   - List, search, filter by role; view a user's enrolments and devices.
   - Block/unblock (revokes sessions); change role; soft-delete.
   - Every change is audit-logged.
-- [ ] **ADM-2 Categories CRUD + sub-categories + ordering** · M
-  - Today categories are seeded and read-only. Add `parentId`; enable the catalogue routes `courses/[main]/[sub]`.
-- [ ] **ADM-3 Admin dashboard** · M
-  - Counts: learners, instructors, courses by status, enrolments, completions, revenue (after COM-*).
-  - 30-day charts; pending queues (applications, course reviews, refunds).
-- [ ] **ADM-4 CSV exports** · S — Courses, enrolments, instructors, imaging/quiz results (streamed; exports audit-logged).
-- [ ] **ADM-5 Instructor application custom fields** · S — The admin defines extra fields shown on Become instructor.
-- [ ] **ADM-6 Audit log viewer** · S — Filter by actor, action and resource; export.
-- [ ] **ADM-7 DRM packaging status** · S — Per video: queued/packaging/ready/failed, error text, retry button (`DrmPackagerService.enqueue(force)`).
+- [x] **ADM-2 Categories CRUD + sub-categories + ordering** · M — Admin can create, edit, move and order categories (two levels); learner-facing nested browse routes remain separate work.
+- [x] **ADM-3 Admin dashboard** · M — User/course/enrolment/certificate totals, pending queues and 30-day enrolment/sign-up charts. Revenue and refund queues wait for COM-*.
+- [x] **ADM-4 CSV exports** · S — Courses, enrolments, instructors, quiz attempts and imaging attempts; streamed, optional course filter, contacts masked unless requested, downloads audit-logged.
+- [x] **ADM-5 Instructor application custom fields** · S — Admin-defined fields render on the application form; answers are validated, PC-PNDT screened, saved and shown in review.
+- [x] **ADM-6 Audit log viewer** · S — Filter by actor, action, resource and dates; cursor paging and logged CSV export.
+- [x] **ADM-7 DRM packaging status** · S — Per-video status/error, retry for failed jobs and confirmed re-package for ready videos.
 
 ## P1 — Notifications
 
@@ -218,11 +216,11 @@ Still open from the old instructor area:
 
 ## P2 — Content pages & settings
 
-- [ ] **CMS-1 Pages** · M — Policy pages, About, Contact (form → email/ticket), FAQs; Markdown with preview; en/hi.
+- [~] **CMS-1 Pages** · M — Admin page and FAQ editors, published public pages/FAQ, English/Hindi fallback and legal footer links are shipped. Public `/contact` form → admin inbox at `/admin/messages` (mark handled/reopen/delete, consent + honeypot, 5/min rate limit; migration `20261116170000_admin_contact_and_overrides`). Remaining: an in-editor Markdown preview; emailing admins about new messages waits for a mail provider.
 - [ ] **CMS-2 Home sections** · M — Sliders/banners, feature sections, "why choose us"; ordering.
-- [ ] **CMS-3 SEO settings** · S — Default meta, OG image, sitemap/robots.
-- [ ] **CMS-4 Mail & app settings** · S — Non-secret settings in the DB; secrets stay in env/secret manager.
-- [ ] **CMS-5 Language editor** · M — Admin editor for `messages/*.json` (or DB overrides); missing-key report; add regional languages.
+- [x] **CMS-3 SEO settings** · S — Default title/description, social preview (OG/Twitter) image and a search-indexing switch; `/robots.txt` and `/sitemap.xml` (static pages, published courses and pages, hreflang alternates). Needs `NEXT_PUBLIC_WEB_URL` set in each environment.
+- [~] **CMS-4 Mail & app settings** · S — Public support contact and SEO values are editable; mail-provider, app and push settings remain out of scope until configured.
+- [~] **CMS-5 Language editor** · M — `/admin/languages`: search all UI texts, edit per language as DB overrides merged over `messages/*.json` (unknown keys and edits that change `{arguments}` are ignored, PC-PNDT screened, audit-logged, ~1 min cache), restore shipped text, missing-translation count. Remaining: auto-translate (needs a provider decision) and adding regional languages (needs translated message files).
 
 ## P2 — Accounts & teams
 

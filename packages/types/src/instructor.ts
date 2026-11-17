@@ -242,6 +242,8 @@ export const InstructorApplicationInputSchema = z.object({
   qualifications: z.string().trim().min(2).max(500),
   experienceYears: z.number().int().min(0).max(60),
   registrationNumber: z.string().trim().max(50).nullable(),
+  /** Answers to admin-defined extra questions, keyed by field key (see `ApplicationField`). */
+  answers: z.record(z.union([z.string().max(3000), z.number()])).default({}),
 });
 export type InstructorApplicationInput = z.infer<typeof InstructorApplicationInputSchema>;
 

@@ -114,6 +114,14 @@ model User {
   collaborations        CourseCollaborator[]    @relation("CourseCollaborations")
   /// Set when the account is deleted; personal fields are erased (DPDP Act).
   deletedAt             DateTime?
+  blockedAt             DateTime?
+  blockedReason         String?
+  blockedById           String?                 @db.Uuid
+  blockedBy             User?                   @relation("UserBlocks", fields: [blockedById], references: [id], onDelete: SetNull)
+  blockedUsers          User[]                  @relation("UserBlocks")
+  handledContacts       ContactMessage[]        @relation("ContactHandledBy")
+
+  @@index([role, deletedAt, blockedAt])
 }
 
 /// A physical install of the app/browser. Users may bind at most MAX_DEVICES_PER_USER.
@@ -181,6 +189,8 @@ model InstructorApplication {
   reviewNote         String?
   reviewedById       String?           @db.Uuid
   reviewedAt         DateTime?
+  /// Answers to the admin-defined extra questions, keyed by `ApplicationField.key`.
+  answers            Json?
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
@@ -796,4 +806,108 @@ model CourseCollaborator {
 
   @@unique([courseId, userId])
   @@index([userId, status])
+}
+
+// ---- Admin: instructor application form, content pages, site settings ----------------
+
+enum ApplicationFieldType {
+  TEXT
+  LONG_TEXT
+  NUMBER
+  SELECT
+}
+
+/// An extra question an admin adds to the "Become an instructor" form.
+model ApplicationField {
+  id        String               @id @default(uuid()) @db.Uuid
+  /// Stable key the answers are stored under; never changes after creation.
+  key       String               @unique
+  label     String
+  labelHi   String?
+  helpText  String?
+  type      ApplicationFieldType
+  /// Choices for SELECT fields.
+  options   String[]
+  required  Boolean              @default(false)
+  active    Boolean              @default(true)
+  position  Int                  @default(0)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@index([active, position])
+}
+
+/// An admin-managed page (privacy, terms, refund policy, about…), one row per language.
+model ContentPage {
+  id          String   @id @default(uuid()) @db.Uuid
+  slug        String
+  locale      String
+  title       String
+  /// Plain text with light Markdown (# headings, - lists, blank-line paragraphs). Never raw HTML.
+  body        String
+  published   Boolean  @default(false)
+  updatedById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([slug, locale])
+}
+
+model Faq {
+  id          String   @id @default(uuid()) @db.Uuid
+  locale      String
+  question    String
+  answer      String
+  position    Int      @default(0)
+  published   Boolean  @default(true)
+  updatedById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([locale, published, position])
+}
+
+/// Non-secret site settings (SEO defaults, contact details). Secrets stay in env.
+model SiteSetting {
+  key         String   @id
+  value       Json
+  updatedById String?  @db.Uuid
+  updatedAt   DateTime @updatedAt
+}
+
+// ---- Admin: contact inbox, UI text overrides -------------------------------------------
+
+enum ContactStatus {
+  NEW
+  HANDLED
+}
+
+/// A message sent from the public contact form. Read by admins in the in-app inbox.
+/// Holds contact details given with explicit consent; deletable by admins (DPDP Act).
+model ContactMessage {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String
+  email       String
+  phone       String?
+  subject     String
+  message     String
+  locale      String        @default("en")
+  status      ContactStatus @default(NEW)
+  handledById String?       @db.Uuid
+  handledBy   User?         @relation("ContactHandledBy", fields: [handledById], references: [id], onDelete: SetNull)
+  handledAt   DateTime?
+  createdAt   DateTime      @default(now())
+
+  @@index([status, createdAt])
+}
+
+/// An admin edit of a shipped UI string (next-intl key) for one language.
+model MessageOverride {
+  locale      String
+  key         String
+  value       String
+  updatedById String?  @db.Uuid
+  updatedAt   DateTime @updatedAt
+
+  @@id([locale, key])
 }

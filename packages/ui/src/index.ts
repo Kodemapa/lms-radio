@@ -1,4 +1,10 @@
 export { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/accordion';
+export {
+  AdminTable,
+  type AdminTableColumn,
+  type AdminTableFilter,
+  type AdminTablePagination,
+} from './components/admin-table';
 export { Badge } from './components/badge';
 export { Button, buttonVariants, type ButtonProps } from './components/button';
 export { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/card';

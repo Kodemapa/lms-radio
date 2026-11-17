@@ -7,6 +7,7 @@ import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthoringModule } from './authoring/authoring.module';
 import { CategoriesModule } from './categories/categories.module';
+import { ContentModule } from './content/content.module';
 import { AppConfigModule } from './config/app-config.module';
 import { CoursesModule } from './courses/courses.module';
 import { FilesModule } from './files/files.module';
@@ -39,6 +40,7 @@ import { UsersModule } from './users/users.module';
     UploadsModule,
     ApplicationsModule,
     AdminModule,
+    ContentModule,
     MediaModule,
     ImagingModule,
     TeachingModule,

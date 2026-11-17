@@ -24,8 +24,9 @@
 3. `POST /auth/refresh` rotates the refresh token. It only works with the device id it
    was issued to. Replaying the previous token after a 10-second grace window revokes
    the session (theft detection).
-4. `JwtAuthGuard` checks the JWT **and** that the session is live, so logout and
-   device removal take effect immediately.
+4. `JwtAuthGuard` checks the JWT **and** that the session is live and the account is
+   neither blocked nor deleted, so logout, device removal, blocking, and deletion take
+   effect immediately.
 
 On the web, tokens never reach page JavaScript: the BFF sets them as httpOnly,
 `SameSite=Strict` cookies, and middleware refreshes them for protected pages.
@@ -59,6 +60,46 @@ about determining fetal sex** (PC-PNDT). The web editor runs the same checklist.
 
 Learners become instructors by applying (`POST /instructor-applications`); an admin
 approves the application, which sets their role to `FACULTY`.
+
+## Admin section (ADM-1–ADM-7, CMS-1/3/4/5)
+
+The web admin area has its own layout and admin-only route check under `/admin`. Course
+review and instructor-application pages live there; their previous instructor URLs redirect
+to the admin routes. The instructor sidebar links to the admin area.
+
+User management provides URL-backed search, filters, sorting and pagination; the list masks
+email and phone numbers. Admins can inspect a user's profile, enrolments, devices and recent
+activity, and block/unblock, change roles, or soft-delete with a required reason. Mutations
+are audit-logged and revoke sessions where needed. Admin self-management and removing the
+last active admin are prevented.
+
+The admin tools also provide:
+
+- category CRUD, two-level parent/sub-category relationships and keyboard-accessible ordering;
+- dashboard totals, 30-day enrolment/sign-up charts and links to pending application, course,
+  review-moderation and DRM queues (commerce totals are not available before checkout exists);
+- streamed CSV exports for courses, enrolments, instructors, quiz attempts and imaging attempts,
+  with contact details masked by default and each export audit-logged;
+- audit filtering, keyset paging and CSV export;
+- reported/hidden review moderation and video DRM status/retry/re-package actions;
+- admin-defined instructor application fields, client/server answer validation, PC-PNDT screening
+  and reviewer display of saved answers;
+- CMS page and FAQ editors, published public pages/FAQ, English fallback, legal footer links,
+  and non-secret SEO/contact settings used by page metadata and the footer.
+
+The migrations for user management and admin content/fields are in
+`apps/api/prisma/migrations/`; the local database was verified up to date on 16 Nov 2026.
+- a public contact form (`/contact` → BFF `/api/contact` → `POST /content/contact`, consent
+  required, honeypot, 5/min per IP) feeding the admin inbox at `/admin/messages`;
+- SEO: Open Graph/Twitter image and a search-indexing switch in Site settings, `app/robots.ts`
+  and `app/sitemap.ts` (base URL from `NEXT_PUBLIC_WEB_URL`);
+- a language editor at `/admin/languages`: `MessageOverride` rows are fetched by
+  `i18n/request.ts` (60 s cache) and merged over `messages/*.json` with
+  `applyMessageOverrides`, which drops unknown keys and edits that change ICU arguments.
+
+If the API is unreachable, public settings and text overrides fall back to defaults, so
+the site keeps rendering. Home-page CMS sections (content schema not agreed), mail/push
+settings and auto-translate (providers not chosen, rule 10) remain unimplemented.
 
 ## Learning area (Phase 2)
 

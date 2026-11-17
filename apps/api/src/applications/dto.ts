@@ -1,4 +1,4 @@
-import { IsInt, IsString, Max, MaxLength, Min, MinLength, ValidateIf } from 'class-validator';
+import { IsInt, IsObject, IsOptional, IsString, Max, MaxLength, Min, MinLength, ValidateIf } from 'class-validator';
 
 export class InstructorApplicationDto {
   @IsString()
@@ -26,4 +26,9 @@ export class InstructorApplicationDto {
   @IsString()
   @MaxLength(50)
   registrationNumber: string | null;
+
+  /** Answers to admin-defined extra questions; checked against the active fields in the service. */
+  @IsOptional()
+  @IsObject()
+  answers?: Record<string, unknown>;
 }

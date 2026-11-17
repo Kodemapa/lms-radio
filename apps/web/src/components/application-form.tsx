@@ -1,13 +1,25 @@
 'use client';
 
-import { InstructorApplicationInputSchema, type InstructorApplication } from '@obgyn/types';
-import { Button, Input, Label, Textarea } from '@obgyn/ui';
-import { useTranslations } from 'next-intl';
+import {
+  InstructorApplicationInputSchema,
+  validateApplicationAnswers,
+  type ApplicationField,
+  type InstructorApplication,
+} from '@obgyn/types';
+import { Button, Input, Label, Select, Textarea } from '@obgyn/ui';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { bffFetch } from '@/lib/client-fetch';
 
-export function ApplicationForm({ initial }: { initial: InstructorApplication | null }) {
+export function ApplicationForm({
+  initial,
+  fields,
+}: {
+  initial: InstructorApplication | null;
+  fields: ApplicationField[];
+}) {
+  const locale = useLocale();
   const t = useTranslations('BecomeInstructor');
   const tCommon = useTranslations('Common');
   const router = useRouter();
@@ -18,7 +30,11 @@ export function ApplicationForm({ initial }: { initial: InstructorApplication | 
     registrationNumber: initial?.registrationNumber ?? '',
     bio: initial?.bio ?? '',
   });
+  const [answers, setAnswers] = useState<Record<string, string>>(() =>
+    Object.fromEntries(fields.map((field) => [field.key, String(initial?.answers[field.key] ?? '')])),
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [answerErrors, setAnswerErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -27,10 +43,15 @@ export function ApplicationForm({ initial }: { initial: InstructorApplication | 
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    const checkedAnswers = validateApplicationAnswers(fields, answers);
+    setAnswerErrors(checkedAnswers.errors);
+    if (Object.keys(checkedAnswers.errors).length) return;
+
     const parsed = InstructorApplicationInputSchema.safeParse({
       ...values,
       experienceYears: Number(values.experienceYears),
       registrationNumber: values.registrationNumber.trim() || null,
+      answers: checkedAnswers.answers,
     });
     if (!parsed.success) {
       setErrors(Object.fromEntries(parsed.error.issues.map((issue) => [issue.path[0], issue.message])));
@@ -74,6 +95,80 @@ export function ApplicationForm({ initial }: { initial: InstructorApplication | 
         {field('registrationNumber', t('registrationNumber'), <Input {...aria('registrationNumber')} value={values.registrationNumber} onChange={set('registrationNumber')} />)}
       </div>
       {field('bio', t('bio'), <Textarea {...aria('bio', true)} rows={6} value={values.bio} onChange={set('bio')} required />, t('bioHint'))}
+      {fields.map((applicationField) => {
+        const id = `app-extra-${applicationField.id}`;
+        const errorId = `${id}-error`;
+        const hintId = `${id}-hint`;
+        const label =
+          locale === 'hi' && applicationField.labelHi ? applicationField.labelHi : applicationField.label;
+        const describedBy = [
+          applicationField.helpText ? hintId : '',
+          answerErrors[applicationField.key] ? errorId : '',
+        ]
+          .filter(Boolean)
+          .join(' ') || undefined;
+        const controlProps = {
+          id,
+          required: applicationField.required,
+          'aria-invalid': !!answerErrors[applicationField.key],
+          'aria-describedby': describedBy,
+        };
+        const value = answers[applicationField.key] ?? '';
+        const onChange = (nextValue: string) => {
+          setAnswers((current) => ({ ...current, [applicationField.key]: nextValue }));
+          setAnswerErrors((current) => {
+            const next = { ...current };
+            delete next[applicationField.key];
+            return next;
+          });
+        };
+        const message = answerErrors[applicationField.key];
+
+        return (
+          <div key={applicationField.id} className="flex flex-col gap-2">
+            <Label htmlFor={id}>
+              {label}
+              {applicationField.required ? <span aria-hidden="true"> *</span> : null}
+            </Label>
+            {applicationField.type === 'LONG_TEXT' ? (
+              <Textarea
+                {...controlProps}
+                rows={4}
+                maxLength={3000}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+              />
+            ) : applicationField.type === 'SELECT' ? (
+              <Select
+                {...controlProps}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+              >
+                <option value="">{t('chooseFieldOption')}</option>
+                {applicationField.options.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </Select>
+            ) : (
+              <Input
+                {...controlProps}
+                type={applicationField.type === 'NUMBER' ? 'number' : 'text'}
+                maxLength={applicationField.type === 'TEXT' ? 300 : undefined}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+              />
+            )}
+            {applicationField.helpText ? (
+              <p id={hintId} className="text-xs text-muted-foreground">{applicationField.helpText}</p>
+            ) : null}
+            {message ? (
+              <p id={errorId} className="text-sm text-destructive">
+                {t(`fieldErrors.${message}`)}
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
       {failed ? <p role="alert" className="text-sm text-destructive">{tCommon('genericError')}</p> : null}
       <Button type="submit" size="lg" disabled={pending} className="w-fit">
         {pending ? t('submitting') : t('submit')}

@@ -32,10 +32,7 @@ export default async function InstructorLayout({
     { href: '/instructor/submissions', label: t('nav.submissions'), icon: 'submissions' as const },
     { href: '/instructor/reviews', label: t('nav.reviews'), icon: 'reviews' as const },
     ...(me.role === 'ADMIN'
-      ? [
-          { href: '/instructor/review', label: t('nav.review'), icon: 'review' as const },
-          { href: '/instructor/applications', label: t('nav.applications'), icon: 'applications' as const },
-        ]
+      ? [{ href: '/admin/users', label: t('nav.admin'), icon: 'admin' as const }]
       : []),
   ];
 

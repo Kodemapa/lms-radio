@@ -80,12 +80,20 @@
     "aboutTitle": "About us",
     "contactTitle": "Get in touch",
     "emailUs": "Email us",
+    "callUs": "Call us",
+    "faq": "Frequently asked questions",
     "usefulLinks": "Useful links",
     "legal": "Legal",
     "privacy": "Privacy policy",
     "terms": "Terms & conditions",
     "refund": "Refund policy",
-    "copyright": "© {year} {appName}. All rights reserved."
+    "copyright": "© {year} {appName}. All rights reserved.",
+    "contact": "Contact us"
+  },
+  "PublicContent": {
+    "faqTitle": "Frequently asked questions",
+    "faqEmpty": "There are no published questions yet.",
+    "updated": "Updated {date}"
   },
   "Home": {
     "eyebrow": "Fetal ultrasound · Radiology education",
@@ -551,6 +559,15 @@
     "registrationNumber": "Medical/Nursing Council registration number (optional)",
     "bio": "About you",
     "bioHint": "At least 50 characters. This appears on your instructor profile.",
+    "chooseFieldOption": "Choose an option",
+    "fieldsLoadError": "We couldn't load the application questions. Please refresh the page before applying.",
+    "fieldErrors": {
+      "REQUIRED": "This field is required.",
+      "NUMBER": "Enter a valid number.",
+      "TOO_LONG": "This answer is too long.",
+      "OPTION": "Choose one of the listed options.",
+      "PCPNDT": "This answer contains content that cannot be accepted under PC-PNDT requirements."
+    },
     "submit": "Submit application",
     "submitting": "Submitting…",
     "status": {
@@ -884,6 +901,7 @@
     "rejectNote": "What needs to change?",
     "applicationsTitle": "Instructor applications",
     "applicationsEmpty": "No pending applications.",
+    "applicationAnswers": "Additional application answers",
     "approve": "Approve",
     "decline": "Decline",
     "experience": "{years, plural, one {# year} other {# years}} experience",
@@ -900,6 +918,479 @@
     "feedback": "Feedback for the learner",
     "viewFile": "Open attached file",
     "activityTitle": "Learner activity"
+  },
+  "Admin": {
+    "sectionTitle": "Admin",
+    "backToSite": "Back to site",
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "categories": "Categories",
+      "courseReview": "Course review",
+      "applications": "Instructor applications",
+      "formFields": "Application form fields",
+      "moderation": "Review moderation",
+      "media": "Video processing",
+      "exports": "Data exports",
+      "audit": "Audit log",
+      "pages": "Content pages",
+      "faqs": "FAQs",
+      "settings": "Site settings",
+      "inbox": "Contact messages",
+      "languages": "Language editor"
+    },
+    "dashboard": {
+      "title": "Admin dashboard",
+      "updated": "Last refreshed at {time}",
+      "pendingTitle": "Needs attention",
+      "totalsTitle": "Platform totals",
+      "learners": "Learners",
+      "instructors": "Instructors",
+      "enrolments": "Enrolments",
+      "certificates": "Certificates",
+      "newUsers": "{count, plural, =0 {No new users in the last 30 days} one {# new user in the last 30 days} other {# new users in the last 30 days}}",
+      "admins": "{count, plural, one {# administrator} other {# administrators}}",
+      "last30": "{count, plural, =0 {None in the last 30 days} one {# in the last 30 days} other {# in the last 30 days}}",
+      "courseStatus": {
+        "DRAFT": "Draft courses",
+        "IN_REVIEW": "Courses in review",
+        "PUBLISHED": "Published courses",
+        "RETIRED": "Retired courses"
+      },
+      "pending": {
+        "applications": "Instructor applications",
+        "courseReviews": "Courses awaiting review",
+        "reportedReviews": "Reported reviews",
+        "failedVideos": "Failed video packages"
+      },
+      "enrolmentsChart": "Daily enrolments (last 30 days)",
+      "enrolmentsCount": "{count, plural, one {# enrolment} other {# enrolments}}",
+      "signupsChart": "Daily sign-ups (last 30 days)",
+      "signupsCount": "{count, plural, one {# sign-up} other {# sign-ups}}",
+      "showTable": "Show chart data as a table",
+      "revenueLater": "Revenue and refunds aren't available because the platform doesn't have an order or payment system yet."
+    },
+    "categories": {
+      "title": "Course categories",
+      "intro": "Organise courses into categories and sub-categories.",
+      "depthHint": "Categories can have one level of sub-categories. Use the arrow buttons to reorder.",
+      "add": "Add category",
+      "empty": "No categories yet.",
+      "subcategoriesOf": "Sub-categories of {name}",
+      "courseCount": "{count, plural, one {# course} other {# courses}}",
+      "childCount": "{count, plural, one {# sub-category} other {# sub-categories}}",
+      "moveUp": "Move {name} up",
+      "moveDown": "Move {name} down",
+      "edit": "Edit {name}",
+      "delete": "Delete {name}",
+      "addTitle": "Add category",
+      "editTitle": "Edit category",
+      "formHint": "Categories are visible in course discovery.",
+      "name": "Name",
+      "slug": "URL slug",
+      "slugHint": "Leave blank to generate it from the name.",
+      "parent": "Parent category",
+      "topLevel": "Top level",
+      "hasChildrenHint": "A category with sub-categories can't be moved.",
+      "description": "Description (optional)",
+      "deleteTitle": "Delete {name}?",
+      "deleteBody": "Only empty categories can be deleted.",
+      "created": "Created {name}.",
+      "updated": "Updated {name}.",
+      "deleted": "Deleted {name}.",
+      "moved": "Moved {name}.",
+      "errors": {
+        "failed": "The category couldn't be saved. Please try again.",
+        "slugTaken": "That URL slug is already in use.",
+        "depth": "Categories can only have one level of sub-categories.",
+        "inUse": "This category has courses and can't be deleted.",
+        "hasChildren": "Remove or move its sub-categories before deleting this category."
+      }
+    },
+    "audit": {
+      "title": "Audit log",
+      "intro": "Review administrative and system changes. Newest entries appear first.",
+      "export": "Export filtered CSV",
+      "filters": {
+        "actorId": "Actor user ID",
+        "action": "Action starts with",
+        "resource": "Resource type",
+        "resourceId": "Resource ID",
+        "from": "From date",
+        "to": "To date"
+      },
+      "apply": "Apply filters",
+      "clear": "Clear",
+      "invalidFilters": "One or more filters are invalid and were ignored.",
+      "table": {
+        "time": "Time",
+        "actor": "Actor",
+        "action": "Action",
+        "resource": "Resource",
+        "details": "Details"
+      },
+      "empty": "No audit entries match these filters.",
+      "unknownActor": "Unknown user",
+      "system": "System",
+      "show": "Show details",
+      "paging": "Audit log pages",
+      "newest": "Newest entries",
+      "older": "Older entries"
+    },
+    "moderation": {
+      "title": "Review moderation",
+      "intro": "Review reported feedback, hide inappropriate reviews, or restore hidden reviews.",
+      "filter": "Filter reviews",
+      "statuses": {
+        "REPORTED": "Reported",
+        "HIDDEN": "Hidden",
+        "ALL": "All reviews"
+      },
+      "empty": "No reviews in this view.",
+      "rating": "{rating} out of 5 stars",
+      "hiddenBadge": "Hidden",
+      "noComment": "No written comment.",
+      "reportedBy": "Reported by {name} on {date}: {reason}",
+      "courseTeam": "Course team",
+      "reasons": {
+        "ABUSE": "Abusive",
+        "SPAM": "Spam",
+        "OFF_TOPIC": "Off-topic",
+        "PRIVACY": "Privacy concern",
+        "OTHER": "Other"
+      },
+      "restore": "Restore review",
+      "restoreTitle": "Restore this review?",
+      "restoreBody": "The review will be visible to learners again. Enter a reason for the audit log.",
+      "hide": "Hide review",
+      "hideTitle": "Hide this review?",
+      "hideBody": "The review will no longer be visible to learners. Enter a reason for the audit log.",
+      "dismiss": "Dismiss report",
+      "dismissTitle": "Dismiss this report?",
+      "dismissBody": "The review will remain visible. Enter a reason for the audit log.",
+      "paging": "Review pages",
+      "previous": "Previous",
+      "next": "Next",
+      "errors": {
+        "alreadyHidden": "This review is already hidden.",
+        "notHidden": "This review isn't hidden.",
+        "notReported": "This review has no active report."
+      }
+    },
+    "media": {
+      "title": "Video processing",
+      "intro": "Check protected video packaging status and retry failed jobs.",
+      "disabled": "DRM packaging is disabled. Configure a DRM provider before packaging videos.",
+      "filter": "Filter video packages",
+      "statuses": {
+        "QUEUED": "Queued",
+        "PACKAGING": "Processing",
+        "READY": "Ready",
+        "FAILED": "Failed"
+      },
+      "all": "All",
+      "table": {
+        "video": "Video",
+        "usedIn": "Used in",
+        "status": "Status",
+        "updated": "Last updated",
+        "actions": "Actions"
+      },
+      "empty": "No video packages in this view.",
+      "untitled": "Unnamed video",
+      "unused": "Not used in a lesson",
+      "attempts": "{count, plural, one {# attempt} other {# attempts}}",
+      "paging": "Video package pages",
+      "previous": "Previous",
+      "next": "Next",
+      "retry": "Retry",
+      "repackage": "Re-package",
+      "repackageTitle": "Re-package this video?",
+      "repackageBody": "The existing protected package will be replaced.",
+      "errors": {
+        "queued": "This video is already queued.",
+        "disabled": "DRM packaging is disabled.",
+        "failed": "The video couldn't be queued. Please try again."
+      }
+    },
+    "exports": {
+      "title": "Data exports",
+      "intro": "Download administrative CSV reports. Contact details are masked unless explicitly included.",
+      "course": "Course filter",
+      "allCourses": "All courses",
+      "courseHint": "The course filter applies only to exports that contain course-specific records.",
+      "includeContacts": "Include contact details",
+      "contactsHint": "Unmasked emails and phone numbers are sensitive. Export only when required.",
+      "download": "Download CSV",
+      "kinds": {
+        "courses": {
+          "title": "Courses",
+          "body": "Course titles, instructors, categories, status and pricing."
+        },
+        "enrolments": {
+          "title": "Enrolments",
+          "body": "Learner enrolments and progress, optionally for one course."
+        },
+        "instructors": {
+          "title": "Instructors",
+          "body": "Instructor profiles and review status."
+        },
+        "quiz-attempts": {
+          "title": "Quiz attempts",
+          "body": "Learner quiz scores and attempt dates, optionally for one course."
+        },
+        "imaging-attempts": {
+          "title": "Imaging attempts",
+          "body": "DICOM assessment scores and attempt dates, optionally for one course."
+        }
+      }
+    },
+    "formFields": {
+      "title": "Instructor application fields",
+      "intro": "Add and order extra questions shown on the instructor application form.",
+      "add": "Add question",
+      "empty": "No extra questions configured.",
+      "required": "Required",
+      "inactive": "Inactive",
+      "active": "Active",
+      "moveUp": "Move {label} up",
+      "moveDown": "Move {label} down",
+      "edit": "Edit {label}",
+      "delete": "Delete {label}",
+      "editTitle": "Edit application question",
+      "addTitle": "Add application question",
+      "formHint": "The stable key is used to keep existing answers attached to this question.",
+      "label": "Question label (English)",
+      "labelHi": "Question label (Hindi)",
+      "key": "Stable answer key",
+      "keyHint": "2–40 lowercase letters, numbers or underscores; starts with a letter. Can't be changed after creation.",
+      "type": "Answer type",
+      "types": {
+        "TEXT": "Short text",
+        "LONG_TEXT": "Long text",
+        "NUMBER": "Number",
+        "SELECT": "Choose from a list"
+      },
+      "options": "Options (one per line)",
+      "optionsHint": "A choice question needs at least two unique options.",
+      "helpText": "Help text (optional)",
+      "saved": "Saved “{label}”.",
+      "moved": "Question order updated.",
+      "deleted": "Deleted “{label}”.",
+      "deleteTitle": "Delete “{label}”?",
+      "deleteBody": "Existing application answers are retained under their stable key.",
+      "errors": {
+        "keyTaken": "That answer key is already in use.",
+        "failed": "The question couldn't be saved. Please try again."
+      }
+    },
+    "contentPages": {
+      "title": "Content pages",
+      "intro": "Create English and Hindi policy or information pages. Only published pages are visible publicly.",
+      "add": "Add page",
+      "empty": "No content pages yet.",
+      "published": "Published",
+      "draft": "Draft",
+      "edit": "Edit {title}",
+      "delete": "Delete {title}",
+      "addTitle": "Add content page",
+      "editTitle": "Edit content page",
+      "slug": "URL slug",
+      "language": "Language",
+      "english": "English",
+      "hindi": "Hindi",
+      "titleLabel": "Page title",
+      "body": "Page body",
+      "bodyHint": "Plain text with light Markdown: # / ## headings, - lists, and blank lines between paragraphs. HTML isn't supported.",
+      "deleteTitle": "Delete “{title}”?",
+      "deleteBody": "This language version will be permanently deleted.",
+      "saved": "Page saved.",
+      "deleted": "Page deleted.",
+      "errors": {
+        "exists": "A page with that slug and language already exists.",
+        "failed": "The page couldn't be saved. Please try again."
+      }
+    },
+    "faqs": {
+      "title": "Frequently asked questions",
+      "intro": "Manage the questions shown on the public FAQ page. Questions are displayed by language and position.",
+      "add": "Add FAQ",
+      "empty": "No FAQs yet.",
+      "published": "Published",
+      "draft": "Draft",
+      "positionLabel": "Position {position}",
+      "edit": "Edit: {question}",
+      "delete": "Delete: {question}",
+      "addTitle": "Add FAQ",
+      "editTitle": "Edit FAQ",
+      "language": "Language",
+      "english": "English",
+      "hindi": "Hindi",
+      "position": "Display order",
+      "question": "Question",
+      "answer": "Answer",
+      "deleteTitle": "Delete this FAQ?",
+      "deleteBody": "This FAQ will be permanently deleted.",
+      "saved": "FAQ saved.",
+      "deleted": "FAQ deleted.",
+      "errors": {
+        "failed": "The FAQ couldn't be saved. Please try again."
+      }
+    },
+    "settings": {
+      "title": "Site settings",
+      "intro": "These public settings control default SEO text, social previews, search indexing and contact details shown on the site.",
+      "seoTitle": "Default site title",
+      "seoDescription": "Default search description",
+      "supportEmail": "Support email",
+      "supportPhone": "Support phone",
+      "address": "Contact address",
+      "secretsNote": "Passwords, payment credentials, and mail-server secrets must be configured in environment secrets, not here.",
+      "saved": "Site settings saved.",
+      "errors": {
+        "failed": "Settings couldn't be saved. Please try again."
+      },
+      "ogImageUrl": "Social preview image URL",
+      "ogImageHelp": "A public https image (1200 × 630 recommended) shown when a link to the site is shared. Leave empty for none.",
+      "allowIndexing": "Allow search engines to index the site",
+      "allowIndexingHelp": "Turn off for staging or before launch: robots.txt then blocks all crawlers, the sitemap is empty and pages are marked noindex."
+    },
+    "usersTitle": "User management",
+    "usersIntro": "Search accounts, review activity, and manage access and roles.",
+    "usersEmpty": "No users match these filters.",
+    "search": "Search users",
+    "searchPlaceholder": "Name, email or phone",
+    "filters": {
+      "status": "Account status",
+      "role": "Role"
+    },
+    "statuses": {
+      "ACTIVE": "Active",
+      "BLOCKED": "Blocked",
+      "DELETED": "Deleted",
+      "ALL": "All statuses"
+    },
+    "roles": {
+      "LEARNER": "Learner",
+      "FACULTY": "Instructor",
+      "ADMIN": "Admin"
+    },
+    "allRoles": "All roles",
+    "table": {
+      "title": "Users",
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "role": "Role",
+      "status": "Status",
+      "created": "Joined"
+    },
+    "pagination": "{start}–{end} of {total} users",
+    "previous": "Previous",
+    "next": "Next",
+    "backToUsers": "Back to users",
+    "profile": "Profile",
+    "headline": "Professional headline",
+    "learnerType": "Learner type",
+    "learnerTypes": {
+      "MBBS_STUDENT": "MBBS student",
+      "OBG_RESIDENT": "OBG resident",
+      "SONOLOGIST": "Sonologist",
+      "NURSE_MIDWIFE": "Nurse / midwife",
+      "FACULTY": "Faculty",
+      "OTHER": "Other"
+    },
+    "joined": "Joined",
+    "blocked": "Blocked",
+    "blockedDetails": "{date} by {admin}",
+    "unknownAdmin": "Unknown admin",
+    "reason": "Reason",
+    "bio": "About",
+    "enrollments": "Enrolments",
+    "noEnrollments": "No course enrolments.",
+    "devices": "Devices",
+    "unnamedDevice": "Unnamed device",
+    "deviceRevoked": "Revoked",
+    "lastSeen": "Last seen {date}",
+    "noDevices": "No registered devices.",
+    "recentActivity": "Recent activity",
+    "noActivity": "No recent activity.",
+    "role": "New role",
+    "selfManagementDisabled": "You can't block, change the role of, or delete your own account.",
+    "saving": "Saving…",
+    "actions": {
+      "changeRole": "Change role",
+      "roleTitle": "Change user role",
+      "roleDescription": "Changing a role signs the user out of all active sessions. Enter a reason for the audit log.",
+      "block": "Block user",
+      "blockTitle": "Block this user?",
+      "blockDescription": "This user will be signed out on every device and won't be able to sign in until unblocked.",
+      "unblock": "Unblock user",
+      "unblockTitle": "Unblock this user?",
+      "unblockDescription": "The user will be able to sign in again. Enter a reason for the audit log.",
+      "delete": "Delete user",
+      "deleteTitle": "Erase this user's personal data?",
+      "deleteDescription": "This soft-deletes the account, erases personal details, and revokes sessions. Enrolment and progress records remain anonymised."
+    },
+    "errors": {
+      "actionFailed": "The action couldn't be completed. Refresh the page and try again.",
+      "lastAdmin": "At least one active administrator must remain.",
+      "selfAction": "You can't block, demote, or delete your own account."
+    },
+    "inbox": {
+      "title": "Contact messages",
+      "intro": "Messages sent from the public contact form. Reply by email, then mark them handled. Delete a message to erase the sender’s details.",
+      "filter": "Filter messages",
+      "tabs": {
+        "all": "All",
+        "new": "New ({count})",
+        "handled": "Handled"
+      },
+      "new": "New",
+      "handledBy": "Handled by {name} on {date}",
+      "unknownAdmin": "an admin",
+      "reply": "Reply",
+      "markHandled": "Mark handled",
+      "reopen": "Reopen",
+      "delete": "Delete message “{subject}”",
+      "deleteTitle": "Delete this message?",
+      "deleteBody": "The message and the sender’s contact details are permanently erased. The audit log keeps only a record that it was deleted.",
+      "deleted": "Message deleted.",
+      "markedHandled": "Marked as handled.",
+      "reopened": "Message reopened.",
+      "empty": "No messages here.",
+      "errors": {
+        "failed": "That didn't work. Please try again."
+      }
+    },
+    "languages": {
+      "title": "Language editor",
+      "intro": "Change the wording of the site’s built-in text for each language. The shipped translation stays as the fallback; restore it at any time.",
+      "language": "Language",
+      "english": "English",
+      "hindi": "Hindi",
+      "search": "Search",
+      "searchPlaceholder": "Key or text, e.g. Footer.about",
+      "editedOnly": "Edited only",
+      "apply": "Show",
+      "clear": "Clear",
+      "summary": "Showing {shown} of {total} matching texts · {edited} edited in this language.",
+      "missing": "{count} texts have no translation yet and show English.",
+      "rules": "Keep every '{…}' placeholder exactly as it is: they are filled in automatically. Changes appear on the site within about a minute.",
+      "empty": "No texts match.",
+      "edited": "Edited",
+      "englishLabel": "English:",
+      "shippedLabel": "Shipped text:",
+      "keepArguments": "Must contain: {args}",
+      "restore": "Restore shipped text",
+      "restored": "Shipped text restored.",
+      "saved": "Saved.",
+      "errors": {
+        "empty": "The text can’t be empty. Use “Restore shipped text” instead.",
+        "arguments": "Keep the same placeholders as the shipped text ({args}), with matching braces.",
+        "failed": "The text couldn't be saved. Please try again."
+      }
+    }
   },
   "NotFound": {
     "title": "Page not found",
@@ -1575,5 +2066,34 @@
     "feedbackNeeded": "Say what needs correcting before returning the working.",
     "verify": "Verify working",
     "return": "Return for correction"
+  },
+  "Contact": {
+    "title": "Contact us",
+    "intro": "Questions about a course, your account or institutional access? Send us a message and our team will reply by email.",
+    "detailsTitle": "Other ways to reach us",
+    "emailLabel": "Email",
+    "phoneLabel": "Phone",
+    "addressLabel": "Address",
+    "name": "Your name",
+    "email": "Email",
+    "phone": "Phone (optional)",
+    "subject": "Subject",
+    "message": "Message",
+    "consent": "I agree that my name and contact details are used to answer this message, as described in the <privacy>privacy policy</privacy>.",
+    "send": "Send message",
+    "sending": "Sending…",
+    "sentTitle": "Thank you — your message has been sent.",
+    "sentBody": "Our team will reply to the email address you gave.",
+    "sendAnother": "Send another message",
+    "errors": {
+      "name": "Enter your name (at least 2 characters).",
+      "email": "Enter a valid email address.",
+      "phone": "Enter a phone number of up to 30 characters.",
+      "subject": "Enter a subject (at least 3 characters).",
+      "message": "Write a message of at least 10 characters.",
+      "consent": "Please agree so we can use your details to reply.",
+      "failed": "Your message couldn't be sent. Please try again.",
+      "limited": "Too many messages were sent from your connection. Please wait a minute and try again."
+    }
   }
 }

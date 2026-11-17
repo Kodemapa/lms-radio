@@ -1,6 +1,8 @@
-import { ArrowUpRight, Mail, MapPin } from 'lucide-react';
+import { ArrowUpRight, Mail, MapPin, Phone } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { LEGAL_PAGE_SLUGS } from '@obgyn/types';
 import { Link } from '@/i18n/navigation';
+import { getPublicSiteSettings } from '@/lib/site-settings';
 import { Brand } from './brand';
 
 /** Contact details shown in the footer; set these for your organisation. */
@@ -12,7 +14,13 @@ const CONTACT = {
 const linkClass = 'text-white/70 transition-colors hover:text-white';
 
 export async function SiteFooter() {
-  const [t, tCommon] = await Promise.all([getTranslations('Footer'), getTranslations('Common')]);
+  const [t, tCommon, settings] = await Promise.all([
+    getTranslations('Footer'),
+    getTranslations('Common'),
+    getPublicSiteSettings(),
+  ]);
+  const email = settings.supportEmail || CONTACT.email;
+  const address = settings.address || CONTACT.address;
   const year = new Date().getFullYear();
 
   return (
@@ -34,11 +42,11 @@ export async function SiteFooter() {
               </span>
               <div>
                 <p className="font-semibold text-white sm:text-lg">{t('contactTitle')}</p>
-                <p className="text-sm">{CONTACT.address}</p>
+                <p className="text-sm">{address}</p>
               </div>
             </div>
             <a
-              href={`mailto:${CONTACT.email}`}
+              href={`mailto:${email}`}
               className="group flex items-center gap-4 rounded-3xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur transition-colors hover:bg-white/10"
             >
               <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[#e3d4fb] to-[#b49cf0] text-[#2f2340]">
@@ -46,13 +54,27 @@ export async function SiteFooter() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-white sm:text-lg">{t('emailUs')}</p>
-                <p className="truncate text-sm">{CONTACT.email}</p>
+                <p className="truncate text-sm">{email}</p>
               </div>
               <ArrowUpRight
                 aria-hidden
                 className="size-5 shrink-0 text-white/50 transition-transform group-hover:rotate-45 group-hover:text-white"
               />
             </a>
+            {settings.supportPhone ? (
+              <a
+                href={`tel:${settings.supportPhone}`}
+                className="group flex items-center gap-4 rounded-3xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur transition-colors hover:bg-white/10"
+              >
+                <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[#d5f0e2] to-[#9ecfb1] text-[#2f2340]">
+                  <Phone aria-hidden className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-white sm:text-lg">{t('callUs')}</p>
+                  <p className="truncate text-sm">{settings.supportPhone}</p>
+                </div>
+              </a>
+            ) : null}
           </div>
 
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
@@ -71,16 +93,20 @@ export async function SiteFooter() {
                 <li><Link href="/instructors" className={linkClass}>{tCommon('instructors')}</Link></li>
                 <li><Link href="/simulators" className={linkClass}>{tCommon('simulators')}</Link></li>
                 <li><Link href="/become-instructor" className={linkClass}>{tCommon('becomeInstructor')}</Link></li>
+                <li><Link href="/faq" className={linkClass}>{t('faq')}</Link></li>
+                <li><Link href="/contact" className={linkClass}>{t('contact')}</Link></li>
               </ul>
             </nav>
             <nav aria-labelledby="footer-legal">
               <h2 id="footer-legal" className="mb-5 text-lg font-semibold text-white">
                 {t('legal')}
               </h2>
-              <ul className="flex flex-col gap-3 text-sm text-white/70">
-                <li><span>{t('privacy')}</span></li>
-                <li><span>{t('terms')}</span></li>
-                <li><span>{t('refund')}</span></li>
+              <ul className="flex flex-col gap-3 text-sm">
+                {LEGAL_PAGE_SLUGS.map((slug) => (
+                  <li key={slug}>
+                    <Link href={`/pages/${slug}`} className={linkClass}>{t(slug)}</Link>
+                  </li>
+                ))}
               </ul>
             </nav>
           </div>

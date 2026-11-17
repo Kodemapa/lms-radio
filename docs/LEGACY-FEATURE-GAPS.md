@@ -29,7 +29,7 @@ Legend: ✅ in the new platform · 🟡 partly · ❌ missing · ⛔ deliberatel
 | Lesson **resources** (downloadable files) | 🟡 | Possible as protected PDFs; raw downloads ⛔ (rule 2) |
 | Course **download for offline** | ⛔ | Only via DRM offline licences in the mobile app (later) |
 | Email + password login, password reset | ⛔ / 🟡 | OTP login by design; email + password exists in dev only |
-| Contact us, FAQs, policy pages (CMS), home sliders, "why choose us" | ❌ | Admin-managed content pages (§4) |
+| Contact us, FAQs, policy pages (CMS), home sliders, "why choose us" | 🟡 | Public FAQ, published policy pages and a `/contact` form (to the admin inbox) are shipped; footer links work. Home sliders and editable feature sections remain (content schema not agreed). |
 
 ## 2. Instructor
 
@@ -67,24 +67,29 @@ Legend: ✅ in the new platform · 🟡 partly · ❌ missing · ⛔ deliberatel
 
 | Feature (old) | New | Notes |
 |---|---|---|
-| Instructor applications approve/reject | ✅ | **Custom form fields** for the application ❌ |
-| Course review / publish / reject | ✅ | |
-| **Admin dashboard** (statistics, charts) | ❌ | |
-| **Users management** (list, search, block, delete, change role) | ❌ | |
-| **Categories CRUD + ordering** | ❌ | Categories are seeded, read-only today |
-| Course list / enrolments / instructors with **CSV export** | ❌ | |
+| Instructor applications approve/reject | ✅ | Admin page at `/admin/instructor-applications`; custom fields render on the learner form, answers are validated and shown to reviewers. |
+| Course review / publish / reject | ✅ | Admin page at `/admin/courses/review` |
+| **Admin dashboard** (statistics, charts) | ✅ | User/course/enrolment/certificate totals, pending application/course/review/video queues and 30-day enrolment/sign-up charts. Revenue awaits commerce. |
+| **Users management** (list, search, block, delete, change role) | ✅ | Admin list/detail, masked contact fields, reasoned/audited actions, session revocation and last-admin/self protections. Local migration status is up to date. |
+| **Categories CRUD + ordering** | ✅ | Create/edit/delete, two-level parent/child categories, move and keyboard-accessible ordering. Learner-facing nested browse routes remain separate. |
+| Course list / enrolments / instructors / quiz attempts / DICOM attempts with **CSV export** | ✅ | Streamed exports, optional course filter, contacts masked unless explicitly included, downloads logged. |
 | Revenue, sales, commission reports + export | ❌ | With §3 |
 | Withdrawal requests, refund settings, taxes, promo codes | ❌ | With §3 |
 | Payment gateway settings | ❌ | With §3 (secrets in env/secret manager, not in the DB UI) |
-| **CMS**: pages, FAQs, sliders, feature sections, "why choose us", SEO settings | ❌ | |
-| App / web settings, mail settings (+ test), Firebase push settings | ❌ | |
-| **Languages**: JSON editor, auto-translate | ❌ | Hindi exists as files; admin editing is missing |
-| **Discussions moderation**, content reports, report reasons | ❌ | Phase 4 |
+| **CMS**: pages, FAQs, sliders, feature sections, "why choose us", SEO settings | 🟡 | Admin page/FAQ editors, public `/pages/[slug]`, `/faq` and `/contact`, contact inbox at `/admin/messages`, English/Hindi fallback, footer links, SEO title/description, OG image, search-indexing switch, `/robots.txt` and `/sitemap.xml` are implemented. Only home sliders/feature sections remain (needs a content-schema decision). |
+| App / web settings, mail settings (+ test), Firebase push settings | 🟡 | Non-secret support contact, SEO, OG image and indexing settings are editable. Mail and push settings are blocked: no provider has been chosen (paid service, rule 10). |
+| **Languages**: JSON editor, auto-translate | 🟡 | `/admin/languages` edits any UI text per language as safe DB overrides with restore and a missing-translation count. Auto-translate is blocked on a provider decision. |
+| **Discussions moderation**, content reports, report reasons | ❌ | No discussion/Q&A feature or discussion records exist to moderate; build those first (Phase 4). Review moderation is implemented separately. |
 | **Groups / group requests** | ❌ | Phase 4 |
-| Video encoding queue (encode, re-encode, retry) | 🟡 | DRM packaging runs automatically; no admin status/retry screen |
-| Roles list | 🟡 | Fixed roles (learner, faculty, admin) |
+| Video encoding queue (encode, re-encode, retry) | ✅ | Admin status/error queue, retry for failed jobs and confirmed re-package for ready videos. Processing still depends on DRM being enabled/configured. |
+| Roles list | 🟡 | Roles are intentionally fixed (learner, faculty, admin); no configurable role editor. |
 | Certificate templates | ✅ | Per course (instructor) |
 | System update / migrate / seed endpoints | ⛔ | Replaced by deployments and migrations |
+| Audit log viewer | ✅ | Actor/action/resource/date filters, older-entry paging and CSV export; the export itself is logged. |
+
+The admin section now has its own layout and navigation. The old instructor review and
+application URLs redirect to their admin routes, and shared `AdminTable` supports
+URL-backed search, filters, sorting and pagination.
 
 ## 5. Cross-cutting
 
@@ -92,7 +97,7 @@ Legend: ✅ in the new platform · 🟡 partly · ❌ missing · ⛔ deliberatel
 |---|---|
 | Notifications service (in-app + email; SMS for OTP exists) | ❌ |
 | Email templates (enrolment, certificate, assignment graded, payment) | ❌ |
-| Audit log | ✅ (writes); admin viewer ❌ |
+| Audit log | ✅ (writes + admin viewer) |
 | Mobile app parity (Expo app exists as a shell) | 🟡 |
 
 ## Suggested order
@@ -119,3 +124,7 @@ Legend: ✅ in the new platform · 🟡 partly · ❌ missing · ⛔ deliberatel
 - Keep **email + password** login for production, or OTP only?
 - Are **teams** (institutional seats) in scope for the fetal-medicine course?
 - **Offline download** in the mobile app (needs DRM offline licences) — wanted?
+- **Contact form delivery:** decided 16 Nov 2026 — in-app admin inbox (`/admin/messages`). Email notification to admins can be added once a mail provider is chosen.
+- **Mail and push providers:** choose providers and approve any paid service before adding their credentials or settings.
+- **CMS home sections:** confirm which banners/feature blocks are editable and what their content schema should be.
+- **Automatic translation:** choose and approve a translation provider before implementing auto-translate. The language editor itself is built (`/admin/languages`).

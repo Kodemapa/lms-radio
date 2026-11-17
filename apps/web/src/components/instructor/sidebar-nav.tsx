@@ -1,6 +1,28 @@
 'use client';
 
-import { ClipboardCheck, ClipboardList, LayoutDashboard, Library, Loader2, MessageSquareText, PlusCircle, UserCheck } from 'lucide-react';
+import {
+  CircleHelp,
+  ClipboardCheck,
+  ClipboardList,
+  Download,
+  FileText,
+  Film,
+  Flag,
+  FolderTree,
+  Inbox,
+  Languages,
+  LayoutDashboard,
+  ListChecks,
+  Library,
+  Loader2,
+  MessageSquareText,
+  PlusCircle,
+  ScrollText,
+  Settings,
+  ShieldCheck,
+  UserCheck,
+  Users,
+} from 'lucide-react';
 import { useLinkStatus } from 'next/link';
 import { Link, usePathname } from '@/i18n/navigation';
 
@@ -18,6 +40,19 @@ const ICONS = {
   reviews: MessageSquareText,
   review: ClipboardCheck,
   applications: UserCheck,
+  admin: ShieldCheck,
+  users: Users,
+  categories: FolderTree,
+  audit: ScrollText,
+  moderation: Flag,
+  media: Film,
+  exports: Download,
+  formFields: ListChecks,
+  pages: FileText,
+  faqs: CircleHelp,
+  settings: Settings,
+  inbox: Inbox,
+  languages: Languages,
 };
 
 export function SidebarNav({
@@ -29,7 +64,7 @@ export function SidebarNav({
 }) {
   const pathname = usePathname();
   const isActive = (href: string) =>
-    href === '/instructor'
+    href === '/instructor' || href === '/admin'
       ? pathname === href
       : href === '/instructor/courses'
         ? pathname.startsWith(href) && pathname !== '/instructor/courses/new'

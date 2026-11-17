@@ -5,6 +5,7 @@ import { Bricolage_Grotesque, Geist, Noto_Sans_Devanagari } from 'next/font/goog
 import { notFound } from 'next/navigation';
 import { type ReactNode } from 'react';
 import { routing } from '@/i18n/routing';
+import { getPublicSiteSettings, SITE_URL } from '@/lib/site-settings';
 import '../globals.css';
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' });
@@ -31,10 +32,25 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Omit<Props, 'children'>): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'Common' });
+  const [t, settings] = await Promise.all([
+    getTranslations({ locale, namespace: 'Common' }),
+    getPublicSiteSettings(),
+  ]);
+  const appName = settings.seoTitle || t('appName');
+  const description = settings.seoDescription || t('tagline');
+  const images = settings.ogImageUrl ? [{ url: settings.ogImageUrl }] : undefined;
   return {
-    title: { default: t('appName'), template: `%s · ${t('appName')}` },
-    description: t('tagline'),
+    metadataBase: new URL(SITE_URL),
+    title: { default: appName, template: `%s · ${appName}` },
+    description,
+    openGraph: { siteName: appName, title: appName, description, locale, type: 'website', images },
+    twitter: {
+      card: images ? 'summary_large_image' : 'summary',
+      title: appName,
+      description,
+      images: images?.map((image) => image.url),
+    },
+    ...(settings.allowIndexing ? {} : { robots: { index: false, follow: false } }),
   };
 }
 

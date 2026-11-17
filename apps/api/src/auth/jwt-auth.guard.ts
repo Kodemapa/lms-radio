@@ -30,13 +30,20 @@ export class JwtAuthGuard implements CanActivate {
 
     const session = await this.prisma.session.findUnique({
       where: { id: claims.sid },
-      select: { userId: true, revokedAt: true, expiresAt: true },
+      select: {
+        userId: true,
+        revokedAt: true,
+        expiresAt: true,
+        user: { select: { blockedAt: true, deletedAt: true } },
+      },
     });
     if (
       !session ||
       session.revokedAt ||
       session.expiresAt <= new Date() ||
-      session.userId !== claims.sub
+      session.userId !== claims.sub ||
+      session.user.blockedAt ||
+      session.user.deletedAt
     ) {
       throw new UnauthorizedException('SESSION_REVOKED');
     }

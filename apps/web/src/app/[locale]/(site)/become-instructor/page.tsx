@@ -1,11 +1,12 @@
 import { PageHero } from '@/components/layout/page-hero';
-import { InstructorApplicationSchema } from '@obgyn/types';
+import { ApplicationFieldSchema, InstructorApplicationSchema } from '@obgyn/types';
+import { z } from 'zod';
 import { BookOpen, FileCheck2, Globe2, PenTool, Rocket, ShieldCheck, UserCheck } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { ApplicationForm } from '@/components/application-form';
 import { Link } from '@/i18n/navigation';
 import { getMe } from '@/lib/catalog';
-import { apiGet } from '@/lib/server-api';
+import { ApiError, apiGet } from '@/lib/server-api';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -31,10 +32,20 @@ export default async function BecomeInstructorPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
   const [t, me] = await Promise.all([getTranslations('BecomeInstructor'), getMe()]);
-  const application =
-    me && me.role === 'LEARNER'
-      ? await apiGet('/instructor-applications/me', InstructorApplicationSchema, { auth: true }).catch(() => null)
-      : null;
+  const learner = me?.role === 'LEARNER';
+  const [application, fieldResult] = learner
+    ? await Promise.all([
+        apiGet('/instructor-applications/me', InstructorApplicationSchema, { auth: true }).catch((error: unknown) => {
+          if (error instanceof ApiError && error.status === 404) return null;
+          throw error;
+        }),
+        apiGet('/instructor-applications/fields', z.array(ApplicationFieldSchema), { auth: true }).then(
+          (fields) => ({ fields, failed: false }),
+          () => ({ fields: [], failed: true }),
+        ),
+      ])
+    : [null, { fields: [], failed: false }];
+  const fields = fieldResult.fields;
 
   let panel: React.ReactNode;
   if (!me) {
@@ -64,6 +75,9 @@ export default async function BecomeInstructorPage({ params }: Props) {
   } else {
     panel = (
       <div className="flex flex-col gap-4">
+        {fieldResult.failed ? (
+          <p role="alert" className="text-sm text-destructive">{t('fieldsLoadError')}</p>
+        ) : null}
         {application?.status === 'REJECTED' ? (
           <div role="status" className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
             <p>{t('status.REJECTED')}</p>
@@ -72,7 +86,7 @@ export default async function BecomeInstructorPage({ params }: Props) {
             ) : null}
           </div>
         ) : null}
-        <ApplicationForm initial={application} />
+        {!fieldResult.failed ? <ApplicationForm initial={application} fields={fields} /> : null}
       </div>
     );
   }

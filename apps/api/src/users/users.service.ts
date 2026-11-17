@@ -1,4 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { type Device, type UserProfile } from '@obgyn/types';
 import { AuditService } from '../audit/audit.service';
 import { type AuthUser } from '../auth/auth-user';
@@ -89,15 +90,21 @@ export class UsersService {
    * statistics remain correct. Instructors must hand over published courses first.
    */
   async deleteAccount(user: AuthUser): Promise<void> {
-    const published = await this.prisma.course.count({
-      where: { instructorId: user.userId, status: { in: ['PUBLISHED', 'IN_REVIEW'] } },
+    await this.prisma.$transaction((tx) => this.eraseAccount(tx, user.userId));
+    await this.audit.log({ actorId: user.userId, action: 'account.deleted', resource: 'user', resourceId: user.userId });
+  }
+
+  /** Shared soft-erasure logic for self-service and administrator deletion. */
+  async eraseAccount(tx: Prisma.TransactionClient, userId: string): Promise<void> {
+    const published = await tx.course.count({
+      where: { instructorId: userId, status: { in: ['PUBLISHED', 'IN_REVIEW'] } },
     });
     if (published > 0) throw new ConflictException({ code: 'HAS_PUBLISHED_COURSES' });
 
     const now = new Date();
-    await this.prisma.$transaction([
-      this.prisma.user.update({
-        where: { id: user.userId },
+    await Promise.all([
+      tx.user.update({
+        where: { id: userId },
         data: {
           displayName: 'Deleted user',
           email: null,
@@ -107,17 +114,19 @@ export class UsersService {
           learnerType: null,
           role: 'LEARNER',
           deletedAt: now,
+          blockedAt: null,
+          blockedReason: null,
+          blockedById: null,
         },
       }),
-      this.prisma.session.updateMany({
-        where: { userId: user.userId, revokedAt: null },
+      tx.session.updateMany({
+        where: { userId, revokedAt: null },
         data: { revokedAt: now, revokedReason: 'ACCOUNT_DELETED' },
       }),
-      this.prisma.device.updateMany({ where: { userId: user.userId, revokedAt: null }, data: { revokedAt: now } }),
-      this.prisma.courseReview.deleteMany({ where: { userId: user.userId } }),
-      this.prisma.wishlistItem.deleteMany({ where: { userId: user.userId } }),
-      this.prisma.instructorApplication.deleteMany({ where: { userId: user.userId } }),
+      tx.device.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: now } }),
+      tx.courseReview.deleteMany({ where: { userId } }),
+      tx.wishlistItem.deleteMany({ where: { userId } }),
+      tx.instructorApplication.deleteMany({ where: { userId } }),
     ]);
-    await this.audit.log({ actorId: user.userId, action: 'account.deleted', resource: 'user', resourceId: user.userId });
   }
 }

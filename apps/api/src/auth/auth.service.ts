@@ -92,6 +92,9 @@ export class AuthService {
     method: 'otp' | 'dev-password' = 'otp',
   ): Promise<TokenPair> {
     const user = await this.findOrCreateUser(channel, target);
+    if (user.blockedAt || user.deletedAt) {
+      throw new UnauthorizedException({ code: 'ACCOUNT_UNAVAILABLE' });
+    }
     const device = await this.bindDevice(user.id, dto.deviceId, dto.deviceLabel);
 
     const secret = this.tokens.newRefreshSecret();
@@ -129,7 +132,14 @@ export class AuthService {
       where: { id: parsed.sessionId },
       include: { device: true, user: true },
     });
-    if (!session || session.revokedAt || session.expiresAt <= now || session.device.revokedAt) {
+    if (
+      !session ||
+      session.revokedAt ||
+      session.expiresAt <= now ||
+      session.device.revokedAt ||
+      session.user.blockedAt ||
+      session.user.deletedAt
+    ) {
       throw unauthorized();
     }
 
