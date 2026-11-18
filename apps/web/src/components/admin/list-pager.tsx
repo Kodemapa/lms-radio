@@ -1,3 +1,4 @@
+import { ADMIN_PAGE_SIZE_COOKIE } from '@obgyn/types';
 import { AdminPager } from '@obgyn/ui';
 import { getTranslations } from 'next-intl/server';
 import { pageWindow, PAGE_SIZE_OPTIONS, withQuery } from '@/lib/admin-paging';
@@ -42,6 +43,7 @@ export async function ListPager({
         options: PAGE_SIZE_OPTIONS,
         label: t('rowsPerPage'),
         params,
+        cookie: ADMIN_PAGE_SIZE_COOKIE,
       }}
     />
   );

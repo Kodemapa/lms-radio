@@ -1,11 +1,12 @@
-import { AdminAuditPageSchema, AdminAuditQuerySchema } from '@obgyn/types';
+import { ADMIN_PAGE_SIZE_COOKIE, AdminAuditPageSchema, AdminAuditQuerySchema } from '@obgyn/types';
 import { AdminPager, Button, Input, Label } from '@obgyn/ui';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin-server';
+import { rememberedPageSize } from '@/lib/admin-page-size';
 import { apiGet } from '@/lib/server-api';
 import { ADMIN_DEFAULT_PAGE_SIZE } from '@obgyn/types';
-import { PAGE_SIZE_OPTIONS, readPageSize } from '@/lib/admin-paging';
+import { PAGE_SIZE_OPTIONS } from '@/lib/admin-paging';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 const FILTERS = ['actorId', 'action', 'resource', 'resourceId', 'from', 'to'] as const;
@@ -26,7 +27,7 @@ export default async function AdminAuditPage({
     getFormatter(),
     searchParams,
   ]);
-  const limit = readPageSize(raw.limit, ADMIN_DEFAULT_PAGE_SIZE);
+  const limit = await rememberedPageSize(raw.limit, ADMIN_DEFAULT_PAGE_SIZE);
 
   // Keep only non-empty, valid filters (an invalid one is dropped rather than erroring).
   const values: Record<string, string> = {};
@@ -156,6 +157,7 @@ export default async function AdminAuditPage({
           options: PAGE_SIZE_OPTIONS,
           label: tAdmin('rowsPerPage'),
           params: Object.fromEntries(filters),
+          cookie: ADMIN_PAGE_SIZE_COOKIE,
         }}
       />
     </div>

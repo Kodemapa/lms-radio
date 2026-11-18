@@ -24,6 +24,7 @@ import { createPortal } from 'react-dom';
 import { useRouter } from '@/i18n/navigation';
 import { GlobalLoader } from './page-loader';
 import { initials } from '@/lib/initials';
+import { useSessionWatch } from './session-watch';
 
 export interface UserMenuLabels {
   myLearning: string;
@@ -39,7 +40,10 @@ export interface UserMenuLabels {
 export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenuLabels }) {
   const router = useRouter();
   const tCommon = useTranslations('Common');
+  // True from "Sign out" until the page reloads: shows the global loader meanwhile.
   const [signingOut, setSigningOut] = useState(false);
+  // Signed in on every page that shows this menu: sign out here if the session ends elsewhere.
+  useSessionWatch();
   const isAdmin = user.role === 'ADMIN';
   const isInstructor = user.role === 'FACULTY' || user.role === 'ADMIN';
 

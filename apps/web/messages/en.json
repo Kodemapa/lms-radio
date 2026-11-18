@@ -559,7 +559,10 @@
     "editDetails": "Edit my details",
     "forgotIntro": "Enter your registered email or mobile number. We will send a code to reset your password.",
     "instructorHint": "Want to teach? Create a learner account first, then",
-    "becomeInstructor": "apply to become an instructor"
+    "becomeInstructor": "apply to become an instructor",
+    "signingIn": "Signing you in…",
+    "creatingAccount": "Creating your account…",
+    "sessionEnded": "You have been signed out. Your session ended or your account was changed by an administrator. Sign in again to continue."
   },
   "BecomeInstructor": {
     "title": "Teach on GIFS e-LMS",
@@ -953,7 +956,17 @@
     "publish": "Approve and publish",
     "reject": "Request changes",
     "changesRequested": "Changes requested",
-    "reviewHistory": {"title": "Review history", "empty": "No review activity yet.", "by": "by {name}", "kind": {"SUBMITTED": "Submitted for review", "CHANGES_REQUESTED": "Changes requested", "PUBLISHED": "Approved and published", "WITHDRAWN": "Withdrawn from review"}},
+    "reviewHistory": {
+      "title": "Review history",
+      "empty": "No review activity yet.",
+      "by": "by {name}",
+      "kind": {
+        "SUBMITTED": "Submitted for review",
+        "CHANGES_REQUESTED": "Changes requested",
+        "PUBLISHED": "Approved and published",
+        "WITHDRAWN": "Withdrawn from review"
+      }
+    },
     "recentActivity": "Recent review activity",
     "recentActivityIntro": "Submissions and decisions on every course, newest first. Courses sent back for changes stay here after they leave the queue.",
     "rejectNote": "What needs to change?",
@@ -1422,7 +1435,12 @@
       "selfAction": "You can't block, demote, or delete your own account.",
       "accountExists": "An account already uses that email or mobile number.",
       "invalidInstructor": "Check the instructor details and password requirements.",
-      "hasPublishedCourses": "This user has published or in-review courses. Unpublish or reassign them before deleting."
+      "hasPublishedCourses": "This user has published or in-review courses. Unpublish or reassign them before deleting.",
+      "loadFailed": "Couldn't load users. Check your connection and try again.",
+      "phoneRequired": "Enter the instructor's mobile number.",
+      "phoneInvalid": "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8 or 9.",
+      "phoneInUse": "This mobile number is already in use by another account.",
+      "emailInUse": "This email address is already in use by another account."
     },
     "inbox": {
       "title": "Contact messages",
@@ -1482,7 +1500,11 @@
     "idCopied": "User ID copied",
     "rowsPerPage": "Rows per page",
     "pageRange": "{start}–{end} of {total}",
-    "pages": "Pages"
+    "pages": "Pages",
+    "searchLabel": "Search",
+    "searching": "Searching…",
+    "instructorMobile": "Mobile number",
+    "instructorMobileHint": "10-digit Indian mobile number, e.g. 9876543210."
   },
   "NotFound": {
     "title": "Page not found",

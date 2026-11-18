@@ -39,6 +39,7 @@ export function AdminUserActions({
   isSelf,
   showView = true,
   afterDelete = 'refresh',
+  onChanged,
 }: {
   userId: string;
   userName: string;
@@ -48,6 +49,8 @@ export function AdminUserActions({
   showView?: boolean;
   /** On the user page a deleted user's page is gone, so go back to the list. */
   afterDelete?: 'refresh' | 'list';
+  /** Called after a successful change instead of refreshing the page (the live users table reloads itself). */
+  onChanged?: () => void;
 }) {
   const t = useTranslations('Admin');
   const tCommon = useTranslations('Common');
@@ -86,6 +89,7 @@ export function AdminUserActions({
       const deleted = open.kind === 'delete';
       setOpen(null);
       if (deleted && afterDelete === 'list') router.push('/admin/users');
+      else if (onChanged) onChanged();
       else router.refresh();
     } catch (requestError) {
       const code = requestError instanceof ApiClientError ? requestError.body?.code : undefined;

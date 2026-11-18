@@ -13,6 +13,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
 import { RequiredLabel } from '@/components/admin/required-label';
+import { GlobalLoader } from '@/components/layout/page-loader';
 import { Link } from '@/i18n/navigation';
 import { getDeviceId } from '@/lib/device';
 import { safeNextPath } from '@/lib/paths';
@@ -70,7 +71,30 @@ function minutesLeft(expiresAt: string): number {
   return Math.max(1, Math.round((new Date(expiresAt).getTime() - Date.now()) / 60_000));
 }
 
-export function LoginForm({ next, register = false }: { next: string | null; register?: boolean }) {
+/**
+ * Sign-in, OTP, sign-up and password-reset forms. While a request runs, and while the app
+ * moves to the next page after signing in, the site's global loader covers the screen.
+ */
+export function LoginForm(props: { next: string | null; register?: boolean }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  return (
+    <>
+      {/* source="nav": hides under the destination page's own loader, so they never stack. */}
+      {busy ? <GlobalLoader label={busy} source="nav" /> : null}
+      <LoginFormSteps {...props} onBusy={setBusy} />
+    </>
+  );
+}
+
+function LoginFormSteps({
+  next,
+  register = false,
+  onBusy,
+}: {
+  next: string | null;
+  register?: boolean;
+  onBusy: (label: string | null) => void;
+}) {
   const t = useTranslations('Login');
   const locale = useLocale();
   const router = useRouter();
@@ -100,6 +124,10 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  /** Overlay text for the current request; null means the generic "Please wait…". */
+  const [busyLabel, setBusyLabel] = useState<string | null>(null);
+  /** Signed in: the next page is loading. Stays true until this form unmounts. */
+  const [redirecting, setRedirecting] = useState(false);
   const [resendIn, setResendIn] = useState(0);
 
   useEffect(() => {
@@ -188,20 +216,28 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
     });
   }
 
+  // Tell the wrapper whether to show the global loader, and with which text.
+  useEffect(() => {
+    onBusy(redirecting ? t('signingIn') : pending ? (busyLabel ?? t('working')) : null);
+  }, [onBusy, redirecting, pending, busyLabel, t]);
+
   async function run(action: () => Promise<void>) {
     setPending(true);
     try {
       await action();
     } catch {
       setError(t('errors.generic'));
+      setRedirecting(false);
     } finally {
       setPending(false);
+      setBusyLabel(null);
     }
   }
 
   const device = () => ({ deviceId: getDeviceId(), deviceLabel: navigator.userAgent.slice(0, 100) });
 
   async function continueAfterAuthentication() {
+    setRedirecting(true);
     if (next) {
       router.replace(safeNextPath(next, `/${locale}/courses`));
     } else {
@@ -231,6 +267,7 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
       })
     )
       return;
+    setBusyLabel(t('signingIn'));
     await run(async () => {
       const res = await post('/api/auth/login', { identifier, password, ...device() });
       if (!res.ok) return showFailure(res);
@@ -287,6 +324,7 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
     event.preventDefault();
     if (step.kind !== 'otp-verify') return;
     if (!check({ code: CODE.test(code) ? undefined : t('errors.codeRequired') })) return;
+    setBusyLabel(t('signingIn'));
     await run(async () => {
       const res = await post('/api/auth/otp/verify', { challengeId: step.challengeId, code, ...device() });
       if (!res.ok) return showFailure(res);
@@ -320,6 +358,7 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
     event.preventDefault();
     if (step.kind !== 'signup-verify') return;
     if (!check({ code: CODE.test(code) ? undefined : t('errors.codeRequired') })) return;
+    setBusyLabel(t('creatingAccount'));
     await run(async () => {
       const res = await post('/api/auth/signup', {
         displayName: displayName.trim(),
@@ -434,7 +473,6 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
         inputMode="numeric"
         autoComplete="tel-national"
         placeholder="9876543210"
-        maxLength={10}
         required
         autoFocus={autoFocus}
         className="rounded-s-none"

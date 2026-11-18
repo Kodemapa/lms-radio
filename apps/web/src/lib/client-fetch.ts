@@ -10,6 +10,8 @@ export async function bffFetch(input: string, init?: RequestInit): Promise<Respo
     const locale = window.location.pathname.split('/')[1] === 'hi' ? 'hi' : 'en';
     const login = new URL(`/${locale}/login`, window.location.origin);
     login.searchParams.set('next', `${window.location.pathname}${window.location.search}`);
+    // Tells the sign-in page to explain why (blocked, role changed, signed out elsewhere).
+    login.searchParams.set('reason', 'session-ended');
     window.location.replace(login);
     return res;
   }

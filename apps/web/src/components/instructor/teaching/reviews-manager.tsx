@@ -107,7 +107,7 @@ function ReviewItem({ review, onChanged }: { review: InstructorReview; onChanged
         <span className="text-xs text-muted-foreground">
           {review.courseTitle} · {new Date(review.createdAt).toLocaleDateString(locale, { dateStyle: 'medium' })}
         </span>
-        {review.reportedAt ? <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-900">{t('reported', { reason: t(`reportReason.${review.reportReason ?? 'OTHER'}`) })}</span> : null}
+        {review.reportedAt ? <span className="rounded bg-accent-light px-1.5 py-0.5 text-xs text-accent-deep">{t('reported', { reason: t(`reportReason.${review.reportReason ?? 'OTHER'}`) })}</span> : null}
         {review.hidden ? <span className="rounded bg-muted px-1.5 py-0.5 text-xs">{t('hiddenByAdmin')}</span> : null}
       </div>
       {review.comment ? <p className="whitespace-pre-line">{review.comment}</p> : null}

@@ -173,7 +173,8 @@ export type SignedIn = z.infer<typeof SignedInSchema>;
 export const AdminCreateInstructorSchema = z.object({
   displayName: z.string().trim().min(2).max(100),
   email: z.string().trim().toLowerCase().email().max(254),
-  phone: optionalMobile,
+  /** Required: Indian mobile in +91XXXXXXXXXX form (the form shows +91 fixed). */
+  phone: mobileNumber,
   headline: z.string().trim().max(160).optional(),
   /** Temporary password the admin shares with the instructor privately. */
   password: PasswordSchema,

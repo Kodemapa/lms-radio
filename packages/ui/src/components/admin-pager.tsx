@@ -16,6 +16,8 @@ export interface PageSizeConfig {
   label: string;
   /** Other query parameters to keep (filters, search, sort). Paging restarts at page 1. */
   params?: Record<string, string>;
+  /** Cookie that remembers the choice so other screens open with it too. */
+  cookie?: string;
 }
 
 export interface AdminPagerProps {
@@ -37,9 +39,14 @@ const linkClass =
 const disabledClass =
   'inline-flex h-10 items-center gap-1 rounded-full border border-border px-4 text-sm font-medium opacity-40';
 
-export function PageSizeSelect({ action, name = 'pageSize', value, options, label, params = {} }: PageSizeConfig) {
+export function PageSizeSelect({ action, name = 'pageSize', value, options, label, params = {}, cookie }: PageSizeConfig) {
   const id = useId();
-  const submit = (event: ChangeEvent<HTMLSelectElement>) => event.currentTarget.form?.requestSubmit();
+  const submit = (event: ChangeEvent<HTMLSelectElement>) => {
+    if (cookie) {
+      document.cookie = `${cookie}=${encodeURIComponent(event.currentTarget.value)}; path=/; max-age=31536000; samesite=lax`;
+    }
+    event.currentTarget.form?.requestSubmit();
+  };
   return (
     <form action={action} method="get" className="flex items-center gap-2">
       {Object.entries(params)

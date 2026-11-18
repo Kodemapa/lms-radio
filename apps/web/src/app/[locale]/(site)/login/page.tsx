@@ -7,7 +7,7 @@ import { Link } from '@/i18n/navigation';
 
 type Props = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ next?: string; mode?: string }>;
+  searchParams: Promise<{ next?: string; mode?: string; reason?: string }>;
 };
 
 export async function generateMetadata({ params, searchParams }: Props) {
@@ -19,7 +19,7 @@ export async function generateMetadata({ params, searchParams }: Props) {
 export default async function LoginPage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { next, mode } = await searchParams;
+  const { next, mode, reason } = await searchParams;
   const register = mode === 'register';
   const t = await getTranslations('Login');
   const keep = next ? `&next=${encodeURIComponent(next)}` : '';
@@ -51,6 +51,11 @@ export default async function LoginPage({ params, searchParams }: Props) {
           <div className="flex flex-col justify-center gap-4 p-6 sm:p-10">
             <h1 className="!text-4xl font-bold">{register ? t('registerTitle') : t('title')}</h1>
             <p className="text-muted-foreground">{register ? t('registerIntro') : t('intro')}</p>
+            {reason === 'session-ended' && !register ? (
+              <p role="status" className="rounded-xl bg-accent-light p-3 text-sm text-accent-deep">
+                {t('sessionEnded')}
+              </p>
+            ) : null}
             <LoginForm key={register ? 'register' : 'login'} next={next ?? null} register={register} />
             <p className="text-sm text-muted-foreground">
               {register ? t('haveAccount') : t('noAccount')}{' '}

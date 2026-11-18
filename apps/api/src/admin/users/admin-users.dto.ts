@@ -1,7 +1,7 @@
 import { ADMIN_USER_STATUSES, ROLES, type AdminUserStatus, type Role } from '@obgyn/types';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsEmail, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength, ValidateIf } from 'class-validator';
+import { IsEmail, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { INDIAN_MOBILE_REGEX } from '@obgyn/types';
 import { IsStrongPassword } from '../../auth/dto/password-auth.dto';
 
@@ -78,12 +78,11 @@ export class AdminCreateInstructorDto {
   @MaxLength(254)
   email: string;
 
-  @ApiPropertyOptional({ example: '+919876543210' })
-  @IsOptional()
+  @ApiProperty({ example: '+919876543210', description: 'Required Indian mobile number' })
   @Transform(trimString)
-  @ValidateIf((_, value) => value !== '')
+  @IsString()
   @Matches(INDIAN_MOBILE_REGEX, { message: 'phone must look like +919876543210' })
-  phone?: string;
+  phone: string;
 
   @ApiPropertyOptional({ maxLength: 160, example: 'MS (OBG), Fetal Medicine Consultant' })
   @IsOptional()

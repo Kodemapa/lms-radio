@@ -67,9 +67,9 @@ export async function SiteHeader() {
           >
             <Search aria-hidden className="size-4" />
           </Link>
-          {/* Theme choice is for signed-in users only; visitors get the admin's default. */}
           {me ? <NotificationBell /> : null}
-          {me ? <ThemeToggle /> : null}
+          {/* Everyone can pick light, dark or device; the choice is remembered in this browser. */}
+          <ThemeToggle />
           <LocaleSwitcher label={t('language')} />
           {me ? (
             <UserMenu

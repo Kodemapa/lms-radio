@@ -26,8 +26,8 @@ export function ThemeToggle() {
   // The real value is read after mount; the server cannot know it.
   const [pref, setPref] = useState<ThemePreference>('system');
 
-  // The toggle only appears for signed-in users. Right after sign-in (no full reload) the
-  // page still shows the default theme, so apply this browser's saved choice now.
+  // Read this browser's saved choice once mounted (the server can't know it) and make
+  // sure the page shows it.
   useEffect(() => {
     const saved = document.cookie.match(new RegExp(`(?:^|; )${THEME_COOKIE}=(light|dark|system)`))?.[1] as
       | ThemePreference

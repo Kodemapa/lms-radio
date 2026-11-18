@@ -36,6 +36,8 @@ function setup(targetOverrides: Record<string, unknown> = {}) {
     $transaction: jest.fn((work: (transaction: typeof tx) => Promise<unknown>) => work(tx)),
     user: {
       create: jest.fn().mockResolvedValue({ id: TARGET_ID }),
+      // Nobody owns the email/mobile unless a test says so.
+      findUnique: jest.fn().mockResolvedValue(null),
       findMany: jest.fn().mockResolvedValue([
         {
           id: TARGET_ID,
@@ -71,7 +73,7 @@ describe('AdminUsersService', () => {
     await service.createInstructor(ADMIN, {
       displayName: ' Dr Asha Rao ',
       email: 'ASHA@EXAMPLE.COM ',
-      phone: '',
+      phone: '+919812345678',
       headline: 'Fetal medicine',
       password,
     });
@@ -81,7 +83,7 @@ describe('AdminUsersService', () => {
       data: {
         displayName: 'Dr Asha Rao',
         email: 'asha@example.com',
-        phone: null,
+        phone: '+919812345678',
         role: 'FACULTY',
       },
       select: { id: true },
@@ -92,6 +94,25 @@ describe('AdminUsersService', () => {
       expect.objectContaining({ action: 'admin.instructor_created', resourceId: TARGET_ID }),
     );
     expect(JSON.stringify(audit.log.mock.calls)).not.toContain(password);
+  });
+
+  it.each([
+    ['mobile', { phone: '+919812345678' }, 'PHONE_IN_USE'],
+    ['email', { email: 'asha@example.com' }, 'EMAIL_IN_USE'],
+  ])('refuses an instructor whose %s is already registered, naming that field', async (_label, where, code) => {
+    const { service, prisma } = setup();
+    prisma.user.findUnique.mockImplementation(async (args: { where: Record<string, string> }) =>
+      Object.entries(where).every(([key, value]) => args.where[key] === value) ? { id: 'someone-else' } : null,
+    );
+    await expect(
+      service.createInstructor(ADMIN, {
+        displayName: 'Dr Asha Rao',
+        email: 'asha@example.com',
+        phone: '+919812345678',
+        password: 'Temporary1pass',
+      }),
+    ).rejects.toMatchObject({ status: 409, response: { code } });
+    expect(prisma.user.create).not.toHaveBeenCalled();
   });
 
   it('masks contact details in the paged user list', async () => {

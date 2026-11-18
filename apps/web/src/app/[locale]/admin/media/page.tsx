@@ -1,11 +1,12 @@
-import { ADMIN_DEFAULT_PAGE_SIZE, AdminDrmListSchema, AdminDrmQuerySchema, DRM_PACKAGE_STATUSES } from '@obgyn/types';
+import { ADMIN_PAGE_SIZE_COOKIE, ADMIN_DEFAULT_PAGE_SIZE, AdminDrmListSchema, AdminDrmQuerySchema, DRM_PACKAGE_STATUSES } from '@obgyn/types';
 import { AdminPager } from '@obgyn/ui';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { DrmRetryButton } from '@/components/admin/drm-retry-button';
 import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin-server';
+import { rememberedPageSize } from '@/lib/admin-page-size';
 import { apiGet } from '@/lib/server-api';
-import { pageWindow, PAGE_SIZE_OPTIONS, readPageSize, withQuery } from '@/lib/admin-paging';
+import { pageWindow, PAGE_SIZE_OPTIONS, withQuery } from '@/lib/admin-paging';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -35,7 +36,7 @@ export default async function AdminMediaPage({
   const query = AdminDrmQuerySchema.catch(AdminDrmQuerySchema.parse({})).parse({
     status: typeof raw.status === 'string' && raw.status ? raw.status : undefined,
     page: typeof raw.page === 'string' ? raw.page : undefined,
-    pageSize: readPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE),
+    pageSize: await rememberedPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE),
   });
   const result = await apiGet(
     withQuery('/admin/media/drm', { status: query.status, page: query.page, pageSize: query.pageSize }),
@@ -140,6 +141,7 @@ export default async function AdminMediaPage({
           options: PAGE_SIZE_OPTIONS,
           label: tAdmin('rowsPerPage'),
           params: query.status ? { status: query.status } : {},
+          cookie: ADMIN_PAGE_SIZE_COOKIE,
         }}
       />
     </div>

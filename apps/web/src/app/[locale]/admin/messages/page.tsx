@@ -1,11 +1,12 @@
-import { ADMIN_DEFAULT_PAGE_SIZE, ContactMessageListSchema, ContactStatusSchema } from '@obgyn/types';
+import { ADMIN_DEFAULT_PAGE_SIZE, ADMIN_PAGE_SIZE_COOKIE, ContactMessageListSchema, ContactStatusSchema } from '@obgyn/types';
 import { AdminPager } from '@obgyn/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { ContactInbox } from '@/components/admin/contact-inbox';
 import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin-server';
+import { rememberedPageSize } from '@/lib/admin-page-size';
 import { apiGet } from '@/lib/server-api';
-import { pageWindow, PAGE_SIZE_OPTIONS, readPage, readPageSize, withQuery } from '@/lib/admin-paging';
+import { pageWindow, PAGE_SIZE_OPTIONS, readPage, withQuery } from '@/lib/admin-paging';
 
 export default async function AdminMessagesPage({
   params,
@@ -20,7 +21,7 @@ export default async function AdminMessagesPage({
   const raw = await searchParams;
   const parsed = ContactStatusSchema.safeParse(typeof raw.status === 'string' ? raw.status : undefined);
   const status = parsed.success ? parsed.data : undefined;
-  const pageSize = readPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE);
+  const pageSize = await rememberedPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE);
   const page = readPage(raw.page);
   const [t, tAdmin, list] = await Promise.all([
     getTranslations('Admin.inbox'),
@@ -70,6 +71,7 @@ export default async function AdminMessagesPage({
           options: PAGE_SIZE_OPTIONS,
           label: tAdmin('rowsPerPage'),
           params: status ? { status } : {},
+          cookie: ADMIN_PAGE_SIZE_COOKIE,
         }}
       />
     </div>

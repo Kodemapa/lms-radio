@@ -6,24 +6,8 @@
 
 body:has(.clinical-home),
 .clinical-home {
-  --background: #fffaf4;
-  --foreground: #2b2036;
-  --card: #ffffff;
-  --card-foreground: #2b2036;
-  --muted: #f3edf6;
-  --muted-foreground: #6c6275;
-  --border: #ebe3ee;
-  --primary: #6a52a3;
-  --primary-hover: #563f8a;
-  --primary-foreground: #ffffff;
-  --primary-light: #efe8fa;
-  --secondary: #2f2340;
-  --secondary-foreground: #ffffff;
-  --section: #f7f1f4;
-  --footer: #2b2036;
-  --footer-panel: #3a2e48;
-  --ring: #6a52a3;
-
+  /* Site colours (--background, --card, --primary …) come from globals.css, so the
+     landing page follows the light/dark theme like every other page. */
   --lp-plum: #2f2340;
   --lp-violet: #6a52a3;
   --lp-lav: #ece3f8;
@@ -37,6 +21,10 @@ body:has(.clinical-home),
   --lp-shadow: 0 1px 2px #2b20360a, 0 18px 40px -12px #2b203624;
   --lp-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   --lp-display: var(--font-display), var(--font-geist), var(--font-devanagari), system-ui, sans-serif;
+  /* Text-coloured twins of the brand colours (they flip in dark mode). */
+  --lp-ink: var(--lp-plum);
+  --lp-violet-ink: var(--lp-violet);
+  --lp-orange-ink: var(--lp-orange-deep);
 }
 
 .clinical-home {
@@ -112,7 +100,7 @@ body:has(.clinical-home),
   font-weight: 650;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--lp-orange-deep);
+  color: var(--lp-orange-ink);
 }
 .lp-kicker::before {
   content: '';
@@ -168,15 +156,15 @@ body:has(.clinical-home),
 }
 .lp-btn-ghost {
   padding: 14px 20px;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-btn-ghost:hover {
   background: #2f23400d;
 }
 .lp-btn-light {
   padding: 8px 8px 8px 24px;
-  background: #fff;
-  color: var(--lp-plum);
+  background: var(--lpd-s-fff, #fff);
+  color: var(--lp-ink);
 }
 .lp-btn-light:hover {
   transform: translateY(-2px);
@@ -264,9 +252,9 @@ body:has(.clinical-home),
   inset: -120px 0 0;
   z-index: -1;
   background:
-    radial-gradient(40% 50% at 82% 30%, #e7dbfa 0%, transparent 70%),
-    radial-gradient(30% 40% at 95% 75%, #fde0c6 0%, transparent 70%),
-    radial-gradient(35% 45% at 5% 10%, #f6ecff 0%, transparent 70%);
+    radial-gradient(40% 50% at 82% 30%, var(--lpd-s-e7dbfa, #e7dbfa) 0%, transparent 70%),
+    radial-gradient(30% 40% at 95% 75%, var(--lpd-s-fde0c6, #fde0c6) 0%, transparent 70%),
+    radial-gradient(35% 45% at 5% 10%, var(--lpd-s-f6ecff, #f6ecff) 0%, transparent 70%);
 }
 .lp-hero-grid {
   display: grid;
@@ -280,12 +268,12 @@ body:has(.clinical-home),
   gap: 8px;
   padding: 8px 14px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--lpd-s-fff, #fff);
   box-shadow: var(--lp-shadow);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--lp-violet);
+  color: var(--lp-violet-ink);
 }
 .lp-pill svg {
   color: var(--lp-orange);
@@ -297,7 +285,7 @@ body:has(.clinical-home),
   line-height: 0.98;
   letter-spacing: -0.04em;
   font-weight: 700;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
   text-wrap: balance;
 }
 .lp-highlight {
@@ -357,8 +345,8 @@ body:has(.clinical-home),
   max-width: 460px;
   padding: 14px 18px 14px 14px;
   border-radius: 20px;
-  background: #ffffffb3;
-  border: 1px solid #fff;
+  background: var(--lpd-s-ffffffb3, #ffffffb3);
+  border: 1px solid var(--lpd-s-fff, #fff);
   box-shadow: var(--lp-shadow);
   backdrop-filter: blur(8px);
   font-size: 13px;
@@ -373,7 +361,7 @@ body:has(.clinical-home),
   height: 44px;
   border-radius: 14px;
   background: var(--lp-lav);
-  color: var(--lp-violet);
+  color: var(--lp-violet-ink);
 }
 .lp-stats {
   display: flex;
@@ -389,7 +377,7 @@ body:has(.clinical-home),
   font-size: 40px;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
   line-height: 1;
 }
 .lp-stats dt {
@@ -413,8 +401,8 @@ body:has(.clinical-home),
   border-radius: 46% 54% 44% 56% / 52% 42% 58% 48%;
   background:
     var(--lp-grain),
-    radial-gradient(circle at 30% 25%, #f1e8ff 0%, transparent 55%),
-    linear-gradient(140deg, #c9b5ef 0%, #e5c4e2 45%, #fbc9a1 100%);
+    radial-gradient(circle at 30% 25%, var(--lpd-s-f1e8ff, #f1e8ff) 0%, transparent 55%),
+    linear-gradient(140deg, var(--lpd-s-c9b5ef, #c9b5ef) 0%, var(--lpd-s-e5c4e2, #e5c4e2) 45%, var(--lpd-s-fbc9a1, #fbc9a1) 100%);
   background-blend-mode: soft-light, normal, normal;
   box-shadow: inset 0 -30px 60px #ffffff40;
 }
@@ -457,7 +445,7 @@ body:has(.clinical-home),
   aspect-ratio: 4 / 5;
   border-radius: 999px 999px 36px 36px;
   overflow: hidden;
-  border: 8px solid #fff;
+  border: 8px solid var(--lpd-s-fff, #fff);
   box-shadow: 0 30px 60px -20px #2f234066;
 }
 .lp-arch img {
@@ -480,7 +468,7 @@ body:has(.clinical-home),
   width: 250px;
   padding: 14px;
   border-radius: 24px;
-  background: #fff;
+  background: var(--lpd-s-fff, #fff);
   box-shadow: 0 30px 60px -18px #2f234055;
   rotate: -4deg;
 }
@@ -501,8 +489,8 @@ body:has(.clinical-home),
   gap: 6px;
   padding: 4px 8px;
   border-radius: 99px;
-  background: #fff1e6;
-  color: var(--lp-orange-deep);
+  background: var(--lpd-s-fff1e6, #fff1e6);
+  color: var(--lp-orange-ink);
   letter-spacing: 0.06em;
 }
 .lp-pulse {
@@ -566,7 +554,7 @@ body:has(.clinical-home),
   font-family: var(--lp-display);
   font-size: 18px;
   font-weight: 650;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-scan-sub {
   display: flex;
@@ -583,7 +571,7 @@ body:has(.clinical-home),
   height: 18px;
   border-radius: 50%;
   background: var(--lp-lav);
-  color: var(--lp-violet);
+  color: var(--lp-violet-ink);
 }
 .lp-bubble {
   position: absolute;
@@ -593,7 +581,7 @@ body:has(.clinical-home),
   aspect-ratio: 1;
   border-radius: 50%;
   overflow: hidden;
-  border: 6px solid #fff;
+  border: 6px solid var(--lpd-s-fff, #fff);
   box-shadow: 0 20px 40px -14px #2f234066;
 }
 .lp-bubble img {
@@ -622,13 +610,13 @@ body:has(.clinical-home),
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--lpd-s-fff, #fff);
 }
 .lp-chip-b {
   top: 12%;
   left: 2%;
-  background: #fff;
-  color: var(--lp-violet);
+  background: var(--lpd-s-fff, #fff);
+  color: var(--lp-violet-ink);
   rotate: -6deg;
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -780,7 +768,7 @@ body:has(.clinical-home),
   flex: 1;
   padding: 0 24px 22px;
   margin-top: -28px;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-pathway-icon {
   display: grid;
@@ -788,8 +776,8 @@ body:has(.clinical-home),
   width: 48px;
   height: 48px;
   border-radius: 16px;
-  background: #fff;
-  color: var(--lp-violet);
+  background: var(--lpd-s-fff, #fff);
+  color: var(--lp-violet-ink);
   box-shadow: 0 10px 20px -10px #2f234055;
 }
 .lp-pathway-num {
@@ -811,7 +799,7 @@ body:has(.clinical-home),
   margin-top: 8px;
   font-size: 14px;
   line-height: 1.65;
-  color: #2b2036b3;
+  color: var(--lpd-i-2b2036b3, #2b2036b3);
 }
 .lp-pathway-cta {
   display: flex;
@@ -840,8 +828,8 @@ body:has(.clinical-home),
 /* ---------- Learning journey (pinned media) ---------- */
 .lp-journey-section {
   background:
-    radial-gradient(50% 40% at 0% 30%, #f2e9fd 0%, transparent 70%),
-    radial-gradient(40% 40% at 100% 90%, #fde8d6 0%, transparent 70%);
+    radial-gradient(50% 40% at 0% 30%, var(--lpd-s-f2e9fd, #f2e9fd) 0%, transparent 70%),
+    radial-gradient(40% 40% at 100% 90%, var(--lpd-s-fde8d6, #fde8d6) 0%, transparent 70%);
 }
 .lp-journey {
   display: grid;
@@ -905,12 +893,12 @@ body:has(.clinical-home),
   width: 8px;
   height: 8px;
   border-radius: 99px;
-  background: #ffffff80;
+  background: var(--lpd-s-ffffff80, #ffffff80);
   transition: width 0.4s;
 }
 .lp-journey-dots li[data-active='true'] {
   width: 28px;
-  background: #fff;
+  background: var(--lpd-s-fff, #fff);
 }
 .lp-journey-steps {
   display: flex;
@@ -938,18 +926,18 @@ body:has(.clinical-home),
   width: fit-content;
   padding: 8px 14px 8px 8px;
   border-radius: 99px;
-  background: #fff;
+  background: var(--lpd-s-fff, #fff);
   box-shadow: var(--lp-shadow);
   font-size: 13px;
   font-weight: 650;
-  color: var(--lp-violet);
+  color: var(--lp-violet-ink);
 }
 .lp-journey-num svg {
   box-sizing: content-box;
   padding: 7px;
   border-radius: 50%;
   background: var(--lp-peach);
-  color: var(--lp-orange-deep);
+  color: var(--lp-orange-ink);
 }
 .lp-journey-step h3 {
   margin-top: 20px;
@@ -957,7 +945,7 @@ body:has(.clinical-home),
   font-size: clamp(28px, 3vw, 40px);
   font-weight: 650;
   letter-spacing: -0.03em;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-journey-step p {
   margin-top: 12px;
@@ -978,9 +966,9 @@ body:has(.clinical-home),
   padding: 28px;
   background:
     var(--lp-grain),
-    linear-gradient(150deg, #f4ecff 0%, #fbe1ec 55%, #fdd6b5 100%);
+    linear-gradient(150deg, var(--lpd-s-f4ecff, #f4ecff) 0%, var(--lpd-s-fbe1ec, #fbe1ec) 55%, var(--lpd-s-fdd6b5, #fdd6b5) 100%);
   background-blend-mode: soft-light, normal;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-report {
   display: flex;
@@ -988,7 +976,7 @@ body:has(.clinical-home),
   gap: 12px;
   padding: 18px;
   border-radius: 22px;
-  background: #fffffff2;
+  background: var(--lpd-s-fffffff2, #fffffff2);
   box-shadow: 0 1px 2px #2b20360f, 0 24px 48px -20px #2b203640;
   font-size: 12px;
   line-height: 1.35;
@@ -1007,7 +995,7 @@ body:has(.clinical-home),
 .lp-report-head span,
 .lp-report-label,
 .lp-report-detail {
-  color: #2b20368c;
+  color: var(--lpd-i-2b20368c, #2b20368c);
 }
 .lp-report-label {
   font-size: 11px;
@@ -1028,16 +1016,16 @@ body:has(.clinical-home),
   min-width: 0;
   padding: 10px 12px;
   border-radius: 14px;
-  background: #f7f3fc;
+  background: var(--lpd-s-f7f3fc, #f7f3fc);
 }
 .lp-report-where > span:last-child {
   font-weight: 600;
 }
 .lp-report-where[data-next='true'] {
-  background: #ece3f8;
+  background: var(--lpd-s-ece3f8, #ece3f8);
 }
 .lp-report-where[data-next='true'] > span:last-child {
-  color: var(--lp-violet);
+  color: var(--lp-violet-ink);
 }
 .lp-report-meter {
   display: flex;
@@ -1073,7 +1061,7 @@ body:has(.clinical-home),
   align-items: center;
   gap: 12px;
   padding-block: 7px;
-  border-top: 1px solid #2f234012;
+  border-top: 1px solid var(--lpd-l-2f234012, #2f234012);
   font-weight: 600;
 }
 .lp-report-cols {
@@ -1083,18 +1071,18 @@ body:has(.clinical-home),
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #2b20368c;
+  color: var(--lpd-i-2b20368c, #2b20368c);
 }
 .lp-report-score {
   display: flex;
   flex-direction: column;
   gap: 3px;
   font-weight: 500;
-  color: #2b2036a6;
+  color: var(--lpd-i-2b2036a6, #2b2036a6);
   font-variant-numeric: tabular-nums;
 }
 .lp-report-score strong {
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-week-bar {
   display: block;
@@ -1125,21 +1113,21 @@ body:has(.clinical-home),
   font-style: normal;
   font-size: 10.5px;
   text-align: center;
-  background: #e9f3e3;
-  color: #3d6b2a;
+  background: var(--lpd-s-e9f3e3, #e9f3e3);
+  color: var(--lpd-i-3d6b2a, #3d6b2a);
 }
 .lp-report-row em[data-tone='mid'] {
-  background: #fff1e0;
-  color: #9a5414;
+  background: var(--lpd-s-fff1e0, #fff1e0);
+  color: var(--lpd-i-9a5414, #9a5414);
 }
 .lp-report-row em[data-tone='weak'] {
-  background: #fde4e4;
-  color: #a33a3a;
+  background: var(--lpd-s-fde4e4, #fde4e4);
+  color: var(--lpd-i-a33a3a, #a33a3a);
 }
 .lp-week-note {
   margin-top: 10px;
   font-size: 11px;
-  color: #2b203680;
+  color: var(--lpd-i-2b203680, #2b203680);
 }
 /* Short desktop screens shrink the pinned frame; keep the whole report inside it. */
 @media (min-width: 1024px) and (max-height: 800px) {
@@ -1228,7 +1216,7 @@ body:has(.clinical-home),
   height: 46px;
   border-radius: 14px;
   background: linear-gradient(140deg, var(--lp-peach), var(--lp-orange));
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-task h3 {
   margin-top: 18px;
@@ -1278,7 +1266,7 @@ body:has(.clinical-home),
   background: transparent;
 }
 .clinical-home .fetal-course-section.bg-section {
-  background: linear-gradient(180deg, transparent, #f7eef3 20%, #f7eef3 80%, transparent);
+  background: linear-gradient(180deg, transparent, var(--lpd-s-f7eef3, #f7eef3) 20%, var(--lpd-s-f7eef3, #f7eef3) 80%, transparent);
 }
 .clinical-home #newest,
 .clinical-home #free {
@@ -1293,7 +1281,7 @@ body:has(.clinical-home),
   overflow: hidden;
   background:
     var(--lp-grain),
-    linear-gradient(130deg, #efe5fb 0%, #f8e2ea 60%, #fde3cf 100%);
+    linear-gradient(130deg, var(--lpd-s-efe5fb, #efe5fb) 0%, var(--lpd-s-f8e2ea, #f8e2ea) 60%, var(--lpd-s-fde3cf, #fde3cf) 100%);
   background-blend-mode: soft-light, normal;
   box-shadow: var(--lp-shadow);
 }
@@ -1348,7 +1336,7 @@ body:has(.clinical-home),
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(160deg, #ece3f855 0%, transparent 40%, #ef874633 100%);
+  background: linear-gradient(160deg, var(--lpd-s-ece3f855, #ece3f855) 0%, transparent 40%, #ef874633 100%);
   mix-blend-mode: multiply;
 }
 .lp-accordion {
@@ -1358,8 +1346,8 @@ body:has(.clinical-home),
 }
 .lp-accordion > * {
   border-radius: 20px !important;
-  border-color: #ece4ef !important;
-  background: #fff;
+  border-color: var(--lpd-s-ece4ef, #ece4ef) !important;
+  background: var(--lpd-s-fff, #fff);
   padding-inline: 8px;
   transition: box-shadow 0.3s;
 }
@@ -1613,10 +1601,10 @@ body:has(.clinical-home),
   bottom: 48px;
   padding: 18px 20px;
   border-radius: 22px;
-  background: #ffffffeb;
+  background: var(--lpd-s-ffffffeb, #ffffffeb);
   backdrop-filter: blur(10px);
   box-shadow: 0 20px 40px -16px #0006;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-result-title {
   font-family: var(--lp-display);
@@ -1637,10 +1625,10 @@ body:has(.clinical-home),
   font-weight: 600;
 }
 .lp-result-card li svg {
-  color: #3d8a2a;
+  color: var(--lpd-i-3d8a2a, #3d8a2a);
 }
 .lp-result-card li[data-ok='false'] svg {
-  color: #c2410c;
+  color: var(--lpd-i-c2410c, #c2410c);
 }
 .lp-result-card li em {
   font-style: normal;
@@ -1648,20 +1636,20 @@ body:has(.clinical-home),
   font-weight: 600;
   padding: 3px 10px;
   border-radius: 99px;
-  background: #e9f3e3;
-  color: #3d6b2a;
+  background: var(--lpd-s-e9f3e3, #e9f3e3);
+  color: var(--lpd-i-3d6b2a, #3d6b2a);
 }
 .lp-result-card li[data-ok='false'] em {
-  background: #fff1e0;
-  color: #9a5414;
+  background: var(--lpd-s-fff1e0, #fff1e0);
+  color: var(--lpd-i-9a5414, #9a5414);
 }
 .lp-result-foot {
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid #2f234014;
+  border-top: 1px solid var(--lpd-l-2f234014, #2f234014);
   font-size: 12px;
   font-weight: 600;
-  color: var(--lp-violet);
+  color: var(--lp-violet-ink);
 }
 .lp-mock-note {
   position: absolute;
@@ -1685,8 +1673,8 @@ body:has(.clinical-home),
   gap: 14px;
   padding: 18px;
   border-radius: 20px;
-  background: #ffffffb3;
-  border: 1px solid #fff;
+  background: var(--lpd-s-ffffffb3, #ffffffb3);
+  border: 1px solid var(--lpd-s-fff, #fff);
   box-shadow: var(--lp-shadow);
   font-size: 13px;
   line-height: 1.55;
@@ -1696,7 +1684,7 @@ body:has(.clinical-home),
   display: block;
   margin-bottom: 2px;
   font-size: 14px;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-trust-icon {
   display: grid;
@@ -1706,7 +1694,7 @@ body:has(.clinical-home),
   height: 40px;
   border-radius: 12px;
   background: var(--lp-lav);
-  color: var(--lp-violet);
+  color: var(--lp-violet-ink);
 }
 
 /* ---------- Faculty CTA list ---------- */
@@ -1719,7 +1707,7 @@ body:has(.clinical-home),
   margin-bottom: 30px;
   font-size: 14px;
   line-height: 1.5;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-cta-list li {
   display: flex;
@@ -1731,8 +1719,8 @@ body:has(.clinical-home),
   box-sizing: content-box;
   padding: 3px;
   border-radius: 50%;
-  background: #fff;
-  color: var(--lp-orange-deep);
+  background: var(--lpd-s-fff, #fff);
+  color: var(--lp-orange-ink);
 }
 
 @media (max-width: 1023px) {
@@ -1877,29 +1865,29 @@ body:has(.clinical-home),
 }
 .lp-compare > div:not(:last-child) .lp-compare-row > span,
 .lp-compare-header > span {
-  border-bottom: 1px solid #2f23400f;
+  border-bottom: 1px solid var(--lpd-l-2f23400f, #2f23400f);
 }
 .lp-compare-topic {
   font-family: var(--lp-display);
   font-size: 17px !important;
   font-weight: 650;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-compare-them {
-  color: #8a8190;
+  color: var(--lpd-i-8a8190, #8a8190);
 }
 .lp-compare-them > svg {
   flex-shrink: 0;
   margin-top: 4px;
-  color: #b9b0bf;
+  color: var(--lpd-i-b9b0bf, #b9b0bf);
 }
 .lp-compare-us {
   background:
     var(--lp-grain),
-    linear-gradient(120deg, #f1e8fd 0%, #fbe6ee 60%, #fde7d4 100%);
+    linear-gradient(120deg, var(--lpd-s-f1e8fd, #f1e8fd) 0%, var(--lpd-s-fbe6ee, #fbe6ee) 60%, var(--lpd-s-fde7d4, #fde7d4) 100%);
   background-blend-mode: soft-light, normal;
   background-attachment: fixed, scroll;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
   font-weight: 550;
 }
 .lp-compare-us > svg {
@@ -1920,7 +1908,7 @@ body:has(.clinical-home),
 }
 .lp-compare-header .lp-compare-us {
   border-radius: 24px 24px 0 0;
-  color: var(--lp-orange-deep);
+  color: var(--lp-orange-ink);
 }
 .lp-compare > div:last-child .lp-compare-us {
   border-radius: 0 0 24px 24px;
@@ -1937,8 +1925,8 @@ body:has(.clinical-home),
   border-radius: 36px;
   background:
     var(--lp-grain),
-    radial-gradient(50% 80% at 100% 0%, #fde3cf 0%, transparent 70%),
-    linear-gradient(140deg, #efe5fb 0%, #f7eaf2 100%);
+    radial-gradient(50% 80% at 100% 0%, var(--lpd-s-fde3cf, #fde3cf) 0%, transparent 70%),
+    linear-gradient(140deg, var(--lpd-s-efe5fb, #efe5fb) 0%, var(--lpd-s-f7eaf2, #f7eaf2) 100%);
   background-blend-mode: soft-light, normal, normal;
   box-shadow: var(--lp-shadow);
 }
@@ -1951,7 +1939,7 @@ body:has(.clinical-home),
   font-weight: 650;
   letter-spacing: -0.03em;
   line-height: 1.1;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-loop-copy > p:last-child {
   margin-top: 12px;
@@ -1989,7 +1977,7 @@ body:has(.clinical-home),
   font-family: var(--lp-display);
   font-size: 19px;
   font-weight: 650;
-  color: var(--lp-plum);
+  color: var(--lp-ink);
 }
 .lp-loop-icon {
   display: grid;
@@ -1997,8 +1985,8 @@ body:has(.clinical-home),
   width: 54px;
   height: 54px;
   border-radius: 18px;
-  background: #fff;
-  color: var(--lp-violet);
+  background: var(--lpd-s-fff, #fff);
+  color: var(--lp-violet-ink);
   box-shadow: 0 10px 22px -10px #2f234055;
 }
 .lp-loop-steps li:nth-child(3) .lp-loop-icon {
@@ -2059,7 +2047,7 @@ body:has(.clinical-home),
     grid-template-columns: 1fr;
     border-radius: 22px;
     overflow: hidden;
-    background: #fff;
+    background: var(--lpd-s-fff, #fff);
     box-shadow: var(--lp-shadow);
   }
   .lp-compare-row > span {
@@ -2088,7 +2076,7 @@ body:has(.clinical-home),
     opacity: 0.75;
   }
   .lp-compare-us .lp-compare-tag {
-    color: var(--lp-orange-deep);
+    color: var(--lp-orange-ink);
   }
   .lp-loop {
     border-radius: 28px;
@@ -2108,4 +2096,65 @@ body:has(.clinical-home),
   .lp-loop-steps strong {
     margin-top: 2px;
   }
+}
+
+/* ---------- Dark theme: values derived from the light ones above ---------- */
+:root[data-theme='dark'] body:has(.clinical-home),
+:root[data-theme='dark'] .clinical-home {
+  --lp-lav: #2d203e;
+  --lp-lav-2: #3a2e55;
+  --lp-peach: #37281c;
+  --lp-rose: #3e2023;
+  --lp-sage: #2c3821;
+  --lp-ink: #f3edf7;
+  --lp-violet-ink: #c6b3f5;
+  --lp-orange-ink: #f7ad7b;
+  --lp-shadow: 0 1px 2px #0006, 0 18px 40px -12px #000a;
+  --lpd-i-2b203680: #dbd1e480;
+  --lpd-i-2b20368c: #dbd1e48c;
+  --lpd-i-2b2036a6: #dbd1e4a6;
+  --lpd-i-2b2036b3: #dbd1e4b3;
+  --lpd-i-3d6b2a: #cce2c3;
+  --lpd-i-3d8a2a: #c5e0be;
+  --lpd-i-8a8190: #baacc3;
+  --lpd-i-9a5414: #e0cfbf;
+  --lpd-i-a33a3a: #dd9292;
+  --lpd-i-b9b0bf: #baaac5;
+  --lpd-i-c2410c: #f89d78;
+  --lpd-l-2f23400f: #ffffff15;
+  --lpd-l-2f234012: #ffffff19;
+  --lpd-l-2f234014: #ffffff1c;
+  --lpd-s-c9b5ef: #231a33;
+  --lpd-s-e5c4e2: #341b32;
+  --lpd-s-e7dbfa: #2b1f3d;
+  --lpd-s-e9f3e3: #2a3d1f;
+  --lpd-s-ece3f8: #2d203e;
+  --lpd-s-ece3f855: #2d203e55;
+  --lpd-s-ece4ef: #332239;
+  --lpd-s-efe5fb: #2e203f;
+  --lpd-s-f1e8fd: #2e2140;
+  --lpd-s-f1e8ff: #2d2140;
+  --lpd-s-f2e9fd: #2f2140;
+  --lpd-s-f4ecff: #2f2141;
+  --lpd-s-f6ecff: #322141;
+  --lpd-s-f7eaf2: #3f2033;
+  --lpd-s-f7eef3: #402132;
+  --lpd-s-f7f3fc: #302242;
+  --lpd-s-f8e2ea: #3e202b;
+  --lpd-s-fbc9a1: #312419;
+  --lpd-s-fbe1ec: #3e202d;
+  --lpd-s-fbe6ee: #3f202c;
+  --lpd-s-fdd6b5: #36281c;
+  --lpd-s-fde0c6: #392a1d;
+  --lpd-s-fde3cf: #3b2b1e;
+  --lpd-s-fde4e4: #3f2020;
+  --lpd-s-fde7d4: #3c2c1f;
+  --lpd-s-fde8d6: #3c2c1f;
+  --lpd-s-fff: #211a29;
+  --lpd-s-fff1e0: #3f3120;
+  --lpd-s-fff1e6: #402e21;
+  --lpd-s-ffffff80: #211a2980;
+  --lpd-s-ffffffb3: #211a29b3;
+  --lpd-s-ffffffeb: #211a29eb;
+  --lpd-s-fffffff2: #211a29f2;
 }

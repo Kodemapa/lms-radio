@@ -282,7 +282,7 @@ export function ImagingCaseDialog({
           <p role="status" className="text-sm text-muted-foreground">{t('loadingImage')}</p>
         ) : (
           <div className="flex flex-col gap-6">
-            {locked ? <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{t('locked')}</p> : null}
+            {locked ? <p className="rounded-lg bg-accent-light p-3 text-sm text-accent-deep">{t('locked')}</p> : null}
 
             <details className="rounded-lg border border-border p-3">
               <summary className="cursor-pointer font-semibold">{t('stepDictionary', { count: dictionary.length })}</summary>

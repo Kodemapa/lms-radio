@@ -10,6 +10,8 @@ export const ADMIN_PAGE_SIZES = [5, 10, 15, 25, 50, 100] as const;
 /** Users list shows 5 rows by default; other admin lists show 10. */
 export const ADMIN_USERS_DEFAULT_PAGE_SIZE = 5;
 export const ADMIN_DEFAULT_PAGE_SIZE = 10;
+/** Cookie remembering the admin's rows-per-page choice across admin screens. */
+export const ADMIN_PAGE_SIZE_COOKIE = 'elms_admin_page_size';
 
 export const AdminUsersQuerySchema = z.object({
   q: z.string().trim().max(100).default(''),

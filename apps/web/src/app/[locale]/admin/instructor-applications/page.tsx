@@ -3,9 +3,10 @@ import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/serve
 import { z } from 'zod';
 import { ReviewActions } from '@/components/instructor/review-actions';
 import { ListPager } from '@/components/admin/list-pager';
-import { pageWindow, readPage, readPageSize } from '@/lib/admin-paging';
+import { pageWindow, readPage } from '@/lib/admin-paging';
 import { apiGet } from '@/lib/server-api';
 import { requireAdmin } from '@/lib/admin-server';
+import { rememberedPageSize } from '@/lib/admin-page-size';
 
 export default async function AdminApplicationsPage({
   params,
@@ -24,7 +25,7 @@ export default async function AdminApplicationsPage({
   ]);
   const fieldsByKey = new Map(fields.map((field) => [field.key, field]));
   const raw = await searchParams;
-  const pageSize = readPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE);
+  const pageSize = await rememberedPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE);
   const page = pageWindow(applications.length, readPage(raw.page), pageSize);
   const visible = applications.slice(page.offset, page.offset + pageSize);
 

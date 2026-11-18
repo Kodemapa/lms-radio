@@ -162,16 +162,25 @@ export class AdminUsersService {
 
   /**
    * Create an instructor (FACULTY) account with a temporary password the
-   * admin shares privately. 409 if the email or mobile is already in use.
+   * admin shares privately. 409 PHONE_IN_USE / EMAIL_IN_USE if either is taken.
    */
   async createInstructor(admin: AuthUser, input: AdminCreateInstructor): Promise<{ id: string }> {
     const now = new Date();
+    const email = input.email.trim().toLowerCase();
+    const phone = input.phone.trim();
+    // Say exactly which detail is taken, so the admin can fix the right field.
+    const [phoneOwner, emailOwner] = await Promise.all([
+      this.prisma.user.findUnique({ where: { phone }, select: { id: true } }),
+      this.prisma.user.findUnique({ where: { email }, select: { id: true } }),
+    ]);
+    if (phoneOwner) throw inUse('PHONE_IN_USE');
+    if (emailOwner) throw inUse('EMAIL_IN_USE');
     try {
       const user = await this.prisma.user.create({
         data: {
           displayName: input.displayName.trim(),
-          email: input.email.trim().toLowerCase(),
-          phone: input.phone ? input.phone.trim() : null,
+          email,
+          phone,
           headline: input.headline?.trim() || null,
           role: 'FACULTY',
           passwordHash: await hashPassword(input.password),
@@ -184,17 +193,16 @@ export class AdminUsersService {
         action: 'admin.instructor_created',
         resource: 'user',
         resourceId: user.id,
-        metadata: { withPhone: !!input.phone },
+        metadata: { withPhone: true },
       });
       // The temporary password is never emailed; the admin shares it privately.
       this.mail.sendInBackground([instructorAccountEmail(input.email.trim().toLowerCase(), input.displayName.trim())]);
       return user;
     } catch (error) {
+      // Taken by a request that raced this one: work out which field from the unique index.
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException({
-          code: 'ACCOUNT_EXISTS',
-          message: 'An account with this email or mobile number already exists.',
-        });
+        const target = String((error.meta as { target?: unknown } | undefined)?.target ?? '');
+        throw inUse(target.includes('phone') ? 'PHONE_IN_USE' : 'EMAIL_IN_USE');
       }
       throw error;
     }
@@ -339,4 +347,15 @@ export class AdminUsersService {
   private lockAdminChanges(tx: Prisma.TransactionClient): Promise<unknown> {
     return tx.$executeRaw`SELECT pg_advisory_xact_lock(1732050807)`;
   }
+}
+
+/** 409 naming the detail that already belongs to another account. */
+function inUse(code: 'PHONE_IN_USE' | 'EMAIL_IN_USE'): ConflictException {
+  return new ConflictException({
+    code,
+    message:
+      code === 'PHONE_IN_USE'
+        ? 'This mobile number is already in use by another account.'
+        : 'This email address is already in use by another account.',
+  });
 }

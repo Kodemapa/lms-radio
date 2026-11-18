@@ -1,12 +1,13 @@
-import { ADMIN_DEFAULT_PAGE_SIZE, ADMIN_REVIEW_STATUSES, AdminReviewListSchema, AdminReviewQuerySchema, REVIEW_REPORT_REASONS } from '@obgyn/types';
+import { ADMIN_PAGE_SIZE_COOKIE, ADMIN_DEFAULT_PAGE_SIZE, ADMIN_REVIEW_STATUSES, AdminReviewListSchema, AdminReviewQuerySchema, REVIEW_REPORT_REASONS } from '@obgyn/types';
 import { Star } from 'lucide-react';
 import { AdminPager } from '@obgyn/ui';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { ReasonAction } from '@/components/admin/reason-action';
 import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin-server';
+import { rememberedPageSize } from '@/lib/admin-page-size';
 import { apiGet } from '@/lib/server-api';
-import { pageWindow, PAGE_SIZE_OPTIONS, readPageSize, withQuery } from '@/lib/admin-paging';
+import { pageWindow, PAGE_SIZE_OPTIONS, withQuery } from '@/lib/admin-paging';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -29,7 +30,7 @@ export default async function AdminReviewsPage({
   const query = AdminReviewQuerySchema.catch(AdminReviewQuerySchema.parse({})).parse({
     status: typeof raw.status === 'string' ? raw.status : undefined,
     page: typeof raw.page === 'string' ? raw.page : undefined,
-    pageSize: readPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE),
+    pageSize: await rememberedPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE),
   });
   const result = await apiGet(
     withQuery('/admin/reviews', { status: query.status, page: query.page, pageSize: query.pageSize }),
@@ -160,6 +161,7 @@ export default async function AdminReviewsPage({
           options: PAGE_SIZE_OPTIONS,
           label: tAdmin('rowsPerPage'),
           params: { status: query.status },
+          cookie: ADMIN_PAGE_SIZE_COOKIE,
         }}
       />
     </div>

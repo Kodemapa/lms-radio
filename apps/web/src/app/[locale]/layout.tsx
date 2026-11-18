@@ -8,8 +8,6 @@ import { ChunkReloadScript } from '@/components/layout/chunk-reload';
 import { NavigationLoader } from '@/components/layout/navigation-progress';
 import { ThemeScript } from '@/components/theme/theme-script';
 import { routing } from '@/i18n/routing';
-import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from '@obgyn/types';
-import { cookies } from 'next/headers';
 import { getPublicSiteSettings, SITE_URL } from '@/lib/site-settings';
 import '../globals.css';
 
@@ -63,9 +61,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
-  const [t, settings, jar] = await Promise.all([getTranslations('Common'), getPublicSiteSettings(), cookies()]);
-  // Signed in (or able to refresh the session): their own theme choice applies.
-  const signedIn = jar.has(ACCESS_TOKEN_COOKIE) || jar.has(REFRESH_TOKEN_COOKIE);
+  const [t, settings] = await Promise.all([getTranslations('Common'), getPublicSiteSettings()]);
 
   return (
     // suppressHydrationWarning: the theme script sets data-theme on <html> before React loads,
@@ -76,7 +72,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       suppressHydrationWarning
     >
       <head>
-        <ThemeScript defaultTheme={settings.defaultTheme} personal={signedIn} />
+        <ThemeScript defaultTheme={settings.defaultTheme} />
         <ChunkReloadScript />
       </head>
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">

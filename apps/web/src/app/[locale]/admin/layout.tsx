@@ -45,15 +45,17 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-dvh flex-col bg-section">
-      <header className="sticky top-0 z-20 border-b border-border bg-card">
-        <div className="flex items-center justify-between gap-4 px-4 py-3 lg:px-6">
+      {/* Fixed 4rem header on desktop, so the sidebar below can be pinned exactly under it. */}
+      <header className="sticky top-0 z-20 border-b border-border bg-card lg:h-16">
+        <div className="flex items-center justify-between gap-4 px-4 py-3 lg:h-full lg:px-6 lg:py-0">
           <div className="flex items-center gap-4">
             <Brand name={tCommon('appName')} />
             <span className="hidden rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-primary sm:inline">
               {t('sectionTitle')}
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          {/* Tighter on phones so the four header buttons fit a 390 px screen. */}
+          <div className="flex items-center gap-1 sm:gap-3">
             <NotificationBell />
             <ThemeToggle />
             <LocaleSwitcher label={tCommon('language')} />
@@ -74,7 +76,12 @@ export default async function AdminLayout({
         </div>
       </header>
       <div className="flex flex-1 flex-col lg:flex-row">
-        <aside className="border-b border-border bg-card p-3 lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r lg:p-4">
+        {/*
+          Desktop: the sidebar is fixed to the screen below the header, so it never moves while
+          the page scrolls, however long the page is. It scrolls on its own only if its links
+          don't fit. Phones: it sits above the page content.
+        */}
+        <aside className="border-b border-border bg-card p-3 lg:fixed lg:bottom-0 lg:left-0 lg:top-16 lg:z-10 lg:w-64 lg:overflow-y-auto lg:overscroll-contain lg:border-b-0 lg:border-r lg:p-4">
           <SidebarNav items={items} label={t('sectionTitle')} />
           <Link
             href="/"
@@ -84,7 +91,8 @@ export default async function AdminLayout({
             {t('backToSite')}
           </Link>
         </aside>
-        <main id="main" className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">
+        {/* lg:ml-64 leaves room for the fixed sidebar. */}
+        <main id="main" className="min-w-0 flex-1 p-4 md:p-6 lg:ml-64 lg:p-8">
           {children}
         </main>
       </div>

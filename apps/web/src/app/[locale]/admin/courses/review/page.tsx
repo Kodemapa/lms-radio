@@ -21,6 +21,7 @@ import {
 } from '@/lib/admin-paging';
 import { apiGet } from '@/lib/server-api';
 import { requireAdmin } from '@/lib/admin-server';
+import { rememberedPageSize } from '@/lib/admin-page-size';
 
 export default async function AdminCourseReviewPage({
   params,
@@ -39,6 +40,7 @@ export default async function AdminCourseReviewPage({
     getFormatter(),
   ]);
   const raw = await searchParams;
+  const pageSize = await rememberedPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE);
   // The history has its own page and size, so paging one list never resets the other.
   const historyPageSize = readPageSize(raw.historyPageSize, ADMIN_DEFAULT_PAGE_SIZE);
   const historyPage = readPage(raw.historyPage);
@@ -50,7 +52,6 @@ export default async function AdminCourseReviewPage({
       { auth: true },
     ),
   ]);
-  const pageSize = readPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE);
   const page = pageWindow(queue.length, readPage(raw.page), pageSize);
   const visible = queue.slice(page.offset, page.offset + pageSize);
 
