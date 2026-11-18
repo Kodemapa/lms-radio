@@ -74,7 +74,11 @@
     "myLearning": "My learning",
     "wishlist": "Wishlist",
     "account": "Account settings",
-    "savedToWishlist": "Saved to wishlist"
+    "savedToWishlist": "Saved to wishlist",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "Device setting",
+    "themeButton": "Theme: {theme}. Change theme"
   },
   "Footer": {
     "about": "Focused fetal ultrasound education for radiology postgraduates and residents. Faculty-led courses, imaging case practice and individual learning reports.",
@@ -1012,7 +1016,8 @@
       "signupsChart": "Daily sign-ups (last 30 days)",
       "signupsCount": "{count, plural, one {# sign-up} other {# sign-ups}}",
       "showTable": "Show chart data as a table",
-      "revenueLater": "Revenue and refunds aren't available because the platform doesn't have an order or payment system yet."
+      "revenueLater": "Revenue and refunds aren't available because the platform doesn't have an order or payment system yet.",
+      "autoRefresh": "Updates automatically every 30 seconds."
     },
     "categories": {
       "title": "Course categories",
@@ -1297,7 +1302,14 @@
       "ogImageUrl": "Social preview image URL",
       "ogImageHelp": "A public https image (1200 × 630 recommended) shown when a link to the site is shared. Leave empty for none.",
       "allowIndexing": "Allow search engines to index the site",
-      "allowIndexingHelp": "Turn off for staging or before launch: robots.txt then blocks all crawlers, the sitemap is empty and pages are marked noindex."
+      "allowIndexingHelp": "Turn off for staging or before launch: robots.txt then blocks all crawlers, the sitemap is empty and pages are marked noindex.",
+      "defaultTheme": "Default theme",
+      "defaultThemeHelp": "Used for visitors who have not chosen a theme. Everyone can still change it with the theme button in the header. Changes reach the site within about a minute.",
+      "themes": {
+        "system": "Follow the visitor's device",
+        "light": "Light",
+        "dark": "Dark"
+      }
     },
     "usersTitle": "User management",
     "usersIntro": "Search accounts, review activity, and manage access and roles.",
@@ -1336,7 +1348,9 @@
       "phone": "Phone",
       "role": "Role",
       "status": "Status",
-      "created": "Joined"
+      "created": "Joined",
+      "userId": "User ID",
+      "actions": "Actions"
     },
     "pagination": "{start}–{end} of {total} users",
     "previous": "Previous",
@@ -1383,14 +1397,22 @@
       "unblockDescription": "The user will be able to sign in again. Enter a reason for the audit log.",
       "delete": "Delete user",
       "deleteTitle": "Erase this user's personal data?",
-      "deleteDescription": "This soft-deletes the account, erases personal details, and revokes sessions. Enrolment and progress records remain anonymised."
+      "deleteDescription": "This soft-deletes the account, erases personal details, and revokes sessions. Enrolment and progress records remain anonymised.",
+      "view": "View",
+      "edit": "Edit",
+      "viewUser": "View {name}",
+      "editUser": "Edit {name}",
+      "deleteUser": "Delete {name}",
+      "editTitle": "Edit {name}",
+      "whatToChange": "What do you want to change?"
     },
     "errors": {
       "actionFailed": "The action couldn't be completed. Refresh the page and try again.",
       "lastAdmin": "At least one active administrator must remain.",
       "selfAction": "You can't block, demote, or delete your own account.",
       "accountExists": "An account already uses that email or mobile number.",
-      "invalidInstructor": "Check the instructor details and password requirements."
+      "invalidInstructor": "Check the instructor details and password requirements.",
+      "hasPublishedCourses": "This user has published or in-review courses. Unpublish or reassign them before deleting."
     },
     "inbox": {
       "title": "Contact messages",
@@ -1445,7 +1467,12 @@
         "arguments": "Keep the same placeholders as the shipped text ({args}), with matching braces.",
         "failed": "The text couldn't be saved. Please try again."
       }
-    }
+    },
+    "copyId": "Copy full user ID",
+    "idCopied": "User ID copied",
+    "rowsPerPage": "Rows per page",
+    "pageRange": "{start}–{end} of {total}",
+    "pages": "Pages"
   },
   "NotFound": {
     "title": "Page not found",

@@ -1,10 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export function SignOutButton({ label }: { label: string }) {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
 
   return (
@@ -15,8 +13,8 @@ export function SignOutButton({ label }: { label: string }) {
       onClick={async () => {
         setPending(true);
         await fetch('/api/auth/logout', { method: 'POST' });
-        router.refresh();
-        setPending(false);
+        // Full reload: the signed-out page then uses the site's default theme.
+        window.location.reload();
       }}
     >
       {label}

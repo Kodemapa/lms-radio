@@ -4,27 +4,19 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { countByDay } from '../../teaching/insights.service';
 
 const DAYS = 30;
-const CACHE_MS = 60_000;
 const DAY_MS = 86_400_000;
 
 /**
- * Platform totals for the admin dashboard. Cached for a minute in memory: the numbers are
- * read-only, cheap to be slightly stale, and the API runs as one process today (move to
- * Redis if it is scaled out). Revenue figures arrive with commerce (COM-*).
+ * Platform totals for the admin dashboard, counted fresh on every request so a change
+ * (e.g. a learner promoted to instructor) shows at once. The queries are indexed counts,
+ * and only admins call this. Revenue figures arrive with commerce (COM-*).
  */
 @Injectable()
 export class AdminStatsService {
-  private cache: { at: number; value: Promise<AdminStats> } | null = null;
-
   constructor(private readonly prisma: PrismaService) {}
 
   get(now = Date.now()): Promise<AdminStats> {
-    if (!this.cache || now - this.cache.at > CACHE_MS) {
-      const value = this.compute(new Date(now));
-      this.cache = { at: now, value };
-      value.catch(() => (this.cache = null));
-    }
-    return this.cache.value;
+    return this.compute(new Date(now));
   }
 
   private async compute(now: Date): Promise<AdminStats> {

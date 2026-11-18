@@ -5,12 +5,18 @@ export const ADMIN_USER_STATUSES = ['ACTIVE', 'BLOCKED', 'DELETED', 'ALL'] as co
 export const AdminUserStatusSchema = z.enum(ADMIN_USER_STATUSES);
 export type AdminUserStatus = z.infer<typeof AdminUserStatusSchema>;
 
+/** Rows-per-page choices offered on every admin list. */
+export const ADMIN_PAGE_SIZES = [5, 10, 15, 25, 50, 100] as const;
+/** Users list shows 5 rows by default; other admin lists show 10. */
+export const ADMIN_USERS_DEFAULT_PAGE_SIZE = 5;
+export const ADMIN_DEFAULT_PAGE_SIZE = 10;
+
 export const AdminUsersQuerySchema = z.object({
   q: z.string().trim().max(100).default(''),
   role: RoleSchema.optional(),
   status: AdminUserStatusSchema.default('ACTIVE'),
   page: z.coerce.number().int().positive().default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(25),
+  pageSize: z.coerce.number().int().min(1).max(100).default(5),
   sortBy: z.enum(['createdAt', 'displayName']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
 });

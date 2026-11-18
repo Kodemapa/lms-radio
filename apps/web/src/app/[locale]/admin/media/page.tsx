@@ -1,17 +1,19 @@
-import { AdminDrmListSchema, AdminDrmQuerySchema, DRM_PACKAGE_STATUSES } from '@obgyn/types';
+import { ADMIN_DEFAULT_PAGE_SIZE, AdminDrmListSchema, AdminDrmQuerySchema, DRM_PACKAGE_STATUSES } from '@obgyn/types';
+import { AdminPager } from '@obgyn/ui';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { DrmRetryButton } from '@/components/admin/drm-retry-button';
 import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin-server';
 import { apiGet } from '@/lib/server-api';
+import { pageWindow, PAGE_SIZE_OPTIONS, readPageSize, withQuery } from '@/lib/admin-paging';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
 const BADGE: Record<string, string> = {
-  READY: 'bg-green-100 text-green-800',
-  FAILED: 'bg-red-100 text-red-800',
+  READY: 'bg-success/15 text-success',
+  FAILED: 'bg-destructive/10 text-destructive',
   QUEUED: 'bg-muted text-muted-foreground',
-  PACKAGING: 'bg-amber-100 text-amber-900',
+  PACKAGING: 'bg-accent-light text-accent-deep',
 };
 
 export default async function AdminMediaPage({
@@ -24,16 +26,25 @@ export default async function AdminMediaPage({
   const { locale } = await params;
   setRequestLocale(locale);
   await requireAdmin(locale, '/admin/media');
-  const [t, format, raw] = await Promise.all([getTranslations('Admin.media'), getFormatter(), searchParams]);
+  const [t, tAdmin, format, raw] = await Promise.all([
+    getTranslations('Admin.media'),
+    getTranslations('Admin'),
+    getFormatter(),
+    searchParams,
+  ]);
   const query = AdminDrmQuerySchema.catch(AdminDrmQuerySchema.parse({})).parse({
     status: typeof raw.status === 'string' && raw.status ? raw.status : undefined,
     page: typeof raw.page === 'string' ? raw.page : undefined,
+    pageSize: readPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE),
   });
-  const api = new URLSearchParams({ page: String(query.page) });
-  if (query.status) api.set('status', query.status);
-  const result = await apiGet(`/admin/media/drm?${api}`, AdminDrmListSchema, { auth: true });
+  const result = await apiGet(
+    withQuery('/admin/media/drm', { status: query.status, page: query.page, pageSize: query.pageSize }),
+    AdminDrmListSchema,
+    { auth: true },
+  );
   const href = (status: string | undefined, page = 1) =>
-    `/admin/media?${new URLSearchParams({ ...(status ? { status } : {}), page: String(page) })}`;
+    withQuery('/admin/media', { status, page, pageSize: query.pageSize });
+  const pageInfo = pageWindow(result.total, query.page, query.pageSize);
   const total = Object.values(result.counts).reduce((sum, count) => sum + (count ?? 0), 0);
 
   return (
@@ -43,7 +54,7 @@ export default async function AdminMediaPage({
         <p className="text-muted-foreground">{t('intro')}</p>
       </div>
       {!result.enabled ? (
-        <p role="status" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+        <p role="status" className="rounded-xl bg-accent-light p-4 text-sm text-accent-deep">
           {t('disabled')}
         </p>
       ) : null}
@@ -63,10 +74,10 @@ export default async function AdminMediaPage({
         ))}
       </nav>
 
-      <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+      <div className="max-h-[min(70vh,48rem)] overflow-auto rounded-2xl border border-border bg-card">
         <table className="w-full min-w-[760px] text-left text-sm">
           <caption className="sr-only">{t('title')}</caption>
-          <thead className="border-b border-border bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
+          <thead className="sticky top-0 z-10 border-b border-border bg-muted text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th scope="col" className="px-4 py-3">{t('table.video')}</th>
               <th scope="col" className="px-4 py-3">{t('table.usedIn')}</th>
@@ -114,13 +125,23 @@ export default async function AdminMediaPage({
         </table>
       </div>
 
-      {result.totalPages > 1 ? (
-        <nav aria-label={t('paging')} className="flex items-center justify-between gap-3">
-          {query.page > 1 ? <Link href={href(query.status, query.page - 1)} className="rounded-md border border-border px-3 py-2 text-sm">{t('previous')}</Link> : <span />}
-          <span className="text-sm">{query.page} / {result.totalPages}</span>
-          {query.page < result.totalPages ? <Link href={href(query.status, query.page + 1)} className="rounded-md border border-border px-3 py-2 text-sm">{t('next')}</Link> : <span />}
-        </nav>
-      ) : null}
+      <AdminPager
+        ariaLabel={tAdmin('pages')}
+        summary={tAdmin('pageRange', pageInfo)}
+        page={pageInfo.page}
+        totalPages={pageInfo.totalPages}
+        previousHref={pageInfo.page > 1 ? `/${locale}${href(query.status, pageInfo.page - 1)}` : undefined}
+        nextHref={pageInfo.page < pageInfo.totalPages ? `/${locale}${href(query.status, pageInfo.page + 1)}` : undefined}
+        previousLabel={tAdmin('previous')}
+        nextLabel={tAdmin('next')}
+        pageSize={{
+          action: `/${locale}/admin/media`,
+          value: query.pageSize,
+          options: PAGE_SIZE_OPTIONS,
+          label: tAdmin('rowsPerPage'),
+          params: query.status ? { status: query.status } : {},
+        }}
+      />
     </div>
   );
 }

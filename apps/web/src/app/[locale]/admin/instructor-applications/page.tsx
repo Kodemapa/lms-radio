@@ -1,11 +1,19 @@
-import { ApplicationFieldSchema, InstructorApplicationSchema } from '@obgyn/types';
+import { ADMIN_DEFAULT_PAGE_SIZE, ApplicationFieldSchema, InstructorApplicationSchema } from '@obgyn/types';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { z } from 'zod';
 import { ReviewActions } from '@/components/instructor/review-actions';
+import { ListPager } from '@/components/admin/list-pager';
+import { pageWindow, readPage, readPageSize } from '@/lib/admin-paging';
 import { apiGet } from '@/lib/server-api';
 import { requireAdmin } from '@/lib/admin-server';
 
-export default async function AdminApplicationsPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function AdminApplicationsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { locale } = await params;
   setRequestLocale(locale);
   await requireAdmin(locale, '/admin/instructor-applications');
@@ -15,6 +23,10 @@ export default async function AdminApplicationsPage({ params }: { params: Promis
     apiGet('/admin/application-fields', z.array(ApplicationFieldSchema), { auth: true }),
   ]);
   const fieldsByKey = new Map(fields.map((field) => [field.key, field]));
+  const raw = await searchParams;
+  const pageSize = readPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE);
+  const page = pageWindow(applications.length, readPage(raw.page), pageSize);
+  const visible = applications.slice(page.offset, page.offset + pageSize);
 
   return (
     <div className="flex flex-col gap-6">
@@ -25,7 +37,7 @@ export default async function AdminApplicationsPage({ params }: { params: Promis
         </p>
       ) : (
         <ul className="flex flex-col gap-4">
-          {applications.map((application) => (
+          {visible.map((application) => (
             <li key={application.id} className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="text-lg font-semibold">{application.applicant.displayName}</h2>
@@ -70,6 +82,15 @@ export default async function AdminApplicationsPage({ params }: { params: Promis
           ))}
         </ul>
       )}
+      {applications.length > 0 ? (
+        <ListPager
+          locale={locale}
+          path="/admin/instructor-applications"
+          total={applications.length}
+          page={page.page}
+          pageSize={pageSize}
+        />
+      ) : null}
     </div>
   );
 }

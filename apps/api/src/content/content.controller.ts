@@ -200,10 +200,12 @@ export class AdminContentController {
   }
 
   @Get('contact')
-  @ApiOperation({ summary: 'Contact-form inbox (newest 100)' })
+  @ApiOperation({ summary: 'Contact-form inbox, newest first, paged' })
   @ApiQuery({ name: 'status', required: false, enum: ['NEW', 'HANDLED'] })
-  contactMessages(@Query('status') status?: string): Promise<ContactMessageList> {
-    return this.contact.list(status);
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number, description: '1–100, default 10' })
+  contactMessages(@Query() query: Record<string, unknown>): Promise<ContactMessageList> {
+    return this.contact.list(query);
   }
 
   @Patch('contact/:id')

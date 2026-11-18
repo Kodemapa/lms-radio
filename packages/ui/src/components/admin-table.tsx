@@ -1,8 +1,8 @@
 import { type ReactNode } from 'react';
+import { AdminPager, AutoSubmitSelect, type PageSizeConfig } from './admin-pager';
 import { Button } from './button';
 import { DebouncedSearchInput } from './debounced-search-input';
 import { Label } from './label';
-import { Select } from './select';
 
 export interface AdminTableColumn<T> {
   key: string;
@@ -26,6 +26,8 @@ export interface AdminTablePagination {
   nextHref?: string;
   previousLabel: string;
   nextLabel: string;
+  /** Rows-per-page menu shown beside the pager. */
+  pageSize?: PageSizeConfig;
 }
 
 export function AdminTable<T>({
@@ -74,11 +76,11 @@ export function AdminTable<T>({
         {filters.map((filter) => (
           <div key={filter.name} className="flex min-w-40 flex-col gap-1.5">
             <Label htmlFor={`admin-filter-${filter.name}`}>{filter.label}</Label>
-            <Select id={`admin-filter-${filter.name}`} name={filter.name} defaultValue={filter.value}>
+            <AutoSubmitSelect id={`admin-filter-${filter.name}`} name={filter.name} defaultValue={filter.value}>
               {filter.options.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
-            </Select>
+            </AutoSubmitSelect>
           </div>
         ))}
         {hiddenFields.map((field) => (
@@ -87,9 +89,10 @@ export function AdminTable<T>({
         <Button type="submit">{searchLabel}</Button>
       </form>
 
-      <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+      {/* Scrolls inside the card when the rows don't fit; the header row stays visible. */}
+      <div className="max-h-[min(70vh,48rem)] overflow-auto rounded-2xl border border-border bg-card">
         <table aria-label={ariaLabel} className="w-full min-w-[760px] text-left text-sm">
-          <thead className="border-b border-border bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
+          <thead className="sticky top-0 z-10 border-b border-border bg-muted text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               {columns.map((column) => (
                 <th
@@ -136,32 +139,17 @@ export function AdminTable<T>({
       </div>
 
       {pagination ? (
-        <nav aria-label={ariaLabel} className="flex flex-wrap items-center justify-between gap-3">
-          <span className="text-sm text-muted-foreground">{pagination.summary}</span>
-          <div className="flex items-center gap-2">
-            {pagination.previousHref ? (
-              <a className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted" href={pagination.previousHref}>
-                {pagination.previousLabel}
-              </a>
-            ) : (
-              <span aria-disabled="true" className="rounded-md border border-border px-3 py-2 text-sm opacity-50">
-                {pagination.previousLabel}
-              </span>
-            )}
-            <span className="min-w-16 text-center text-sm" aria-current="page">
-              {pagination.page} / {Math.max(1, pagination.totalPages)}
-            </span>
-            {pagination.nextHref ? (
-              <a className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted" href={pagination.nextHref}>
-                {pagination.nextLabel}
-              </a>
-            ) : (
-              <span aria-disabled="true" className="rounded-md border border-border px-3 py-2 text-sm opacity-50">
-                {pagination.nextLabel}
-              </span>
-            )}
-          </div>
-        </nav>
+        <AdminPager
+          ariaLabel={ariaLabel}
+          summary={pagination.summary}
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          previousHref={pagination.previousHref}
+          nextHref={pagination.nextHref}
+          previousLabel={pagination.previousLabel}
+          nextLabel={pagination.nextLabel}
+          pageSize={pagination.pageSize}
+        />
       ) : null}
     </div>
   );

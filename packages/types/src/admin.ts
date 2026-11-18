@@ -333,6 +333,13 @@ export const FaqInputSchema = z.object({
 export type FaqInput = z.infer<typeof FaqInputSchema>;
 
 /** Public, non-secret settings. Mail/gateway credentials never go here (env / secret manager). */
+/** 'system' follows the visitor's device setting. */
+export const THEME_PREFERENCES = ['system', 'light', 'dark'] as const;
+export const ThemePreferenceSchema = z.enum(THEME_PREFERENCES);
+export type ThemePreference = z.infer<typeof ThemePreferenceSchema>;
+/** Non-httpOnly cookie holding a visitor's own theme choice (read before first paint). */
+export const THEME_COOKIE = 'elms_theme';
+
 export const SiteSettingsSchema = z.object({
   seoTitle: z.string().trim().max(70).default(''),
   seoDescription: z.string().trim().max(160).default(''),
@@ -345,6 +352,8 @@ export const SiteSettingsSchema = z.object({
     .default(''),
   /** When false, robots.txt disallows everything and pages send `noindex`. */
   allowIndexing: z.boolean().default(true),
+  /** Theme for visitors who have not picked one with the header toggle. */
+  defaultTheme: ThemePreferenceSchema.default('system'),
 });
 export type SiteSettings = z.infer<typeof SiteSettingsSchema>;
 
@@ -393,6 +402,15 @@ export type ContactMessage = z.infer<typeof ContactMessageSchema>;
 export const ContactMessageListSchema = z.object({
   items: z.array(ContactMessageSchema),
   newCount: z.number().int().nonnegative(),
+  page: z.number().int().positive().default(1),
+  pageSize: z.number().int().positive().default(10),
+  total: z.number().int().nonnegative().default(0),
+  totalPages: z.number().int().nonnegative().default(0),
+});
+export const ContactMessageQuerySchema = z.object({
+  status: ContactStatusSchema.optional(),
+  page: z.coerce.number().int().positive().max(100_000).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(10),
 });
 export type ContactMessageList = z.infer<typeof ContactMessageListSchema>;
 

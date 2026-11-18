@@ -6,7 +6,6 @@ import { Laptop } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useRouter as useNextRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useRouter } from '@/i18n/navigation';
 import { ApiClientError, api } from '@/lib/instructor-api';
 import { ConfirmDialog } from '../instructor/confirm-dialog';
 
@@ -14,7 +13,6 @@ export function SecurityPanel({ devices }: { devices: Device[] }) {
   const t = useTranslations('Account');
   const tCommon = useTranslations('Common');
   const format = useFormatter();
-  const router = useRouter();
   const nextRouter = useNextRouter();
   const [removing, setRemoving] = useState<Device | null>(null);
   const [confirmText, setConfirmText] = useState('');
@@ -61,8 +59,8 @@ export function SecurityPanel({ devices }: { devices: Device[] }) {
             try {
               await api('DELETE', 'users/me');
               await fetch('/api/auth/logout', { method: 'POST' });
-              router.push('/');
-              nextRouter.refresh();
+              // A full page load re-runs the theme script, so the signed-out site uses the admin default.
+              window.location.assign('/');
             } catch (error) {
               setDeleteState(error instanceof ApiClientError && error.status === 409 ? 'blocked' : 'error');
             }

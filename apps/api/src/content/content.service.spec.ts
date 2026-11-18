@@ -153,8 +153,18 @@ describe('ContactService', () => {
 
   it('ignores an unknown status filter', async () => {
     const { contact, prisma } = setup();
-    await contact.list('BOGUS');
+    await contact.list({ status: 'BOGUS' });
     expect(prisma.contactMessage.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: {} }));
+  });
+
+  it('pages the inbox', async () => {
+    const { contact, prisma } = setup();
+    prisma.contactMessage.count.mockResolvedValue(23);
+    const result = await contact.list({ status: 'NEW', page: '3', pageSize: '10' });
+    expect(prisma.contactMessage.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { status: 'NEW' }, skip: 20, take: 10 }),
+    );
+    expect(result).toMatchObject({ page: 3, pageSize: 10, total: 23, totalPages: 3 });
   });
 
   it('404s when deleting a missing message', async () => {

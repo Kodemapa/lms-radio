@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   ContactMessageInputSchema,
-  ContactStatusSchema,
+  ContactMessageQuerySchema,
   ContactStatusUpdateSchema,
   ContentLocaleSchema,
   type ContactMessage,
@@ -14,7 +14,6 @@ import { type AuthUser } from '../auth/auth-user';
 import { zodOrThrow } from '../common/zod';
 import { PrismaService } from '../prisma/prisma.service';
 
-const LIST_LIMIT = 100;
 
 type Row = Prisma.ContactMessageGetPayload<{ include: { handledBy: { select: { displayName: true } } } }>;
 
@@ -60,19 +59,23 @@ export class ContactService {
     await this.audit.log({ action: 'contact.submitted', resource: 'contact_message', resourceId: row.id });
   }
 
-  async list(status: string | undefined): Promise<ContactMessageList> {
-    const filter = status ? ContactStatusSchema.safeParse(status) : null;
-    const where = filter?.success ? { status: filter.data } : {};
-    const [rows, newCount] = await Promise.all([
+  /** One page of the inbox, newest first; an invalid query falls back to page 1 of everything. */
+  async list(query: unknown): Promise<ContactMessageList> {
+    const parsed = ContactMessageQuerySchema.safeParse(query ?? {});
+    const { status, page, pageSize } = parsed.success ? parsed.data : ContactMessageQuerySchema.parse({});
+    const where = status ? { status } : {};
+    const [rows, total, newCount] = await Promise.all([
       this.prisma.contactMessage.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        take: LIST_LIMIT,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
         include: { handledBy: { select: { displayName: true } } },
       }),
+      this.prisma.contactMessage.count({ where }),
       this.prisma.contactMessage.count({ where: { status: 'NEW' } }),
     ]);
-    return { items: rows.map(toMessage), newCount };
+    return { items: rows.map(toMessage), newCount, page, pageSize, total, totalPages: Math.ceil(total / pageSize) };
   }
 
   async setStatus(admin: AuthUser, id: string, body: unknown): Promise<ContactMessage> {

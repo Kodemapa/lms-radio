@@ -3,6 +3,7 @@ import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/serve
 import { AdminDayChart } from '@/components/admin/admin-day-chart';
 import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin-server';
+import { LiveRefresh } from '@/components/admin/live-refresh';
 import { apiGet } from '@/lib/server-api';
 
 function Tile({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -38,9 +39,12 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-2xl font-bold md:text-3xl">{t('title')}</h1>
-        <p className="text-muted-foreground">
-          {t('updated', { time: format.dateTime(new Date(stats.generatedAt), { timeStyle: 'short' }) })}
+        <p className="text-muted-foreground" aria-live="polite">
+          {t('updated', { time: format.dateTime(new Date(stats.generatedAt), { timeStyle: 'medium' }) })}
+          {' · '}
+          {t('autoRefresh')}
         </p>
+        <LiveRefresh seconds={30} />
       </div>
 
       <section aria-labelledby="pending-heading" className="flex flex-col gap-3">
@@ -51,7 +55,7 @@ export default async function AdminDashboardPage({ params }: { params: Promise<{
               <Link
                 href={item.href}
                 className={`flex items-center justify-between gap-3 rounded-2xl border p-4 hover:border-primary ${
-                  item.count ? 'border-amber-300 bg-amber-50 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100' : 'border-border bg-card'
+                  item.count ? 'border-accent/40 bg-accent-light text-foreground' : 'border-border bg-card'
                 }`}
               >
                 <span className="font-medium">{item.label}</span>

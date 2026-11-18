@@ -1,8 +1,10 @@
-import { ContentLocaleSchema, flattenMessages, MessageOverrideSchema, messageArguments } from '@obgyn/types';
+import { ADMIN_DEFAULT_PAGE_SIZE, ContentLocaleSchema, flattenMessages, MessageOverrideSchema, messageArguments } from '@obgyn/types';
 import { Button, Input, Label, Select } from '@obgyn/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { z } from 'zod';
+import { ListPager } from '@/components/admin/list-pager';
 import { MessageOverrideRow } from '@/components/admin/message-override-row';
+import { pageWindow, readPage, readPageSize } from '@/lib/admin-paging';
 import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin-server';
 import { apiGet } from '@/lib/server-api';
@@ -10,7 +12,6 @@ import en from '../../../../../messages/en.json';
 import hi from '../../../../../messages/hi.json';
 
 const SHIPPED = { en: flattenMessages(en), hi: flattenMessages(hi) };
-const MAX_ROWS = 50;
 
 export default async function AdminLanguagesPage({
   params,
@@ -41,7 +42,12 @@ export default async function AdminLanguagesPage({
     if (!needle) return true;
     return [key, SHIPPED.en[key], shipped[key], edited.get(key)].some((text) => text?.toLowerCase().includes(needle));
   });
-  const rows = matches.slice(0, MAX_ROWS);
+  const pageSize = readPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE);
+  const page = pageWindow(matches.length, readPage(raw.page), pageSize);
+  const rows = matches.slice(page.offset, page.offset + pageSize);
+  const keep: Record<string, string> = { lang: language };
+  if (q) keep.q = q;
+  if (editedOnly) keep.edited = '1';
   const missing = Object.keys(SHIPPED.en).filter((key) => shipped[key] === undefined).length;
 
   return (
@@ -52,6 +58,7 @@ export default async function AdminLanguagesPage({
       </div>
 
       <form method="get" className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-[10rem_1fr_auto_auto] sm:items-end">
+        <input type="hidden" name="pageSize" value={pageSize} />
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="lang">{t('language')}</Label>
           <Select id="lang" name="lang" defaultValue={language}>
@@ -96,6 +103,16 @@ export default async function AdminLanguagesPage({
       ) : (
         <p className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted-foreground">{t('empty')}</p>
       )}
+      {matches.length > 0 ? (
+        <ListPager
+          locale={locale}
+          path="/admin/languages"
+          total={matches.length}
+          page={page.page}
+          pageSize={pageSize}
+          params={keep}
+        />
+      ) : null}
     </div>
   );
 }

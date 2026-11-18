@@ -5,6 +5,7 @@ import { SidebarNav } from '@/components/instructor/sidebar-nav';
 import { Brand } from '@/components/layout/brand';
 import { UserMenu } from '@/components/layout/user-menu';
 import { LocaleSwitcher } from '@/components/locale-switcher';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin-server';
 
@@ -52,6 +53,7 @@ export default async function AdminLayout({
             </span>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <LocaleSwitcher label={tCommon('language')} />
             <UserMenu
               user={me}

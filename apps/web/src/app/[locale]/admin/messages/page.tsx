@@ -1,9 +1,11 @@
-import { ContactMessageListSchema, ContactStatusSchema } from '@obgyn/types';
+import { ADMIN_DEFAULT_PAGE_SIZE, ContactMessageListSchema, ContactStatusSchema } from '@obgyn/types';
+import { AdminPager } from '@obgyn/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { ContactInbox } from '@/components/admin/contact-inbox';
 import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin-server';
 import { apiGet } from '@/lib/server-api';
+import { pageWindow, PAGE_SIZE_OPTIONS, readPage, readPageSize, withQuery } from '@/lib/admin-paging';
 
 export default async function AdminMessagesPage({
   params,
@@ -15,17 +17,23 @@ export default async function AdminMessagesPage({
   const { locale } = await params;
   setRequestLocale(locale);
   await requireAdmin(locale, '/admin/messages');
-  const raw = (await searchParams).status;
-  const parsed = ContactStatusSchema.safeParse(typeof raw === 'string' ? raw : undefined);
+  const raw = await searchParams;
+  const parsed = ContactStatusSchema.safeParse(typeof raw.status === 'string' ? raw.status : undefined);
   const status = parsed.success ? parsed.data : undefined;
-  const [t, list] = await Promise.all([
+  const pageSize = readPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE);
+  const page = readPage(raw.page);
+  const [t, tAdmin, list] = await Promise.all([
     getTranslations('Admin.inbox'),
-    apiGet(`/admin/content/contact${status ? `?status=${status}` : ''}`, ContactMessageListSchema, { auth: true }),
+    getTranslations('Admin'),
+    apiGet(withQuery('/admin/content/contact', { status, page, pageSize }), ContactMessageListSchema, { auth: true }),
   ]);
+  const info = pageWindow(list.total, list.page, pageSize);
+  const href = (changes: { status?: string; page?: number }) =>
+    withQuery('/admin/messages', { status: 'status' in changes ? changes.status : status, page: changes.page, pageSize });
   const tabs = [
-    { href: '/admin/messages', label: t('tabs.all'), active: !status },
-    { href: '/admin/messages?status=NEW', label: t('tabs.new', { count: list.newCount }), active: status === 'NEW' },
-    { href: '/admin/messages?status=HANDLED', label: t('tabs.handled'), active: status === 'HANDLED' },
+    { href: href({ status: undefined }), label: t('tabs.all'), active: !status },
+    { href: href({ status: 'NEW' }), label: t('tabs.new', { count: list.newCount }), active: status === 'NEW' },
+    { href: href({ status: 'HANDLED' }), label: t('tabs.handled'), active: status === 'HANDLED' },
   ];
 
   return (
@@ -46,7 +54,24 @@ export default async function AdminMessagesPage({
           </Link>
         ))}
       </nav>
-      <ContactInbox key={status ?? 'all'} initial={list.items} />
+      <ContactInbox key={`${status ?? 'all'}-${info.page}-${pageSize}`} initial={list.items} />
+      <AdminPager
+        ariaLabel={tAdmin('pages')}
+        summary={tAdmin('pageRange', info)}
+        page={info.page}
+        totalPages={info.totalPages}
+        previousHref={info.page > 1 ? `/${locale}${href({ page: info.page - 1 })}` : undefined}
+        nextHref={info.page < info.totalPages ? `/${locale}${href({ page: info.page + 1 })}` : undefined}
+        previousLabel={tAdmin('previous')}
+        nextLabel={tAdmin('next')}
+        pageSize={{
+          action: `/${locale}/admin/messages`,
+          value: pageSize,
+          options: PAGE_SIZE_OPTIONS,
+          label: tAdmin('rowsPerPage'),
+          params: status ? { status } : {},
+        }}
+      />
     </div>
   );
 }

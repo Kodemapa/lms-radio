@@ -1,7 +1,7 @@
 'use client';
 
-import { SiteSettingsSchema, type SiteSettings } from '@obgyn/types';
-import { Button, Input, Label, Textarea } from '@obgyn/ui';
+import { SiteSettingsSchema, THEME_PREFERENCES, type SiteSettings, type ThemePreference } from '@obgyn/types';
+import { Button, Input, Label, Select, Textarea } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { ApiClientError, api } from '@/lib/instructor-api';
@@ -72,6 +72,25 @@ export function SiteSettingsForm({ initial }: { initial: SiteSettings }) {
           {t('allowIndexing')}
         </label>
         <p id="site-indexing-help" className="text-xs text-muted-foreground">{t('allowIndexingHelp')}</p>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="site-default-theme">{t('defaultTheme')}</Label>
+        <Select
+          id="site-default-theme"
+          className="sm:max-w-xs"
+          aria-describedby="site-default-theme-help"
+          value={settings.defaultTheme}
+          onChange={(event) =>
+            setSettings({ ...settings, defaultTheme: event.target.value as ThemePreference })
+          }
+        >
+          {THEME_PREFERENCES.map((value) => (
+            <option key={value} value={value}>
+              {t(`themes.${value}`)}
+            </option>
+          ))}
+        </Select>
+        <p id="site-default-theme-help" className="text-xs text-muted-foreground">{t('defaultThemeHelp')}</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">

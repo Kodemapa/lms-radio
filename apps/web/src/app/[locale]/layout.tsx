@@ -3,8 +3,12 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Bricolage_Grotesque, Geist, Noto_Sans_Devanagari } from 'next/font/google';
 import { notFound } from 'next/navigation';
-import { type ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
+import { NavigationLoader } from '@/components/layout/navigation-progress';
+import { ThemeScript } from '@/components/theme/theme-script';
 import { routing } from '@/i18n/routing';
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from '@obgyn/types';
+import { cookies } from 'next/headers';
 import { getPublicSiteSettings, SITE_URL } from '@/lib/site-settings';
 import '../globals.css';
 
@@ -58,16 +62,21 @@ export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
-  const t = await getTranslations('Common');
+  const [t, settings, jar] = await Promise.all([getTranslations('Common'), getPublicSiteSettings(), cookies()]);
+  // Signed in (or able to refresh the session): their own theme choice applies.
+  const signedIn = jar.has(ACCESS_TOKEN_COOKIE) || jar.has(REFRESH_TOKEN_COOKIE);
 
   return (
-    // suppressHydrationWarning: browser extensions (e.g. Scribe, Grammarly) add attributes to
-    // <html> before React loads. This only silences attribute mismatches on this one element.
+    // suppressHydrationWarning: the theme script sets data-theme on <html> before React loads,
+    // and browser extensions (e.g. Scribe) add attributes too. Only this element is affected.
     <html
       lang={locale}
       className={`${geist.variable} ${display.variable} ${devanagari.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <ThemeScript defaultTheme={settings.defaultTheme} personal={signedIn} />
+      </head>
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
         <a
           href="#main"
@@ -75,7 +84,13 @@ export default async function LocaleLayout({ children, params }: Props) {
         >
           {t('skipToContent')}
         </a>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          {/* Inside the provider: the loader's "Loading…" label is translated. */}
+          <Suspense fallback={null}>
+            <NavigationLoader />
+          </Suspense>
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

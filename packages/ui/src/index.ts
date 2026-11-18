@@ -5,6 +5,13 @@ export {
   type AdminTableFilter,
   type AdminTablePagination,
 } from './components/admin-table';
+export {
+  AdminPager,
+  AutoSubmitSelect,
+  PageSizeSelect,
+  type AdminPagerProps,
+  type PageSizeConfig,
+} from './components/admin-pager';
 export { Badge } from './components/badge';
 export { Button, buttonVariants, type ButtonProps } from './components/button';
 export { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/card';

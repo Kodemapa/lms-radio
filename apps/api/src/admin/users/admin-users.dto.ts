@@ -29,12 +29,12 @@ export class AdminUsersQueryDto {
   @Max(100_000)
   page = 1;
 
-  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 25 })
+  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 5 })
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
-  pageSize = 25;
+  pageSize = 5;
 
   @ApiPropertyOptional({ enum: ['createdAt', 'displayName'], default: 'createdAt' })
   @IsOptional()

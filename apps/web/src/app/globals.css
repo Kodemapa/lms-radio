@@ -4,6 +4,13 @@
 @source '../../../../packages/ui/src';
 
 /*
+ * Theme: <html data-theme="light|dark"> is set before first paint by the script in
+ * app/[locale]/layout.tsx (visitor's choice, else the admin default, else the device).
+ * Tailwind's `dark:` utilities follow the same attribute.
+ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
  * "Soft clinical" design system, shared by every page:
  * lavender + plum + warm peach on cream paper, soft layered shadows,
  * generous radii and a rounded display face for headings.
@@ -46,9 +53,10 @@
   --display-stack: var(--font-display), var(--font-geist), var(--font-devanagari), system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  /* Warm plum night palette; same hues, lowered lightness. */
-  :root {
+/* Warm plum night palette; same hues, lowered lightness. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  & {
     --background: #17121d;
     --foreground: #f3edf7;
     --card: #211a29;
@@ -231,8 +239,8 @@
     radial-gradient(40% 70% at 92% 0%, #fde0c6 0%, transparent 70%),
     radial-gradient(40% 70% at 0% 0%, #ede0fc 0%, transparent 70%);
 }
-@media (prefers-color-scheme: dark) {
-  .page-glow::before {
+:root[data-theme='dark'] {
+  & .page-glow::before {
     background:
       radial-gradient(40% 70% at 92% 0%, #3a281f 0%, transparent 70%),
       radial-gradient(40% 70% at 0% 0%, #2c2145 0%, transparent 70%);
@@ -255,8 +263,8 @@
     radial-gradient(45% 80% at 88% 10%, #fde0c6 0%, transparent 70%),
     radial-gradient(40% 80% at 0% 0%, #ede0fc 0%, transparent 70%);
 }
-@media (prefers-color-scheme: dark) {
-  .page-hero::before {
+:root[data-theme='dark'] {
+  & .page-hero::before {
     background:
       radial-gradient(45% 80% at 88% 10%, #3a281f 0%, transparent 70%),
       radial-gradient(40% 80% at 0% 0%, #2c2145 0%, transparent 70%);
@@ -283,8 +291,8 @@
   opacity: 0.55;
   filter: blur(2px);
 }
-@media (prefers-color-scheme: dark) {
-  .page-hero-orb {
+:root[data-theme='dark'] {
+  & .page-hero-orb {
     opacity: 0.22;
   }
 }
@@ -317,5 +325,52 @@
 @media (prefers-reduced-motion: reduce) {
   .lift:hover {
     transform: none;
+  }
+}
+
+/* ---------- Global loader (components/layout/page-loader.tsx) ---------- */
+/* Fades in after a beat so quick page changes never flash it. */
+.global-loader {
+  animation: global-loader-in 0.2s ease-out 0.12s both;
+}
+/* A route's own loading screen is showing: hide the navigation loader under it. */
+body:has(.global-loader[data-source='route']) .global-loader[data-source='nav'] {
+  display: none;
+}
+.page-loader-ring {
+  border: 3px solid var(--primary-light);
+  border-top-color: var(--primary);
+  border-right-color: var(--accent);
+}
+.page-loader-dot {
+  box-shadow: 0 8px 20px -6px var(--primary);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .page-loader-ring {
+    animation: page-loader-spin 0.9s linear infinite;
+  }
+  .page-loader-dot {
+    animation: page-loader-pulse 1.4s ease-in-out infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .global-loader {
+    animation: none;
+  }
+}
+@keyframes global-loader-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes page-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes page-loader-pulse {
+  50% {
+    transform: scale(0.8);
+    opacity: 0.75;
   }
 }

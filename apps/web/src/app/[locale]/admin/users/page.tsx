@@ -7,10 +7,12 @@ import {
 import { AdminTable, type AdminTableColumn } from '@obgyn/ui';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import { Link } from '@/i18n/navigation';
 import { apiGet } from '@/lib/server-api';
 import { requireAdmin } from '@/lib/admin-server';
+import { PAGE_SIZE_OPTIONS, stringParams } from '@/lib/admin-paging';
+import { CopyId } from '@/components/admin/copy-id';
 import { InstructorCreateForm } from '@/components/admin/instructor-create-form';
+import { AdminUserActions } from '@/components/admin/user-actions';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -42,7 +44,7 @@ export default async function AdminUsersPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  await requireAdmin(locale, '/admin/users');
+  const me = await requireAdmin(locale, '/admin/users');
   const [t, format, rawSearchParams] = await Promise.all([
     getTranslations('Admin'),
     getFormatter(),
@@ -81,12 +83,9 @@ export default async function AdminUsersPage({
         }),
         direction: query.sortBy === 'displayName' ? query.order : undefined,
       },
-      render: (user) => (
-        <Link href={`/admin/users/${user.id}`} className="font-medium hover:text-primary hover:underline">
-          {user.displayName}
-        </Link>
-      ),
+      render: (user) => <span className="font-medium">{user.displayName}</span>,
     },
+    { key: 'id', header: t('table.userId'), render: (user) => <CopyId id={user.id} /> },
     { key: 'email', header: t('table.email'), render: (user) => user.email ?? '—' },
     { key: 'phone', header: t('table.phone'), render: (user) => user.phone ?? '—' },
     { key: 'role', header: t('table.role'), render: (user) => t(`roles.${user.role}`) },
@@ -96,9 +95,9 @@ export default async function AdminUsersPage({
       render: (user) => (
         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${
           user.status === 'ACTIVE'
-            ? 'bg-green-100 text-green-800'
+            ? 'bg-success/15 text-success'
             : user.status === 'BLOCKED'
-              ? 'bg-amber-100 text-amber-900'
+              ? 'bg-accent-light text-accent-deep'
               : 'bg-muted text-muted-foreground'
         }`}>
           {t(`statuses.${user.status}`)}
@@ -117,6 +116,19 @@ export default async function AdminUsersPage({
         direction: query.sortBy === 'createdAt' ? query.order : undefined,
       },
       render: (user) => format.dateTime(new Date(user.createdAt), { dateStyle: 'medium' }),
+    },
+    {
+      key: 'actions',
+      header: t('table.actions'),
+      render: (user) => (
+        <AdminUserActions
+          userId={user.id}
+          userName={user.displayName}
+          role={user.role}
+          status={user.status}
+          isSelf={me.id === user.id}
+        />
+      ),
     },
   ];
 
@@ -169,6 +181,7 @@ export default async function AdminUsersPage({
         hiddenFields={[
           { name: 'sortBy', value: query.sortBy },
           { name: 'order', value: query.order },
+          { name: 'pageSize', value: String(query.pageSize) },
         ]}
         pagination={{
           page: result.page,
@@ -178,6 +191,19 @@ export default async function AdminUsersPage({
           nextHref: result.page < totalPages ? hrefFor(locale, query, { page: result.page + 1 }) : undefined,
           previousLabel: t('previous'),
           nextLabel: t('next'),
+          pageSize: {
+            action: `/${locale}/admin/users`,
+            value: query.pageSize,
+            options: PAGE_SIZE_OPTIONS,
+            label: t('rowsPerPage'),
+            params: stringParams({
+              q: query.q,
+              role: query.role,
+              status: query.status,
+              sortBy: query.sortBy,
+              order: query.order,
+            }),
+          },
         }}
       />
     </div>

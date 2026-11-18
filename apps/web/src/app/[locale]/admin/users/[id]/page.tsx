@@ -39,9 +39,12 @@ export default async function AdminUserDetailPage({
         </div>
         <AdminUserActions
           userId={user.id}
+          userName={user.displayName}
           role={user.role}
           status={status}
           isSelf={admin.id === user.id}
+          showView={false}
+          afterDelete="list"
         />
       </div>
 

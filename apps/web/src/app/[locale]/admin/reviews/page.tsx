@@ -1,10 +1,12 @@
-import { ADMIN_REVIEW_STATUSES, AdminReviewListSchema, AdminReviewQuerySchema, REVIEW_REPORT_REASONS } from '@obgyn/types';
+import { ADMIN_DEFAULT_PAGE_SIZE, ADMIN_REVIEW_STATUSES, AdminReviewListSchema, AdminReviewQuerySchema, REVIEW_REPORT_REASONS } from '@obgyn/types';
 import { Star } from 'lucide-react';
+import { AdminPager } from '@obgyn/ui';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { ReasonAction } from '@/components/admin/reason-action';
 import { Link } from '@/i18n/navigation';
 import { requireAdmin } from '@/lib/admin-server';
 import { apiGet } from '@/lib/server-api';
+import { pageWindow, PAGE_SIZE_OPTIONS, readPageSize, withQuery } from '@/lib/admin-paging';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -18,18 +20,29 @@ export default async function AdminReviewsPage({
   const { locale } = await params;
   setRequestLocale(locale);
   await requireAdmin(locale, '/admin/reviews');
-  const [t, format, raw] = await Promise.all([getTranslations('Admin.moderation'), getFormatter(), searchParams]);
+  const [t, tAdmin, format, raw] = await Promise.all([
+    getTranslations('Admin.moderation'),
+    getTranslations('Admin'),
+    getFormatter(),
+    searchParams,
+  ]);
   const query = AdminReviewQuerySchema.catch(AdminReviewQuerySchema.parse({})).parse({
     status: typeof raw.status === 'string' ? raw.status : undefined,
     page: typeof raw.page === 'string' ? raw.page : undefined,
+    pageSize: readPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE),
   });
   const result = await apiGet(
-    `/admin/reviews?${new URLSearchParams({ status: query.status, page: String(query.page) })}`,
+    withQuery('/admin/reviews', { status: query.status, page: query.page, pageSize: query.pageSize }),
     AdminReviewListSchema,
     { auth: true },
   );
   const href = (changes: { status?: string; page?: number }) =>
-    `/admin/reviews?${new URLSearchParams({ status: changes.status ?? query.status, page: String(changes.page ?? 1) })}`;
+    withQuery('/admin/reviews', {
+      status: changes.status ?? query.status,
+      page: changes.page ?? 1,
+      pageSize: query.pageSize,
+    });
+  const pageInfo = pageWindow(result.total, query.page, query.pageSize);
   const errors = { ALREADY_HIDDEN: t('errors.alreadyHidden'), NOT_HIDDEN: t('errors.notHidden'), NOT_REPORTED: t('errors.notReported') };
 
   return (
@@ -73,7 +86,7 @@ export default async function AdminReviewsPage({
                 <p className="flex items-center gap-2 text-sm">
                   <span className="font-medium">{review.authorName}</span>
                   <span className="flex items-center gap-1" aria-label={t('rating', { rating: review.rating })}>
-                    <Star aria-hidden className="size-4 fill-current text-amber-500" />
+                    <Star aria-hidden className="size-4 fill-current text-rating" />
                     {review.rating}/5
                   </span>
                   {review.hiddenAt ? (
@@ -85,7 +98,7 @@ export default async function AdminReviewsPage({
                   <p className="whitespace-pre-line border-s-2 border-border ps-3 text-sm text-muted-foreground">{review.reply}</p>
                 ) : null}
                 {review.reportedAt ? (
-                  <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+                  <p className="rounded-xl bg-accent-light p-3 text-sm text-accent-deep">
                     {t('reportedBy', {
                       name: review.reportedByName ?? t('courseTeam'),
                       date: format.dateTime(new Date(review.reportedAt), { dateStyle: 'medium' }),
@@ -132,13 +145,23 @@ export default async function AdminReviewsPage({
         </ul>
       )}
 
-      {result.totalPages > 1 ? (
-        <nav aria-label={t('paging')} className="flex items-center justify-between gap-3">
-          {query.page > 1 ? <Link href={href({ page: query.page - 1 })} className="rounded-md border border-border px-3 py-2 text-sm">{t('previous')}</Link> : <span />}
-          <span className="text-sm">{query.page} / {result.totalPages}</span>
-          {query.page < result.totalPages ? <Link href={href({ page: query.page + 1 })} className="rounded-md border border-border px-3 py-2 text-sm">{t('next')}</Link> : <span />}
-        </nav>
-      ) : null}
+      <AdminPager
+        ariaLabel={tAdmin('pages')}
+        summary={tAdmin('pageRange', pageInfo)}
+        page={pageInfo.page}
+        totalPages={pageInfo.totalPages}
+        previousHref={pageInfo.page > 1 ? `/${locale}${href({ page: pageInfo.page - 1 })}` : undefined}
+        nextHref={pageInfo.page < pageInfo.totalPages ? `/${locale}${href({ page: pageInfo.page + 1 })}` : undefined}
+        previousLabel={tAdmin('previous')}
+        nextLabel={tAdmin('next')}
+        pageSize={{
+          action: `/${locale}/admin/reviews`,
+          value: query.pageSize,
+          options: PAGE_SIZE_OPTIONS,
+          label: tAdmin('rowsPerPage'),
+          params: { status: query.status },
+        }}
+      />
     </div>
   );
 }

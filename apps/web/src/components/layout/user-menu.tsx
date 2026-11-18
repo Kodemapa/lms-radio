@@ -10,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from '@obgyn/ui';
 import { BookOpen, Bookmark, ChevronDown, GraduationCap, LayoutDashboard, LogOut, Settings } from 'lucide-react';
-import { useRouter as useNextRouter } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { initials } from '@/lib/initials';
 
@@ -27,7 +26,6 @@ export interface UserMenuLabels {
 
 export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenuLabels }) {
   const router = useRouter();
-  const nextRouter = useNextRouter();
   const isAdmin = user.role === 'ADMIN';
   const isInstructor = user.role === 'FACULTY' || user.role === 'ADMIN';
 
@@ -88,8 +86,8 @@ export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenu
         <DropdownMenuItem
           onSelect={async () => {
             await fetch('/api/auth/logout', { method: 'POST' });
-            router.push('/');
-            nextRouter.refresh();
+            // A full page load re-runs the theme script, so the signed-out site uses the admin default.
+            window.location.assign('/');
           }}
         >
           <LogOut aria-hidden className="size-4" />
