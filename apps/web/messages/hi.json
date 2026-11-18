@@ -637,7 +637,8 @@
       "applications": "प्रशिक्षक आवेदन",
       "backToSite": "साइट पर वापस",
       "submissions": "असाइनमेंट",
-      "reviews": "समीक्षाएँ"
+      "reviews": "समीक्षाएँ",
+      "admin": "एडमिन"
     },
     "dashboardTitle": "फिर से स्वागत है, {name}",
     "dashboardSubtitle": "आपके कोर्स का हाल यहाँ देखें।",

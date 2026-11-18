@@ -17,6 +17,12 @@ const nextConfig: NextConfig = {
   // Overridable so a production build can run beside `next dev` (e.g. bundle analysis).
   distDir: process.env.NEXT_DIST_DIR || '.next',
   poweredByHeader: false,
+  // Development only: serve dev files from /dev/_next/... instead of /_next/...
+  // Dev file names are not hashed, and for a short time on 16 Nov 2026 they were sent with a
+  // one-year immutable cache header. A browser that loaded them then keeps running the old
+  // code on every refresh ("Cannot read properties of undefined (reading 'call')").
+  // A different path means those cached copies are never used.
+  assetPrefix: process.env.NODE_ENV === 'production' ? undefined : '/dev',
   transpilePackages: ['@obgyn/ui'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
   webpack(config, { isServer }) {

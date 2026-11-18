@@ -40,5 +40,5 @@ export default async function middleware(req: NextRequest) {
 
 export const config = {
   // Everything except API routes, Next internals and files with an extension.
-  matcher: '/((?!api|_next|_vercel|.*\\..*).*)',
+  matcher: '/((?!api|_next|dev/_next|_vercel|.*\\..*).*)',
 };

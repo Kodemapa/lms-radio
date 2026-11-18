@@ -637,7 +637,8 @@
       "applications": "Instructor applications",
       "backToSite": "Back to site",
       "submissions": "Assignments",
-      "reviews": "Reviews"
+      "reviews": "Reviews",
+      "admin": "Admin"
     },
     "dashboardTitle": "Welcome back, {name}",
     "dashboardSubtitle": "Here's how your courses are doing.",
