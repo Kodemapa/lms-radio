@@ -17,6 +17,7 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:configure-dev-passwords": "node --env-file=.env --import tsx scripts/configure-dev-passwords.ts",
+    "mail:test": "node --import tsx scripts/mail-test.ts",
     "drm:package": "node dist/drm/package-cli.js"
   },
   "prisma": {
@@ -40,6 +41,7 @@
     "dcmjs": "0.52.2",
     "helmet": "8.3.0",
     "jpeg-js": "0.4.4",
+    "nodemailer": "10.3.1",
     "pngjs": "7.0.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",

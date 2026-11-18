@@ -14,6 +14,8 @@ import {
 import { AuditService } from '../audit/audit.service';
 import { type AuthUser } from '../auth/auth-user';
 import { CoursePermissions } from '../courses/course-permissions';
+import { MailService } from '../mail/mail.service';
+import { assignmentReviewedEmail } from '../mail/templates';
 import { PrismaService } from '../prisma/prisma.service';
 import { type QuestionDto, type SubmissionReviewDto } from './dto';
 
@@ -24,6 +26,7 @@ export class AssessmentsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly permissions: CoursePermissions,
+    private readonly mail: MailService,
   ) {}
 
   // ---- Quiz questions ------------------------------------------------------------
@@ -144,7 +147,11 @@ export class AssessmentsService {
   async review(user: AuthUser, submissionId: string, dto: SubmissionReviewDto): Promise<void> {
     const submission = await this.prisma.assignmentSubmission.findUnique({
       where: { id: submissionId },
-      include: { course: { select: { id: true, instructorId: true } } },
+      include: {
+        course: { select: { id: true, instructorId: true, slug: true } },
+        lesson: { select: { title: true } },
+        user: { select: { email: true, displayName: true } },
+      },
     });
     if (!submission) throw new NotFoundException();
     if (!(await this.permissions.can(user, submission.course, 'grade'))) throw new ForbiddenException();
@@ -176,6 +183,17 @@ export class AssessmentsService {
       resource: 'assignment_submission',
       resourceId: submissionId,
     });
+    if (submission.user.email) {
+      this.mail.sendInBackground([
+        assignmentReviewedEmail(
+          submission.user.email,
+          submission.user.displayName,
+          submission.lesson.title,
+          dto.approve,
+          `/en/learn/${submission.course.slug}/${submission.lessonId}`,
+        ),
+      ]);
+    }
   }
 
   // ---- Helpers ------------------------------------------------------------------

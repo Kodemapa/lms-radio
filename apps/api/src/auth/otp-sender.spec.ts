@@ -110,4 +110,27 @@ describe('ConfiguredOtpSender', () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(warn).not.toHaveBeenCalled();
   });
+
+  describe('email codes', () => {
+    const emailCode = { ...MESSAGE, expiresAt: new Date(Date.now() + 300_000), channel: 'email' as const, target: 'asha@gmail.com', purpose: 'PASSWORD_RESET' as const };
+    const mail = (sent: boolean) => ({ enabled: true, sendMail: jest.fn().mockResolvedValue(sent), sendInBackground: jest.fn() });
+
+    it('emails the code when mail is configured', async () => {
+      const m = mail(true);
+      const sender = new ConfiguredOtpSender(fakeConfig(), m as never);
+      await expect(sender.send(emailCode)).resolves.toBeUndefined();
+      expect(m.sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: 'asha@gmail.com', code: emailCode.code, subject: expect.stringContaining('Reset') }));
+      expect(sender.canDeliver('email')).toBe(true);
+    });
+
+    it('fails closed in production when the email could not be sent', async () => {
+      const sender = new ConfiguredOtpSender(fakeConfig({ NODE_ENV: 'production' }), mail(false) as never);
+      await expect(sender.send(emailCode)).rejects.toBeInstanceOf(ServiceUnavailableException);
+    });
+
+    it('reports email as undeliverable when mail is off', () => {
+      expect(new ConfiguredOtpSender(fakeConfig()).canDeliver('email')).toBe(false);
+    });
+  });
 });
+

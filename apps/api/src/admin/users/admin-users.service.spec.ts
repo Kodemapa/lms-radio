@@ -5,6 +5,7 @@ import { type AuthUser } from '../../auth/auth-user';
 import { type PrismaService } from '../../prisma/prisma.service';
 import { type UsersService } from '../../users/users.service';
 import { AdminUsersService } from './admin-users.service';
+import { fakeMail } from '../../test-utils';
 
 const ADMIN: AuthUser = {
   userId: '6f1c2a3b-0000-4000-8000-000000000001',
@@ -57,6 +58,7 @@ function setup(targetOverrides: Record<string, unknown> = {}) {
     prisma as unknown as PrismaService,
     users as unknown as UsersService,
     audit as unknown as AuditService,
+    fakeMail(),
   );
   return { service, prisma, tx, users, audit };
 }

@@ -30,6 +30,8 @@ import { zodOrThrow } from '../common/zod';
 import { AccessService } from '../courses/access.service';
 import { DEFAULT_PASS_PERCENT } from '../learning/grading';
 import { CoursePermissions } from '../courses/course-permissions';
+import { MailService } from '../mail/mail.service';
+import { workingReviewedEmail } from '../mail/templates';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { gradeImaging, readKey, type CaseKey, type GradingImage, type KeyAnnotation } from './grading';
@@ -65,6 +67,7 @@ export class ImagingService {
     private readonly access: AccessService,
     private readonly audit: AuditService,
     private readonly permissions: CoursePermissions,
+    private readonly mail: MailService,
   ) {}
 
   // ---- Upload processing -------------------------------------------------------
@@ -369,7 +372,12 @@ export class ImagingService {
   async reviewWorking(user: AuthUser, attemptId: string, body: unknown): Promise<AttemptWorking> {
     const attempt = await this.prisma.imagingAttempt.findUnique({
       where: { id: attemptId },
-      select: { workingStatus: true, lesson: { select: { course: { select: { id: true, instructorId: true } } } } },
+      select: {
+        workingStatus: true,
+        lessonId: true,
+        user: { select: { email: true, displayName: true } },
+        lesson: { select: { title: true, course: { select: { id: true, instructorId: true, slug: true } } } },
+      },
     });
     if (!attempt) throw new NotFoundException();
     if (!(await this.permissions.can(user, attempt.lesson.course, 'grade'))) throw new ForbiddenException();
@@ -380,6 +388,17 @@ export class ImagingService {
       data: { workingStatus: review.status, workingFeedback: review.feedback, workingReviewedById: user.userId, workingReviewedAt: new Date() },
     });
     await this.audit.log({ actorId: user.userId, action: 'imaging.working_reviewed', resource: 'imaging_attempt', resourceId: attemptId, metadata: { status: review.status } });
+    if (attempt.user?.email) {
+      this.mail.sendInBackground([
+        workingReviewedEmail(
+          attempt.user.email,
+          attempt.user.displayName,
+          attempt.lesson.title,
+          review.status === 'VERIFIED',
+          `/en/learn/${attempt.lesson.course.slug}/${attempt.lessonId}`,
+        ),
+      ]);
+    }
     return (await this.working(updated))!;
   }
 

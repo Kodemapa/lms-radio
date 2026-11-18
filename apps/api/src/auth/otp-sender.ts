@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { INDIAN_MOBILE_REGEX, type OtpChannel } from '@obgyn/types';
 import { AppConfigService } from '../config/app-config.service';
+import { MailService } from '../mail/mail.service';
+import { otpEmail } from '../mail/templates';
 
 export const OTP_SENDER = Symbol('OTP_SENDER');
 const TWOFACTOR_API_BASE_URL = 'https://2factor.in/API/V1';
@@ -16,19 +18,38 @@ export interface OtpMessage {
   target: string;
   code: string;
   expiresAt: Date;
+  /** What the code is for; sets the email wording. Defaults to sign-in. */
+  purpose?: 'AUTH' | 'PASSWORD_RESET' | 'PASSWORD_CHANGE';
 }
 
 export interface OtpSender {
   send(message: OtpMessage): Promise<void>;
+  /** Whether a real provider is configured for the channel (production refuses others). */
+  canDeliver?(channel: OtpChannel): boolean;
 }
 
 @Injectable()
 export class ConfiguredOtpSender implements OtpSender {
   private readonly logger = new Logger('OTP');
 
-  constructor(private readonly config: AppConfigService) {}
+  constructor(
+    private readonly config: AppConfigService,
+    private readonly mail?: MailService,
+  ) {}
 
-  async send({ channel, target, code }: OtpMessage): Promise<void> {
+  canDeliver(channel: OtpChannel): boolean {
+    return channel === 'sms' ? !!this.config.get('TWOFACTOR_API_KEY') : !!this.mail?.enabled;
+  }
+
+  async send({ channel, target, code, expiresAt, purpose = 'AUTH' }: OtpMessage): Promise<void> {
+    if (channel === 'email' && this.mail?.enabled) {
+      if (await this.mail.sendMail(otpEmail(target, code, purpose, expiresAt))) return;
+      // Development falls through to the console code (e.g. seeded @example.com accounts).
+      if (this.config.isProduction) {
+        throw new ServiceUnavailableException('Email delivery is temporarily unavailable');
+      }
+    }
+
     if (channel === 'sms') {
       if (!INDIAN_MOBILE_REGEX.test(target)) {
         throw new BadRequestException('Enter a valid Indian mobile number.');

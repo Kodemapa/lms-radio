@@ -11,6 +11,8 @@ import {
 import { AuditService } from '../../audit/audit.service';
 import { type AuthUser } from '../../auth/auth-user';
 import { hashPassword } from '../../common/password';
+import { MailService } from '../../mail/mail.service';
+import { instructorAccountEmail } from '../../mail/templates';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UsersService } from '../../users/users.service';
 import { pageArgs, pageCount } from '../paging';
@@ -49,6 +51,7 @@ export class AdminUsersService {
     private readonly prisma: PrismaService,
     private readonly users: UsersService,
     private readonly audit: AuditService,
+    private readonly mail: MailService,
   ) {}
 
   async list(query: AdminUsersQuery): Promise<AdminUserListResponse> {
@@ -183,6 +186,8 @@ export class AdminUsersService {
         resourceId: user.id,
         metadata: { withPhone: !!input.phone },
       });
+      // The temporary password is never emailed; the admin shares it privately.
+      this.mail.sendInBackground([instructorAccountEmail(input.email.trim().toLowerCase(), input.displayName.trim())]);
       return user;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {

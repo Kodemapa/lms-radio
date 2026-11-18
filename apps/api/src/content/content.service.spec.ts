@@ -6,6 +6,7 @@ import { type PrismaService } from '../prisma/prisma.service';
 import { ContactService } from './contact.service';
 import { ContentService } from './content.service';
 import { MessageOverridesService } from './message-overrides.service';
+import { fakeMail } from '../test-utils';
 
 const ADMIN: AuthUser = {
   userId: '6f1c2a3b-0000-4000-8000-000000000001',
@@ -53,7 +54,7 @@ function setup() {
     prisma,
     audit,
     content: new ContentService(db, log),
-    contact: new ContactService(db, log),
+    contact: new ContactService(db, log, fakeMail()),
     messages: new MessageOverridesService(db, log),
   };
 }

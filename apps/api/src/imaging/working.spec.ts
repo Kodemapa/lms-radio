@@ -6,6 +6,7 @@ import { type CoursePermissions } from '../courses/course-permissions';
 import { type PrismaService } from '../prisma/prisma.service';
 import { type StorageService } from '../storage/storage.service';
 import { ImagingService } from './imaging.service';
+import { fakeMail } from '../test-utils';
 
 const learner: AuthUser = { userId: 'u1', sessionId: 's1', role: 'LEARNER' };
 const faculty: AuthUser = { userId: 'f1', sessionId: 's2', role: 'FACULTY' };
@@ -35,6 +36,7 @@ function setup({ mode = 'OPTIONAL', owned = 1, canGrade = true, workingStatus = 
     access as unknown as AccessService,
     { log: jest.fn() } as unknown as AuditService,
     permissions as unknown as CoursePermissions,
+    fakeMail(),
   );
   return { service, prisma, permissions };
 }

@@ -1,3 +1,4 @@
+import { type MailService } from './mail/mail.service';
 import { type AppConfigService } from './config/app-config.service';
 import { type Env } from './config/env.schema';
 
@@ -23,4 +24,13 @@ export function fakeConfig(overrides: Partial<Env> = {}): AppConfigService {
     get: (key: keyof Env) => values[key],
     isProduction: values.NODE_ENV === 'production',
   } as unknown as AppConfigService;
+}
+
+/** MailService stand-in: email off, nothing sent. */
+export function fakeMail(): MailService {
+  return {
+    enabled: false,
+    sendMail: jest.fn().mockResolvedValue(false),
+    sendInBackground: jest.fn(),
+  } as unknown as MailService;
 }

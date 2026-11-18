@@ -10,6 +10,8 @@ import { AuditService } from '../audit/audit.service';
 import { type AuthUser } from '../auth/auth-user';
 import { zodOrThrow } from '../common/zod';
 import { CoursePermissions } from '../courses/course-permissions';
+import { MailService } from '../mail/mail.service';
+import { invitationEmail } from '../mail/templates';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** At most this many co-instructors per course. */
@@ -27,6 +29,7 @@ export class CollaboratorsService {
     private readonly prisma: PrismaService,
     private readonly permissions: CoursePermissions,
     private readonly audit: AuditService,
+    private readonly mail: MailService,
   ) {}
 
   async list(user: AuthUser, courseId: string): Promise<Collaborator[]> {
@@ -48,7 +51,7 @@ export class CollaboratorsService {
   async invite(user: AuthUser, courseId: string, body: unknown): Promise<Collaborator[]> {
     const { course } = await this.permissions.assert(user, courseId, 'own');
     const { email, role } = zodOrThrow(InviteCollaboratorSchema, body);
-    const invitee = await this.prisma.user.findUnique({ where: { email }, select: { id: true, role: true } });
+    const invitee = await this.prisma.user.findUnique({ where: { email }, select: { id: true, role: true, email: true, displayName: true } });
     // Same answer whether or not the email exists, so the form can't be used to probe accounts.
     if (!invitee || invitee.role !== 'FACULTY') {
       throw new BadRequestException({ code: 'NOT_FACULTY', message: 'Only approved instructors can be invited. Ask them to apply as an instructor first.' });
@@ -59,6 +62,10 @@ export class CollaboratorsService {
     const existing = await this.prisma.courseCollaborator.findUnique({ where: { courseId_userId: { courseId, userId: invitee.id } } });
     if (existing) throw new ConflictException({ code: 'ALREADY_INVITED', message: 'Already invited' });
     await this.prisma.courseCollaborator.create({ data: { courseId, userId: invitee.id, role, invitedById: user.userId } });
+    const inviter = await this.prisma.user.findUnique({ where: { id: user.userId }, select: { displayName: true } });
+    if (invitee.email) {
+      this.mail.sendInBackground([invitationEmail(invitee.email, invitee.displayName, inviter?.displayName ?? '', course.title, role)]);
+    }
     await this.audit.log({ actorId: user.userId, action: 'course.collaborator_invited', resource: 'course', resourceId: courseId, metadata: { inviteeId: invitee.id, role } });
     return this.list(user, courseId);
   }

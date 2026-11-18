@@ -4,6 +4,8 @@ import { AuditService } from '../audit/audit.service';
 import { type AuthUser } from '../auth/auth-user';
 import { APPLICATION_INCLUDE, toApplication } from '../applications/applications.service';
 import { COURSE_SUMMARY_INCLUDE, toCourseSummary } from '../courses/course-mapper';
+import { MailService } from '../mail/mail.service';
+import { applicationDecisionEmail, courseDecisionEmail } from '../mail/templates';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -11,6 +13,7 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly mail: MailService,
   ) {}
 
   async reviewQueue(): Promise<ReviewQueueItem[]> {
@@ -32,6 +35,7 @@ export class AdminService {
       data: { status: 'PUBLISHED', publishedAt: course.publishedAt ?? new Date(), reviewNote: null },
     });
     await this.log(admin, 'course.published', 'course', course.id);
+    await this.notifyInstructor(course, true);
   }
 
   async reject(admin: AuthUser, courseId: string, note: string | null): Promise<void> {
@@ -41,6 +45,7 @@ export class AdminService {
       data: { status: 'DRAFT', reviewNote: note?.trim() || null },
     });
     await this.log(admin, 'course.rejected', 'course', course.id, note);
+    await this.notifyInstructor(course, false);
   }
 
   async applications(status: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<InstructorApplication[]> {
@@ -55,7 +60,7 @@ export class AdminService {
   async decideApplication(admin: AuthUser, id: string, approve: boolean, note: string | null): Promise<void> {
     const application = await this.prisma.instructorApplication.findUnique({
       where: { id },
-      include: { user: { select: { role: true } } },
+      include: { user: { select: { role: true, email: true, displayName: true } } },
     });
     if (!application) throw new NotFoundException();
     if (application.status !== 'PENDING') throw new ConflictException({ code: 'ALREADY_DECIDED' });
@@ -90,6 +95,17 @@ export class AdminService {
       id,
       note,
     );
+    if (application.user.email) {
+      this.mail.sendInBackground([applicationDecisionEmail(application.user.email, application.user.displayName, approve)]);
+    }
+  }
+
+  private async notifyInstructor(course: { id: string; title: string; instructorId: string | null }, published: boolean) {
+    if (!course.instructorId) return;
+    const owner = await this.prisma.user.findUnique({ where: { id: course.instructorId }, select: { email: true, displayName: true } });
+    if (owner?.email) {
+      this.mail.sendInBackground([courseDecisionEmail(owner.email, owner.displayName, course.title, course.id, published)]);
+    }
   }
 
   private async inReview(courseId: string) {

@@ -70,7 +70,7 @@ export class OtpService {
       },
     });
     try {
-      await this.sender.send({ channel, target, code, expiresAt });
+      await this.sender.send({ channel, target, code, expiresAt, purpose });
     } catch (error) {
       await this.prisma.otpChallenge.update({
         where: { id },
@@ -79,6 +79,11 @@ export class OtpService {
       throw error;
     }
     return { challengeId: id, expiresAt };
+  }
+
+  /** Whether codes can really be delivered on this channel (a provider is configured). */
+  canDeliver(channel: OtpChannel): boolean {
+    return this.sender.canDeliver?.(channel) ?? false;
   }
 
   /** Consumes the challenge on success. Each challenge allows MAX_OTP_ATTEMPTS guesses. */

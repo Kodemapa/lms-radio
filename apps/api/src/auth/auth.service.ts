@@ -84,10 +84,7 @@ export class AuthService {
     }
 
     const { channel: verifiedChannel, target } = parsed.data;
-    if (
-      this.config.isProduction &&
-      (verifiedChannel === 'email' || !this.config.get('TWOFACTOR_API_KEY'))
-    ) {
+    if (this.config.isProduction && !this.otp.canDeliver(verifiedChannel)) {
       throw new ServiceUnavailableException('OTP delivery is not configured for this channel');
     }
     const user = await this.prisma.user.findUnique({

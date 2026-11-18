@@ -6,6 +6,7 @@ import { CoursePermissions } from '../courses/course-permissions';
 import { type PrismaService } from '../prisma/prisma.service';
 import { CollaboratorsService } from './collaborators.service';
 import { countByDay, istDay, summariseAttempts, toStudentsCsv } from './insights.service';
+import { fakeMail } from '../test-utils';
 
 const student = (over: Partial<CourseStudent> = {}): CourseStudent => ({
   userId: 'u1', displayName: 'Asha Rao', email: 'as***@x.in', enrolledAt: '2026-11-01T10:00:00.000Z', completedLessons: 3,
@@ -68,7 +69,7 @@ describe('co-instructor invitations', () => {
       },
       user: { findUnique: jest.fn().mockResolvedValue(invitee) },
     };
-    const service = new CollaboratorsService(prisma as unknown as PrismaService, new CoursePermissions(prisma as unknown as PrismaService), { log: jest.fn() } as unknown as AuditService);
+    const service = new CollaboratorsService(prisma as unknown as PrismaService, new CoursePermissions(prisma as unknown as PrismaService), { log: jest.fn() } as unknown as AuditService, fakeMail());
     return { service, prisma };
   }
 

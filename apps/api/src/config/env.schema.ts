@@ -2,6 +2,7 @@ import { MAX_SIGNED_URL_TTL_SECONDS } from '@obgyn/types';
 import { z } from 'zod';
 
 const bool = z.enum(['true', 'false']).transform((value) => value === 'true');
+const optionalText = z.string().trim().min(1).optional().or(z.literal('').transform(() => undefined));
 const secret = z.string().min(32, 'must be at least 32 characters (use: openssl rand -base64 48)');
 
 export const EnvSchema = z
@@ -31,6 +32,21 @@ export const EnvSchema = z
     TWOFACTOR_API_KEY: z.string().trim().min(1).optional().or(z.literal('').transform(() => undefined)),
     TWOFACTOR_OTP_TEMPLATE: z.string().trim().min(1).max(100).default('OTP1'),
     MAX_DEVICES_PER_USER: z.coerce.number().int().min(1).max(10).default(2),
+
+    /**
+     * Outgoing email through this app's own ZeptoMail Mail Agent (SMTP). Leave
+     * SMTP_HOST empty to turn email off: sends return false and the app keeps working.
+     * Port 465 with implicit TLS: outbound 587 is blocked on the production server.
+     */
+    SMTP_HOST: optionalText,
+    SMTP_PORT: z.coerce.number().int().min(1).max(65535).default(465),
+    SMTP_SECURE: bool.default('true'),
+    SMTP_USER: optionalText,
+    SMTP_PASS: optionalText,
+    /** e.g. "GIFS e-LMS <no-reply@kodemapa.com>"; the domain must be verified for this Mail Agent. */
+    MAIL_FROM: optionalText,
+    /** Public web address used for links in emails. */
+    APP_URL: z.string().url().default('http://localhost:3000'),
     /**
      * Development only: turn off sequential lesson locks so any lesson can be
      * opened without finishing the ones before it. Refused in production.
@@ -77,6 +93,11 @@ export const EnvSchema = z
     SHAKA_PACKAGER_PATH: z.string().default('packager'),
   })
   .superRefine((env, ctx) => {
+    if (env.SMTP_HOST) {
+      for (const key of ['SMTP_USER', 'SMTP_PASS', 'MAIL_FROM'] as const) {
+        if (!env[key]) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: 'required when SMTP_HOST is set' });
+      }
+    }
     if (env.NODE_ENV === 'production' && env.DEV_UNLOCK_LESSONS) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

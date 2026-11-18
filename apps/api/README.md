@@ -34,9 +34,41 @@ pnpm test && pnpm test:e2e
 ```
 
 SMS OTPs use 2Factor.in when configured. Without a key, development prints the
-code to the API console and production fails closed. Email OTP delivery is not
-configured: development logs codes only; production does not send them. Configure
-an email provider only after approval.
+code to the API console and production fails closed. Email codes are sent through
+ZeptoMail when email is configured (below); otherwise development logs them and
+production refuses email codes.
+
+## Email (Zoho ZeptoMail over SMTP)
+
+All email goes through `MailService` (`src/mail/`): sign-in, password-reset and
+password-change codes; co-instructor invitations; instructor application
+decisions; course publish / return decisions; assignment and DICOM-working
+reviews; new instructor accounts (never the password); and a notice to admins
+when the contact form is used. Notices carry no staff notes or clinical text;
+recipients sign in to read them. Notices are sent in the background, one at a
+time, so requests return immediately. Placeholder addresses (`@example.com`,
+`.test`, `.invalid`, `localhost`) are skipped.
+
+| Variable | Value |
+|---|---|
+| `SMTP_HOST` | Host on this Mail Agent's SMTP page: `smtp.zeptomail.in` or `smtp.zeptomail.com`. Empty = email off |
+| `SMTP_PORT` | `465` |
+| `SMTP_SECURE` | `true` |
+| `SMTP_USER` | the literal string `emailapikey` |
+| `SMTP_PASS` | this Mail Agent's SMTP token (secret) |
+| `MAIL_FROM` | e.g. `GIFS e-LMS <no-reply@kodemapa.com>`, on a domain verified for this Mail Agent |
+| `APP_URL` | public web address used for links, e.g. `https://gifs.kodemapa.in` |
+
+- **Own Mail Agent.** This app has its own ZeptoMail Mail Agent and SMTP token.
+  Never reuse another app's token.
+- **Port 465, implicit TLS.** Outbound 587 is blocked on the production VPS; it
+  shows up as "Connection timeout", not as an authentication error.
+- **Email off is safe.** With `SMTP_HOST` empty every send returns false and the
+  app keeps working; admins see everything in the app. Failed sends are logged as
+  `[mail] could not send <subject> to <to>: <error>` with codes masked; the
+  token is never logged.
+- **Test the settings:** `pnpm --filter @obgyn/api mail:test -- --to you@yourdomain.com`
+  reads `apps/api/.env` like the API does and prints success or the exact error.
 
 Existing local test accounts keep their roles and data. After applying the
 non-destructive local migrations, set `DEV_ADMIN_PASSWORD`,

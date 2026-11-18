@@ -12,6 +12,8 @@ import { Prisma } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { type AuthUser } from '../auth/auth-user';
 import { zodOrThrow } from '../common/zod';
+import { MailService } from '../mail/mail.service';
+import { contactReceivedEmail } from '../mail/templates';
 import { PrismaService } from '../prisma/prisma.service';
 
 
@@ -32,14 +34,15 @@ const toMessage = (row: Row): ContactMessage => ({
 });
 
 /**
- * Public contact form → in-app admin inbox (CMS-2). No mail provider is configured yet,
- * so messages are stored and read here; email forwarding can be added once one is chosen.
+ * Public contact form → in-app admin inbox (CMS-2). Admins are also emailed a short
+ * notice (no message body) when mail is configured; the inbox stays the record.
  */
 @Injectable()
 export class ContactService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly mail: MailService,
   ) {}
 
   async submit(body: unknown, locale: string): Promise<void> {
@@ -57,6 +60,13 @@ export class ContactService {
     });
     // Contact details are personal data: the audit entry records only that a message arrived.
     await this.audit.log({ action: 'contact.submitted', resource: 'contact_message', resourceId: row.id });
+    if (this.mail.enabled) {
+      const admins = await this.prisma.user.findMany({
+        where: { role: 'ADMIN', deletedAt: null, blockedAt: null, email: { not: null } },
+        select: { email: true },
+      });
+      this.mail.sendInBackground(admins.map((admin) => contactReceivedEmail(admin.email!, input.name, input.subject)));
+    }
   }
 
   /** One page of the inbox, newest first; an invalid query falls back to page 1 of everything. */

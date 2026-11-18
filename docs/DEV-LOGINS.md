@@ -51,10 +51,11 @@ account's expected role; it never creates users. The API does not read the
 - To test real SMS manually, set `TWOFACTOR_API_KEY` and the approved
   `TWOFACTOR_OTP_TEMPLATE` in `apps/api/.env`, then restart the API. A real request
   may incur provider charges; do not commit the key.
-- Email OTP delivery is not configured. Development only logs email codes to the
-  API output; production does not send them. A console code is not delivered to
-  Gmail. Use SMS for production reset/re-verification until an email provider is
-  approved and configured.
+- Email codes are sent through ZeptoMail when `SMTP_HOST` and the other mail
+  settings are set (see `apps/api/README.md`). Without them, development logs
+  email codes to the API output and production refuses email codes. Seeded
+  `@example.com` accounts never receive mail; development falls back to the
+  console code for them.
 - Public sign-up requires name, mobile, password and consent; the mobile is
   verified by SMS OTP. Email is optional. Public sign-ups always get Learner role.
 - **Forgot Password?** sends a one-time reset code to the registered address/phone
