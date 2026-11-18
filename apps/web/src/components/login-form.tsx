@@ -144,7 +144,12 @@ export function LoginForm({ next, register = false }: { next: string | null; reg
       }
     };
     if (res.status === 429) return fail(t('errors.tooMany'));
-    if (res.status === 503) return fail(t('errors.deliveryUnavailable'));
+    // 503 means two different things: the API refused to send a code (OTP delivery), or the
+    // web server could not reach the API at all (BFF `upstreamUnavailable`). Only the first is
+    // about code delivery — the second can happen on plain password sign-in.
+    if (res.status === 503) {
+      return fail(body?.message === 'Service unavailable' ? t('errors.generic') : t('errors.deliveryUnavailable'));
+    }
     switch (body?.code) {
       case AUTH_ERROR_CODES.deviceLimit:
         return fail(t('errors.deviceLimit'));
