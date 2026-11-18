@@ -17,7 +17,7 @@ import { ApiError, apiGet, isSignedIn } from './server-api';
 export const getMe = cache(async (): Promise<UserProfile | null> => {
   if (!(await isSignedIn())) return null;
   try {
-    return await apiGet('/users/me', UserProfileSchema, { auth: true });
+    return await apiGet('/users/me', UserProfileSchema, { auth: true, onUnauthorized: 'throw' });
   } catch {
     return null;
   }
@@ -70,7 +70,7 @@ export async function getEnrollment(slug: string): Promise<boolean> {
     const { enrolled } = await apiGet(
       `/courses/${encodeURIComponent(slug)}/enrollment`,
       z.object({ enrolled: z.boolean() }),
-      { auth: true },
+      { auth: true, onUnauthorized: 'throw' },
     );
     return enrolled;
   } catch {
@@ -82,7 +82,7 @@ export async function getEnrollment(slug: string): Promise<boolean> {
 export const getWishlistIds = cache(async (): Promise<Set<string> | null> => {
   if (!(await isSignedIn())) return null;
   try {
-    return new Set(await apiGet('/users/me/wishlist/ids', z.array(z.string()), { auth: true }));
+    return new Set(await apiGet('/users/me/wishlist/ids', z.array(z.string()), { auth: true, onUnauthorized: 'throw' }));
   } catch {
     return null;
   }

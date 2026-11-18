@@ -1,76 +1,86 @@
 # Development accounts and sign-in
 
-These are development-only accounts created by `pnpm --filter @obgyn/api db:seed`.
-They do not have a shared/default password. Use the email OTP sign-in flow at
-`http://localhost:3000/en/login`.
+The local database has existing test accounts; do not delete, recreate, or reseed
+them to configure authentication. Their roles are:
 
-| Email | Role | Use it to test |
-|---|---|---|
-| `admin@example.com` | Admin | Admin dashboard, course review, instructor applications, user management |
-| `instructor@example.com` | Instructor | Owner of the seeded Certificate Course in Fetal Medicine |
-| `instructor2@example.com` | Instructor | Co-instructor and team permissions |
-| `learner@example.com` | Learner | Course enrolment and learner experience |
+| Email                     | Role       | Use it to test                                                           |
+| ------------------------- | ---------- | ------------------------------------------------------------------------ |
+| `admin@example.com`       | Admin      | Admin dashboard, course review, instructor applications, user management |
+| `instructor@example.com`  | Instructor | Owner of the seeded Certificate Course in Fetal Medicine                 |
+| `instructor2@example.com` | Instructor | Co-instructor and team permissions                                       |
+| `learner@example.com`     | Learner    | Course enrolment and learner experience                                  |
 
-Without `TWOFACTOR_API_KEY`, development logs the randomly generated code in the
-API process output. With a key configured, SMS codes are sent through 2Factor.in;
-the application still verifies the HMAC-hashed code and enforces its own expiry.
-Set `TWOFACTOR_OTP_TEMPLATE` to your approved 2Factor template (defaults to
-`OTP1`). SMS requests have a 60-second resend cooldown and a limit of five codes
-per target in ten minutes. Production SMS fails closed if no API key is configured;
-production email OTP delivery is not configured.
+## Set local test passwords
 
-To test a real SMS, set `TWOFACTOR_API_KEY` and `TWOFACTOR_OTP_TEMPLATE` in
-`apps/api/.env`, restart the API, then choose SMS sign-in and enter an Indian
-mobile number in `+91XXXXXXXXXX` format. Do not commit the API key. Real SMS may
-incur provider charges.
+First apply the additive migrations to the local development database (never run
+this against production). They add password fields and OTP purpose tracking; they
+do not reset or reseed user data. Confirm `DATABASE_URL` in the ignored
+`apps/api/.env` points to `localhost` before running the migration. Set these
+variables in the same file:
+`apps/api/.env` file:
 
-## Sign-up and passwords
+```dotenv
+DEV_ADMIN_PASSWORD=
+DEV_INSTRUCTOR_PASSWORD=
+DEV_INSTRUCTOR2_PASSWORD=
+DEV_LEARNER_PASSWORD=
+```
 
-- Sign-up is for learner accounts. It verifies the email address with an OTP and
-  requires acceptance of the terms and privacy notice.
-- Existing accounts can sign in with email OTP. Accounts that have set a password
-  can also use email + password.
-- Set or change a password from **Account → Devices & security**. If the account
-  already has a password, enter it to confirm the change.
-- To create an instructor directly, use **Admin → Users → Add instructor**. Set a
-  unique temporary password and share it with the instructor privately; they can
-  change it after signing in.
-- To change a test user's role through the standard workflow, have them apply via
-  **Become an instructor**, then approve the application as the admin.
-
-## Device limit
-
-Each account allows 2 active devices by default. If a shared test account reaches
-that limit, raise `MAX_DEVICES_PER_USER` in the local `apps/api/.env` (maximum 10),
-or remove a device from **Account → Devices & security**.
-
-## Run the app
-
-Ensure PostgreSQL is running and local environment files are configured, then run
-from the repository root:
+Use unique passwords that meet the 8-character, letter-and-number policy. Then run:
 
 ```powershell
-corepack enable
-pnpm install
-pnpm --filter @obgyn/api db:migrate
-pnpm --filter @obgyn/api db:seed
+pnpm --filter @obgyn/api db:deploy
+pnpm --filter @obgyn/api db:configure-dev-passwords
+```
+
+The local-only script refuses production mode and non-local database hosts. It
+updates password hashes only for those existing accounts and verifies each
+account's expected role; it never creates users. The API does not read the
+`DEV_*_PASSWORD` variables. Do not commit `.env` or use these values in production.
+
+## OTP delivery and registration
+
+- Password login is the default at `http://localhost:3000/en/login`; enter the
+  account email or mobile plus password. Click **Use a one-time code instead** for
+  secondary SMS/email OTP sign-in.
+- SMS codes use 2Factor.in when `TWOFACTOR_API_KEY` and the approved
+  `TWOFACTOR_OTP_TEMPLATE` are configured. Real SMS may incur provider charges;
+  do not run paid SMS tests automatically.
+- Without an SMS key, development logs the random code to the API process output.
+  Production SMS fails closed if no key is configured.
+- To test real SMS manually, set `TWOFACTOR_API_KEY` and the approved
+  `TWOFACTOR_OTP_TEMPLATE` in `apps/api/.env`, then restart the API. A real request
+  may incur provider charges; do not commit the key.
+- Email OTP delivery is not configured. Development only logs email codes to the
+  API output; production does not send them. A console code is not delivered to
+  Gmail. Use SMS for production reset/re-verification until an email provider is
+  approved and configured.
+- Public sign-up requires name, mobile, password and consent; the mobile is
+  verified by SMS OTP. Email is optional. Public sign-ups always get Learner role.
+- **Forgot Password?** sends a one-time reset code to the registered address/phone
+  entered. The code expires, is purpose-bound and can only be used once; all
+  sessions are revoked after a reset.
+- **Account → Devices & security** changes a password after current-password
+  verification or OTP re-verification. Other sessions are revoked.
+
+To create an instructor directly, use **Admin → Users → Add instructor**. To
+change a test user's role through the standard workflow, have them apply via
+**Become an instructor**, then approve the application as the admin.
+
+## Device limit and running the app
+
+Each account allows 2 active devices by default. Remove a device from
+**Account → Devices & security** to free a slot.
+
+Ensure PostgreSQL and local environment files are configured, then run from the
+repository root:
+
+```powershell
 pnpm turbo run dev --filter=@obgyn/web --filter=@obgyn/api
 ```
 
-The seed resets the demo course and categories, so don't re-seed a shared
-development database without warning the team.
-
-## Scripts and tests
-
-Use the ordinary OTP request/verify flow in scripts, and keep a fixed device ID
-per test account so repeated runs do not consume device slots. The OTP is printed
-to the API development output:
-
-```js
-await context.request.post('http://localhost:3000/api/auth/otp/request', {
-  data: { channel: 'email', target: 'learner@example.com' },
-});
-```
+Do not run `db:seed` just to set passwords: the seed resets demo course/category
+data.
 
 Never put real patient data in test accounts or uploads. Use synthetic or openly
 licensed samples. Never commit `.env` files.

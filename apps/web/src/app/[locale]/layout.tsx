@@ -61,7 +61,13 @@ export default async function LocaleLayout({ children, params }: Props) {
   const t = await getTranslations('Common');
 
   return (
-    <html lang={locale} className={`${geist.variable} ${display.variable} ${devanagari.variable}`}>
+    // suppressHydrationWarning: browser extensions (e.g. Scribe, Grammarly) add attributes to
+    // <html> before React loads. This only silences attribute mismatches on this one element.
+    <html
+      lang={locale}
+      className={`${geist.variable} ${display.variable} ${devanagari.variable}`}
+      suppressHydrationWarning
+    >
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
         <a
           href="#main"

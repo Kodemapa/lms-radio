@@ -67,7 +67,7 @@ export default async function CoursePage({ params }: Props) {
   const tEntrance = await getTranslations('Entrance');
   const entrance =
     course.entranceTest && me
-      ? await apiGet(`/courses/${encodeURIComponent(slug)}/entrance`, EntranceStatusSchema, { auth: true }).catch(() => null)
+      ? await apiGet(`/courses/${encodeURIComponent(slug)}/entrance`, EntranceStatusSchema, { auth: true, onUnauthorized: 'throw' }).catch(() => null)
       : null;
   // Learners who still need the entrance test see it instead of "Enrol".
   const needsEntrance = !!course.entranceTest && !enrolled && me?.role !== 'FACULTY' && me?.role !== 'ADMIN' && !entrance?.passed;
