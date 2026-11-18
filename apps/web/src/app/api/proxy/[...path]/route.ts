@@ -14,11 +14,11 @@ const SLUG = '[a-z0-9-]+';
 const ADMIN_RECORD = `admin/(categories|application-fields|content/pages|content/faqs|content/contact)/${UUID}`;
 const ALLOWED: Record<string, RegExp> = {
   GET: new RegExp(
-    `^(media/${UUID}/(url|playback)|users/me|users/me/devices|users/me/learning|users/me/wishlist(/ids)?|courses/${SLUG}/enrollment|courses/${SLUG}/reviews|courses/${SLUG}/entrance|learn/.+|instructor-applications/me|instructor/.+|admin/.+)$`,
+    `^(notifications|notifications/unread-count|media/${UUID}/(url|playback)|users/me|users/me/devices|users/me/learning|users/me/wishlist(/ids)?|courses/${SLUG}/enrollment|courses/${SLUG}/reviews|courses/${SLUG}/entrance|learn/.+|instructor-applications/me|instructor/.+|admin/.+)$`,
     'i',
   ),
   POST: new RegExp(
-    `^(courses/${SLUG}/enroll|courses/${SLUG}/entrance/(attempts(/${UUID})?|dev-skip)|learn/.+|uploads|uploads/${UUID}/complete|instructor-applications|instructor/.+|admin/.+)$`,
+    `^(notifications/read-all|notifications/${UUID}/read|courses/${SLUG}/enroll|courses/${SLUG}/entrance/(attempts(/${UUID})?|dev-skip)|learn/.+|uploads|uploads/${UUID}/complete|instructor-applications|instructor/.+|admin/.+)$`,
     'i',
   ),
   PUT: new RegExp(

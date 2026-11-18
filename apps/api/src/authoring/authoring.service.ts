@@ -45,6 +45,11 @@ const AUTHORING_INCLUDE = {
       },
     },
   },
+  reviewEvents: {
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+    include: { actor: { select: { displayName: true } } },
+  },
 } satisfies Prisma.CourseInclude;
 
 type AuthoringCourse = Prisma.CourseGetPayload<{ include: typeof AUTHORING_INCLUDE }>;
@@ -73,6 +78,7 @@ function toRow(course: Prisma.CourseGetPayload<{ include: typeof ROW_INCLUDE }>,
     slug: course.slug,
     title: course.title,
     status: course.status,
+    changesRequested: course.status === 'DRAFT' && course.reviewNote !== null ? { note: course.reviewNote } : null,
     thumbnailAssetId: course.thumbnailAssetId,
     lessonCount: course._count.lessons,
     studentCount: course._count.enrollments,
@@ -90,6 +96,13 @@ function toInstructorCourse(course: AuthoringCourse, myRole: CourseRole): Instru
     slug: course.slug,
     status: course.status,
     reviewNote: course.reviewNote,
+    reviewHistory: course.reviewEvents.map((event) => ({
+      id: event.id,
+      kind: event.kind,
+      note: event.note,
+      actorName: event.actor?.displayName ?? null,
+      createdAt: event.createdAt.toISOString(),
+    })),
     title: course.title,
     shortDescription: course.shortDescription,
     description: course.description,
@@ -336,6 +349,7 @@ export class AuthoringService {
       data: { status: 'IN_REVIEW', submittedAt: new Date(), reviewNote: null },
     });
     await this.log(user, 'course.submitted', course.id);
+    await this.prisma.courseReviewEvent.create({ data: { courseId: course.id, kind: 'SUBMITTED', actorId: user.userId } });
     return this.getCourse(user, course.id);
   }
 
@@ -344,6 +358,7 @@ export class AuthoringService {
     if (course.status !== 'IN_REVIEW') throw new ConflictException({ code: 'NOT_IN_REVIEW' });
     await this.prisma.course.update({ where: { id: course.id }, data: { status: 'DRAFT' } });
     await this.log(user, 'course.withdrawn', course.id);
+    await this.prisma.courseReviewEvent.create({ data: { courseId: course.id, kind: 'WITHDRAWN', actorId: user.userId } });
     return this.getCourse(user, course.id);
   }
 

@@ -16,6 +16,9 @@ export function ReviewsManager() {
   const [filter, setFilter] = useState<Filter>('all');
   const [items, setItems] = useState<InstructorReview[] | null>(null);
   const [error, setError] = useState(false);
+  const [page, setPage] = useState(1);
+  const tCommon = useTranslations('Common');
+  const tAdmin = useTranslations('Admin');
 
   const load = () =>
     api('GET', `instructor/reviews?filter=${filter}`)
@@ -35,7 +38,10 @@ export function ReviewsManager() {
             type="button"
             role="tab"
             aria-selected={filter === f}
-            onClick={() => setFilter(f)}
+            onClick={() => {
+              setFilter(f);
+              setPage(1);
+            }}
             className={`rounded-full border px-3 py-1 text-sm ${filter === f ? 'border-primary bg-primary-light text-primary' : 'border-border hover:bg-muted'}`}
           >
             {t(`reviewFilter.${f}`)}
@@ -48,11 +54,21 @@ export function ReviewsManager() {
       ) : items.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-primary/25 bg-primary-light/40 p-8 text-center text-muted-foreground">{t('noReviews')}</p>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {items.map((r) => (
-            <ReviewItem key={`${r.courseId}-${r.userId}`} review={r} onChanged={() => void load()} />
-          ))}
-        </ul>
+        <>
+          <ul className="flex flex-col gap-3">
+            {items.slice((Math.min(page, Math.ceil(items.length / REVIEWS_PER_PAGE)) - 1) * REVIEWS_PER_PAGE).slice(0, REVIEWS_PER_PAGE).map((r) => (
+              <ReviewItem key={`${r.courseId}-${r.userId}`} review={r} onChanged={() => void load()} />
+            ))}
+          </ul>
+          {items.length > REVIEWS_PER_PAGE ? (
+            <ClientPager
+              page={Math.min(page, Math.ceil(items.length / REVIEWS_PER_PAGE))}
+              total={items.length}
+              onPage={setPage}
+              labels={{ pages: tAdmin('pages'), previous: tCommon('previous'), next: tCommon('next'), range: (start, end) => tAdmin('pageRange', { start, end, total: items.length }) }}
+            />
+          ) : null}
+        </>
       )}
     </div>
   );
@@ -136,5 +152,42 @@ function ReviewItem({ review, onChanged }: { review: InstructorReview; onChanged
       )}
       {error ? <p role="alert" className="text-destructive">{error}</p> : null}
     </li>
+  );
+}
+
+const REVIEWS_PER_PAGE = 10;
+
+/** Previous / Next for a list already loaded in the browser. */
+function ClientPager({
+  page,
+  total,
+  onPage,
+  labels,
+}: {
+  page: number;
+  total: number;
+  onPage: (page: number) => void;
+  labels: { pages: string; previous: string; next: string; range: (start: number, end: number) => string };
+}) {
+  const pages = Math.max(1, Math.ceil(total / REVIEWS_PER_PAGE));
+  const start = (page - 1) * REVIEWS_PER_PAGE + 1;
+  const end = Math.min(page * REVIEWS_PER_PAGE, total);
+  const button =
+    'inline-flex h-10 items-center rounded-full border border-border bg-card px-4 text-sm font-medium hover:bg-primary-light hover:text-primary disabled:pointer-events-none disabled:opacity-40';
+  return (
+    <nav aria-label={labels.pages} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3">
+      <span className="text-sm text-muted-foreground">{labels.range(start, end)}</span>
+      <div className="flex items-center gap-2">
+        <button type="button" className={button} disabled={page <= 1} onClick={() => onPage(page - 1)}>
+          {labels.previous}
+        </button>
+        <span className="min-w-16 text-center text-sm tabular-nums" aria-current="page">
+          {page} / {pages}
+        </span>
+        <button type="button" className={button} disabled={page >= pages} onClick={() => onPage(page + 1)}>
+          {labels.next}
+        </button>
+      </div>
+    </nav>
   );
 }

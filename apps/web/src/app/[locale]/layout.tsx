@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Bricolage_Grotesque, Geist, Noto_Sans_Devanagari } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { Suspense, type ReactNode } from 'react';
+import { ChunkReloadScript } from '@/components/layout/chunk-reload';
 import { NavigationLoader } from '@/components/layout/navigation-progress';
 import { ThemeScript } from '@/components/theme/theme-script';
 import { routing } from '@/i18n/routing';
@@ -76,6 +77,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     >
       <head>
         <ThemeScript defaultTheme={settings.defaultTheme} personal={signedIn} />
+        <ChunkReloadScript />
       </head>
       <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
         <a

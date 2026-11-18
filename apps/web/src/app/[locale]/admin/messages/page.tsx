@@ -57,7 +57,7 @@ export default async function AdminMessagesPage({
       <ContactInbox key={`${status ?? 'all'}-${info.page}-${pageSize}`} initial={list.items} />
       <AdminPager
         ariaLabel={tAdmin('pages')}
-        summary={tAdmin('pageRange', info)}
+        summary={tAdmin('pageRange', { start: info.start, end: info.end, total: list.total })}
         page={info.page}
         totalPages={info.totalPages}
         previousHref={info.page > 1 ? `/${locale}${href({ page: info.page - 1 })}` : undefined}

@@ -1,5 +1,6 @@
 'use client';
 
+import { Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -13,8 +14,14 @@ export function DeleteCourseButton({ id, title }: { id: string; title: string })
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" className="text-destructive hover:underline" onClick={() => setOpen(true)}>
-        {tCommon('delete')}
+      <button
+        type="button"
+        aria-label={`${tCommon('delete')}: ${title}`}
+        title={`${tCommon('delete')}: ${title}`}
+        className="inline-flex size-9 items-center justify-center rounded-full border border-border bg-card text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        onClick={() => setOpen(true)}
+      >
+        <Trash2 aria-hidden className="size-4" />
       </button>
       <ConfirmDialog
         open={open}

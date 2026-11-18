@@ -6,13 +6,14 @@ import {
   HttpCode,
   Param,
   ParseEnumPipe,
+  ParseIntPipe,
   ParseUUIDPipe,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { type InstructorApplication, type ReviewQueueItem } from '@obgyn/types';
+import { ADMIN_DEFAULT_PAGE_SIZE, ADMIN_PAGE_SIZES, type AdminReviewHistory, type InstructorApplication, type ReviewQueueItem } from '@obgyn/types';
 import { type AuthUser } from '../auth/auth-user';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -41,6 +42,16 @@ export class AdminController {
   @Get('courses/review')
   queue(): Promise<ReviewQueueItem[]> {
     return this.admin.reviewQueue();
+  }
+
+  /** Submissions and decisions across all courses, newest first (paged). */
+  @Get('courses/review/history')
+  history(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(ADMIN_DEFAULT_PAGE_SIZE), ParseIntPipe) pageSize: number,
+  ): Promise<AdminReviewHistory> {
+    const size = (ADMIN_PAGE_SIZES as readonly number[]).includes(pageSize) ? pageSize : ADMIN_DEFAULT_PAGE_SIZE;
+    return this.admin.reviewHistory(Math.min(Math.max(1, page), 100_000), size);
   }
 
   @Post('courses/:id/publish')

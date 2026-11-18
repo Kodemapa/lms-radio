@@ -17,6 +17,7 @@ import { InstructorsModule } from './instructors/instructors.module';
 import { LearningModule } from './learning/learning.module';
 import { MailModule } from './mail/mail.module';
 import { MediaModule } from './media/media.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ReportsModule } from './reports/reports.module';
 import { StorageModule } from './storage/storage.module';
@@ -31,6 +32,7 @@ import { UsersModule } from './users/users.module';
     PrismaModule,
     AuditModule,
     MailModule,
+    NotificationsModule,
     StorageModule,
     AuthModule,
     UsersModule,

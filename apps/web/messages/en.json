@@ -31,6 +31,7 @@
     "coursesCount": "{count, plural, one {# course} other {# courses}}",
     "by": "by {name}",
     "loading": "Loading…",
+    "signingOut": "Signing you out…",
     "save": "Save",
     "saving": "Saving…",
     "saved": "Saved",
@@ -42,6 +43,7 @@
     "back": "Back",
     "continue": "Continue",
     "previous": "Previous",
+    "next": "Next",
     "genericError": "Something went wrong. Please try again.",
     "pcpndt": "In line with the PC-PNDT Act, this platform never reveals or teaches fetal sex determination.",
     "level": {
@@ -700,6 +702,9 @@
       "locked": "This course is in review and can't be edited. Withdraw it to make changes.",
       "publishedNotice": "This course is live. Changes you save are visible to learners straight away.",
       "rejected": "Changes requested by the reviewer: {note}",
+      "rejectedTitle": "The reviewer asked for changes",
+      "rejectedNoNote": "No note was added. Check the course and submit it again.",
+      "rejectedHint": "Make the changes, then submit the course again from the Publish tab.",
       "title": "Course title",
       "shortDescription": "Short description",
       "shortDescriptionHint": "One or two sentences shown on course cards (20–300 characters).",
@@ -947,6 +952,10 @@
     "submittedOn": "Submitted {date}",
     "publish": "Approve and publish",
     "reject": "Request changes",
+    "changesRequested": "Changes requested",
+    "reviewHistory": {"title": "Review history", "empty": "No review activity yet.", "by": "by {name}", "kind": {"SUBMITTED": "Submitted for review", "CHANGES_REQUESTED": "Changes requested", "PUBLISHED": "Approved and published", "WITHDRAWN": "Withdrawn from review"}},
+    "recentActivity": "Recent review activity",
+    "recentActivityIntro": "Submissions and decisions on every course, newest first. Courses sent back for changes stay here after they leave the queue.",
     "rejectNote": "What needs to change?",
     "applicationsTitle": "Instructor applications",
     "applicationsEmpty": "No pending applications.",
@@ -2202,5 +2211,30 @@
       "failed": "Your message couldn't be sent. Please try again.",
       "limited": "Too many messages were sent from your connection. Please wait a minute and try again."
     }
+  },
+  "Notifications": {
+    "title": "Notifications",
+    "open": "Notifications",
+    "openUnread": "Notifications, {count} unread",
+    "markAll": "Mark all as read",
+    "empty": "You're all caught up.",
+    "loading": "Loading…",
+    "loadFailed": "Couldn't load notifications.",
+    "kind": {
+      "COURSE_CHANGES_REQUESTED": "Changes requested on “{courseTitle}”",
+      "COURSE_PUBLISHED": "“{courseTitle}” was approved and published",
+      "APPLICATION_APPROVED": "Your instructor application was approved",
+      "APPLICATION_REJECTED": "Your instructor application was not approved",
+      "COLLABORATOR_INVITED": "You were invited to teach “{courseTitle}”",
+      "ASSIGNMENT_REVIEWED": "Your assignment “{lessonTitle}” was reviewed",
+      "WORKING_REVIEWED": "Your working on “{lessonTitle}” was checked",
+      "CONTACT_MESSAGE": "New contact message: {subject}"
+    },
+    "outcome": {
+      "APPROVED": "Approved",
+      "RETURNED": "Returned for changes",
+      "VERIFIED": "Verified"
+    },
+    "from": "From {name}"
   }
 }

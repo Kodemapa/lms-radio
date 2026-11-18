@@ -1,4 +1,5 @@
 import { type MailService } from './mail/mail.service';
+import { type NotificationsService } from './notifications/notifications.service';
 import { type AppConfigService } from './config/app-config.service';
 import { type Env } from './config/env.schema';
 
@@ -33,4 +34,9 @@ export function fakeMail(): MailService {
     sendMail: jest.fn().mockResolvedValue(false),
     sendInBackground: jest.fn(),
   } as unknown as MailService;
+}
+
+/** NotificationsService stand-in: records nothing. */
+export function fakeNotifications(): NotificationsService {
+  return { notify: jest.fn().mockResolvedValue(undefined) } as unknown as NotificationsService;
 }

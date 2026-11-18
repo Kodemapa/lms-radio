@@ -6,7 +6,7 @@ import { type PrismaService } from '../prisma/prisma.service';
 import { ContactService } from './contact.service';
 import { ContentService } from './content.service';
 import { MessageOverridesService } from './message-overrides.service';
-import { fakeMail } from '../test-utils';
+import { fakeMail, fakeNotifications } from '../test-utils';
 
 const ADMIN: AuthUser = {
   userId: '6f1c2a3b-0000-4000-8000-000000000001',
@@ -31,6 +31,7 @@ function setup() {
       delete: jest.fn(),
     },
     faq: { findMany: jest.fn().mockResolvedValue([]) },
+    user: { findMany: jest.fn().mockResolvedValue([{ id: 'admin-1', email: null }]) },
     siteSetting: { findUnique: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
     contactMessage: {
       create: jest.fn().mockResolvedValue({ id: ID }),
@@ -54,7 +55,7 @@ function setup() {
     prisma,
     audit,
     content: new ContentService(db, log),
-    contact: new ContactService(db, log, fakeMail()),
+    contact: new ContactService(db, log, fakeMail(), fakeNotifications()),
     messages: new MessageOverridesService(db, log),
   };
 }

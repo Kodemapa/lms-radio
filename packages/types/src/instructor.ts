@@ -112,6 +112,35 @@ export const InstructorChapterSchema = z.object({
 });
 export type InstructorChapter = z.infer<typeof InstructorChapterSchema>;
 
+/** One step in a course's review: submitted, changes requested (with note), published, withdrawn. */
+export const COURSE_REVIEW_KINDS = ['SUBMITTED', 'CHANGES_REQUESTED', 'PUBLISHED', 'WITHDRAWN'] as const;
+export const CourseReviewKindSchema = z.enum(COURSE_REVIEW_KINDS);
+export type CourseReviewKind = z.infer<typeof CourseReviewKindSchema>;
+
+export const CourseReviewEventSchema = z.object({
+  id: z.string().uuid(),
+  kind: CourseReviewKindSchema,
+  note: z.string().nullable(),
+  /** Who did it (instructor or admin); null if the account was removed. */
+  actorName: z.string().nullable(),
+  createdAt: z.string().datetime(),
+});
+export type CourseReviewEvent = z.infer<typeof CourseReviewEventSchema>;
+
+/** Admin: recent review steps across all courses, newest first. */
+export const AdminReviewHistorySchema = z.object({
+  items: z.array(
+    CourseReviewEventSchema.extend({
+      course: z.object({ id: z.string().uuid(), title: z.string(), slug: z.string(), status: CourseStatusSchema }),
+      instructorName: z.string().nullable(),
+    }),
+  ),
+  total: z.number().int(),
+  page: z.number().int(),
+  pageSize: z.number().int(),
+});
+export type AdminReviewHistory = z.infer<typeof AdminReviewHistorySchema>;
+
 export const InstructorCourseSchema = z.object({
   id: z.string().uuid(),
   /** My role on this course: what the editor lets me change. */
@@ -119,6 +148,8 @@ export const InstructorCourseSchema = z.object({
   slug: z.string(),
   status: CourseStatusSchema,
   reviewNote: z.string().nullable(),
+  /** Review steps, newest first. */
+  reviewHistory: z.array(CourseReviewEventSchema).default([]),
   title: z.string(),
   shortDescription: z.string(),
   description: z.string(),
@@ -157,6 +188,8 @@ export const InstructorCourseRowSchema = z.object({
   discountPricePaise: z.number().int().nullable(),
   updatedAt: z.string().datetime(),
   myRole: CourseRoleSchema,
+  /** Set when an admin sent the course back: the reviewer's note (may be empty). */
+  changesRequested: z.object({ note: z.string().nullable() }).nullable().default(null),
 });
 export type InstructorCourseRow = z.infer<typeof InstructorCourseRowSchema>;
 

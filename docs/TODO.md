@@ -144,6 +144,10 @@ Plan: `docs/IMAGE-TASKS-GAP-ANALYSIS.md`. Done: dictionary, pin/box/outline/cali
 - [ ] **NOT-1 Notification service** · M
   - Table + API: list, unread count, mark read, mark all read.
   - Bell in the header; preferences per type.
+  - Status 18 Nov 2026:
+    - [x] `Notification` table, API (`GET /notifications`, `/notifications/unread-count`, `POST /notifications/:id/read`, `/notifications/read-all`), bell in the site, instructor and admin headers (unread badge, refreshes every 60 s, en/hi).
+    - [x] Sent for: course changes requested / published, instructor application approved / rejected, co-instructor invitation, assignment reviewed, DICOM working reviewed, new contact message (admins).
+    - [ ] Preferences per type.
 - [ ] **NOT-2 Email** · M
   - Provider adapter (SES ap-south-1 or SMTP) with templates (en/hi).
   - Events: enrolment, assignment graded, imaging result, certificate issued, course approved/rejected, new Q&A reply.

@@ -16,6 +16,7 @@ import { type AuthUser } from '../auth/auth-user';
 import { CoursePermissions } from '../courses/course-permissions';
 import { MailService } from '../mail/mail.service';
 import { assignmentReviewedEmail } from '../mail/templates';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { type QuestionDto, type SubmissionReviewDto } from './dto';
 
@@ -27,6 +28,7 @@ export class AssessmentsService {
     private readonly audit: AuditService,
     private readonly permissions: CoursePermissions,
     private readonly mail: MailService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // ---- Quiz questions ------------------------------------------------------------
@@ -182,6 +184,12 @@ export class AssessmentsService {
       action: dto.approve ? 'assignment.approved' : 'assignment.rejected',
       resource: 'assignment_submission',
       resourceId: submissionId,
+    });
+    await this.notifications.notify({
+      userId: submission.userId,
+      kind: 'ASSIGNMENT_REVIEWED',
+      data: { lessonTitle: submission.lesson.title, outcome: dto.approve ? 'APPROVED' : 'RETURNED' },
+      link: `/learn/${submission.course.slug}/${submission.lessonId}`,
     });
     if (submission.user.email) {
       this.mail.sendInBackground([

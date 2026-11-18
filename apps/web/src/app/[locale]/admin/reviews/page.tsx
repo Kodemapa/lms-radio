@@ -147,7 +147,7 @@ export default async function AdminReviewsPage({
 
       <AdminPager
         ariaLabel={tAdmin('pages')}
-        summary={tAdmin('pageRange', pageInfo)}
+        summary={tAdmin('pageRange', { start: pageInfo.start, end: pageInfo.end, total: result.total })}
         page={pageInfo.page}
         totalPages={pageInfo.totalPages}
         previousHref={pageInfo.page > 1 ? `/${locale}${href({ page: pageInfo.page - 1 })}` : undefined}

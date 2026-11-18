@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { getMe } from '@/lib/catalog';
 import { LocaleSwitcher } from '../locale-switcher';
 import { ThemeToggle } from '../theme/theme-toggle';
+import { NotificationBell } from './notification-bell';
 import { Brand } from './brand';
 import { MobileNav } from './mobile-nav';
 import { NavLink } from './nav-link';
@@ -67,6 +68,7 @@ export async function SiteHeader() {
             <Search aria-hidden className="size-4" />
           </Link>
           {/* Theme choice is for signed-in users only; visitors get the admin's default. */}
+          {me ? <NotificationBell /> : null}
           {me ? <ThemeToggle /> : null}
           <LocaleSwitcher label={t('language')} />
           {me ? (

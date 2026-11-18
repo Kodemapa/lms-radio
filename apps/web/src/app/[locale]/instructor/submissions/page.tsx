@@ -1,26 +1,37 @@
 import { InstructorSubmissionSchema, SUBMISSION_STATUSES, type SubmissionStatus } from '@obgyn/types';
+import { AdminPager } from '@obgyn/ui';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 import { z } from 'zod';
 import { SubmissionReview } from '@/components/instructor/submission-review';
 import { Link } from '@/i18n/navigation';
 import { apiGet } from '@/lib/server-api';
+import { pageWindow, PAGE_SIZE_OPTIONS, readPage, readPageSize, stringParams, withQuery } from '@/lib/admin-paging';
 import { requireInstructor } from '@/lib/instructor-server';
 
-type Props = { params: Promise<{ locale: string }>; searchParams: Promise<{ status?: string }> };
+type Props = { params: Promise<{ locale: string }>; searchParams: Promise<{ status?: string; page?: string; pageSize?: string }> };
 
 export default async function SubmissionsPage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
   // Pages render alongside the layout, so each checks the role before calling the API.
   await requireInstructor(locale, '/instructor/submissions');
-  const requested = (await searchParams).status;
+  const query = await searchParams;
+  const requested = query.status;
   const status: SubmissionStatus = SUBMISSION_STATUSES.find((s) => s === requested) ?? 'SUBMITTED';
-  const [t, tAssignment, format, submissions] = await Promise.all([
+  const [t, tAdmin, tCommon, tAssignment, format, submissions] = await Promise.all([
     getTranslations('Instructor'),
+    getTranslations('Admin'),
+    getTranslations('Common'),
     getTranslations('Assignment'),
     getFormatter(),
     apiGet(`/instructor/submissions?status=${status}`, z.array(InstructorSubmissionSchema), { auth: true }),
   ]);
+
+  const pageSize = readPageSize(query.pageSize, 10);
+  const win = pageWindow(submissions.length, readPage(query.page), pageSize);
+  const shown = submissions.slice(win.offset, win.offset + pageSize);
+  const path = `/${locale}/instructor/submissions`;
+  const keep = { status, pageSize: pageSize === 10 ? undefined : pageSize };
 
   return (
     <div className="flex flex-col gap-6">
@@ -45,7 +56,7 @@ export default async function SubmissionsPage({ params, searchParams }: Props) {
         </p>
       ) : (
         <ul className="flex flex-col gap-4">
-          {submissions.map((submission) => (
+          {shown.map((submission) => (
             <li key={submission.id} className="flex flex-col gap-3 surface p-5">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="font-semibold">{submission.learner.displayName}</h2>
@@ -67,6 +78,19 @@ export default async function SubmissionsPage({ params, searchParams }: Props) {
           ))}
         </ul>
       )}
+      {submissions.length > PAGE_SIZE_OPTIONS[0]! ? (
+        <AdminPager
+          ariaLabel={tAdmin('pages')}
+          summary={tAdmin('pageRange', { start: win.start, end: win.end, total: submissions.length })}
+          page={win.page}
+          totalPages={win.totalPages}
+          previousHref={win.page > 1 ? withQuery(path, { ...keep, page: win.page - 1 }) : undefined}
+          nextHref={win.page < win.totalPages ? withQuery(path, { ...keep, page: win.page + 1 }) : undefined}
+          previousLabel={tCommon('previous')}
+          nextLabel={tCommon('next')}
+          pageSize={{ action: path, value: pageSize, options: PAGE_SIZE_OPTIONS, label: tAdmin('rowsPerPage'), params: stringParams({ status }) }}
+        />
+      ) : null}
     </div>
   );
 }

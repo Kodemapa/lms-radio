@@ -14,6 +14,7 @@ import { type AuthUser } from '../auth/auth-user';
 import { zodOrThrow } from '../common/zod';
 import { MailService } from '../mail/mail.service';
 import { contactReceivedEmail } from '../mail/templates';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 
@@ -43,6 +44,7 @@ export class ContactService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly mail: MailService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async submit(body: unknown, locale: string): Promise<void> {
@@ -60,13 +62,16 @@ export class ContactService {
     });
     // Contact details are personal data: the audit entry records only that a message arrived.
     await this.audit.log({ action: 'contact.submitted', resource: 'contact_message', resourceId: row.id });
-    if (this.mail.enabled) {
-      const admins = await this.prisma.user.findMany({
-        where: { role: 'ADMIN', deletedAt: null, blockedAt: null, email: { not: null } },
-        select: { email: true },
-      });
-      this.mail.sendInBackground(admins.map((admin) => contactReceivedEmail(admin.email!, input.name, input.subject)));
-    }
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN', deletedAt: null, blockedAt: null },
+      select: { id: true, email: true },
+    });
+    await this.notifications.notify(
+      ...admins.map((admin) => ({ userId: admin.id, kind: 'CONTACT_MESSAGE' as const, data: { fromName: input.name, subject: input.subject }, link: '/admin/messages' })),
+    );
+    this.mail.sendInBackground(
+      admins.flatMap((admin) => (admin.email ? [contactReceivedEmail(admin.email, input.name, input.subject)] : [])),
+    );
   }
 
   /** One page of the inbox, newest first; an invalid query falls back to page 1 of everything. */

@@ -127,7 +127,7 @@ export default async function AdminMediaPage({
 
       <AdminPager
         ariaLabel={tAdmin('pages')}
-        summary={tAdmin('pageRange', pageInfo)}
+        summary={tAdmin('pageRange', { start: pageInfo.start, end: pageInfo.end, total: result.total })}
         page={pageInfo.page}
         totalPages={pageInfo.totalPages}
         previousHref={pageInfo.page > 1 ? `/${locale}${href(query.status, pageInfo.page - 1)}` : undefined}

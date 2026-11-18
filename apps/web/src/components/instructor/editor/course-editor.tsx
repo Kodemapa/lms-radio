@@ -19,10 +19,19 @@ import { StudentsTab } from '../teaching/students-tab';
 import { TeamTab } from '../teaching/team-tab';
 import { TrashTab } from '../teaching/trash-tab';
 
-type BuildTab = 'details' | 'curriculum' | 'bank' | 'entrance' | 'pricing' | 'certDesign' | 'publish';
+type BuildTab =
+  'details' | 'curriculum' | 'bank' | 'entrance' | 'pricing' | 'certDesign' | 'publish';
 type TeachTab = 'students' | 'reports' | 'analytics' | 'team' | 'trash';
 type Tab = BuildTab | TeachTab;
-const BUILD_TABS: BuildTab[] = ['details', 'curriculum', 'bank', 'entrance', 'pricing', 'certDesign', 'publish'];
+const BUILD_TABS: BuildTab[] = [
+  'details',
+  'curriculum',
+  'bank',
+  'entrance',
+  'pricing',
+  'certDesign',
+  'publish',
+];
 const TEACH_TABS: TeachTab[] = ['students', 'reports', 'analytics', 'team', 'trash'];
 /** Owner-only build steps; the rest of the build tabs need edit rights. */
 const OWNER_TABS = new Set<Tab>(['pricing', 'publish']);
@@ -52,7 +61,11 @@ export function CourseEditor({
   const teachTabs = TEACH_TABS.filter((tab) => tab !== 'trash' || canEdit);
   const allowed: Tab[] = [...buildTabs, ...teachTabs];
   const [tab, setTab] = useState<Tab>(
-    initialTab && allowed.includes(initialTab as Tab) ? (initialTab as Tab) : canEdit ? 'details' : 'students',
+    initialTab && allowed.includes(initialTab as Tab)
+      ? (initialTab as Tab)
+      : canEdit
+        ? 'details'
+        : 'students',
   );
   const locked = course.status === 'IN_REVIEW' || course.status === 'RETIRED';
 
@@ -63,19 +76,20 @@ export function CourseEditor({
         <h1 className="text-2xl font-bold md:text-3xl">{course.title}</h1>
       </div>
       {locked ? (
-        <p role="status" className="flex items-center gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-900/30 dark:text-amber-100">
+        <p
+          role="status"
+          className="flex items-center gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-900/30 dark:text-amber-100"
+        >
           <Lock aria-hidden className="size-4 shrink-0" />
           {t('editor.locked')}
         </p>
       ) : course.status === 'PUBLISHED' ? (
-        <p role="status" className="flex items-center gap-2 rounded-xl bg-primary-light p-3 text-sm text-primary">
+        <p
+          role="status"
+          className="flex items-center gap-2 rounded-xl bg-primary-light p-3 text-sm text-primary"
+        >
           <Pencil aria-hidden className="size-4 shrink-0" />
           {t('editor.publishedNotice')}
-        </p>
-      ) : null}
-      {course.reviewNote && course.status === 'DRAFT' ? (
-        <p role="status" className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm">
-          {t('editor.rejected', { note: course.reviewNote })}
         </p>
       ) : null}
 
@@ -100,7 +114,9 @@ export function CourseEditor({
           </span>
         </TabsList>
         {!isOwner ? (
-          <p className="mt-3 text-sm text-muted-foreground">{t('editor.yourRole', { role: t(`editor.roles.${course.myRole}`) })}</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {t('editor.yourRole', { role: t(`editor.roles.${course.myRole}`) })}
+          </p>
         ) : null}
         <TabsContent value="details">
           <DetailsTab
@@ -123,7 +139,11 @@ export function CourseEditor({
           <EntranceTab courseId={course.id} locked={locked} />
         </TabsContent>
         <TabsContent value="certDesign">
-          <CertificateTab courseId={course.id} courseTitle={course.title} enabled={course.certificateEnabled} />
+          <CertificateTab
+            courseId={course.id}
+            courseTitle={course.title}
+            enabled={course.certificateEnabled}
+          />
         </TabsContent>
         <TabsContent value="pricing">
           <PricingTab course={course} locked={locked} onSaved={setCourse} />

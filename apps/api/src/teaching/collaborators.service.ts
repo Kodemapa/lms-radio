@@ -12,6 +12,7 @@ import { zodOrThrow } from '../common/zod';
 import { CoursePermissions } from '../courses/course-permissions';
 import { MailService } from '../mail/mail.service';
 import { invitationEmail } from '../mail/templates';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** At most this many co-instructors per course. */
@@ -30,6 +31,7 @@ export class CollaboratorsService {
     private readonly permissions: CoursePermissions,
     private readonly audit: AuditService,
     private readonly mail: MailService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(user: AuthUser, courseId: string): Promise<Collaborator[]> {
@@ -63,6 +65,12 @@ export class CollaboratorsService {
     if (existing) throw new ConflictException({ code: 'ALREADY_INVITED', message: 'Already invited' });
     await this.prisma.courseCollaborator.create({ data: { courseId, userId: invitee.id, role, invitedById: user.userId } });
     const inviter = await this.prisma.user.findUnique({ where: { id: user.userId }, select: { displayName: true } });
+    await this.notifications.notify({
+      userId: invitee.id,
+      kind: 'COLLABORATOR_INVITED',
+      data: { courseTitle: course.title, inviter: inviter?.displayName ?? '', role },
+      link: '/instructor',
+    });
     if (invitee.email) {
       this.mail.sendInBackground([invitationEmail(invitee.email, invitee.displayName, inviter?.displayName ?? '', course.title, role)]);
     }

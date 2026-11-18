@@ -29,7 +29,7 @@ export async function ListPager({
   return (
     <AdminPager
       ariaLabel={t('pages')}
-      summary={t('pageRange', info)}
+      summary={t('pageRange', { start: info.start, end: info.end, total })}
       page={info.page}
       totalPages={info.totalPages}
       previousHref={info.page > 1 ? href(info.page - 1) : undefined}

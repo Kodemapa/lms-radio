@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
   // Overridable so a production build can run beside `next dev` (e.g. bundle analysis).
   distDir: process.env.NEXT_DIST_DIR || '.next',
   poweredByHeader: false,
+  experimental: {
+    // Lower webpack memory use. The dev server restarts itself near its memory limit,
+    // which breaks open pages (ChunkLoadError); this makes those restarts rarer.
+    webpackMemoryOptimizations: true,
+  },
   // Development only: serve dev files from /dev/_next/... instead of /_next/...
   // Dev file names are not hashed, and for a short time on 16 Nov 2026 they were sent with a
   // one-year immutable cache header. A browser that loaded them then keeps running the old

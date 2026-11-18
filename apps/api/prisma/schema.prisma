@@ -79,23 +79,23 @@ enum ApplicationStatus {
 }
 
 model User {
-  id          String       @id @default(uuid()) @db.Uuid
-  phone       String?      @unique
-  email       String?      @unique
-  displayName String
+  id                String       @id @default(uuid()) @db.Uuid
+  phone             String?      @unique
+  email             String?      @unique
+  displayName       String
   /// Shown on instructor profiles, e.g. "MS (OBG), Fetal Medicine Consultant".
-  headline    String?
-  bio         String?
-  role        Role         @default(LEARNER)
-  learnerType LearnerType?
-  locale      String       @default("en")
+  headline          String?
+  bio               String?
+  role              Role         @default(LEARNER)
+  learnerType       LearnerType?
+  locale            String       @default("en")
   /// scrypt hash ("scrypt$N$r$p$salt$hash"); null for accounts that have never set a password.
   passwordHash      String?
   passwordChangedAt DateTime?
   /// When the user accepted the terms of use and privacy notice at sign-up (DPDP Act).
   termsAcceptedAt   DateTime?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   devices               Device[]
   sessions              Session[]
@@ -116,6 +116,8 @@ model User {
   checkpointAnswers     CheckpointAnswer[]
   imagingAttempts       ImagingAttempt[]
   reviewedWorking       ImagingAttempt[]        @relation("WorkingReviewer")
+  courseReviewEvents    CourseReviewEvent[]     @relation("CourseReviewActor")
+  notifications         Notification[]
   collaborations        CourseCollaborator[]    @relation("CourseCollaborations")
   /// Set when the account is deleted; personal fields are erased (DPDP Act).
   deletedAt             DateTime?
@@ -278,6 +280,7 @@ model Course {
   entranceAttempts    EntranceAttempt[]
   annotationTerms     AnnotationTerm[]
   collaborators       CourseCollaborator[]
+  reviewEvents        CourseReviewEvent[]
   certificateTemplate CertificateTemplate?
   questionTopics      QuestionTopic[]
   entranceTopic       QuestionTopic?         @relation("EntranceTopic", fields: [entranceTopicId], references: [id], onDelete: SetNull)
@@ -916,4 +919,58 @@ model MessageOverride {
   updatedAt   DateTime @updatedAt
 
   @@id([locale, key])
+}
+
+enum CourseReviewKind {
+  SUBMITTED
+  CHANGES_REQUESTED
+  PUBLISHED
+  WITHDRAWN
+}
+
+/// The review history of a course: every submission and decision, with the
+/// reviewer's note. Shown to the course team and to admins.
+model CourseReviewEvent {
+  id        String           @id @default(uuid()) @db.Uuid
+  courseId  String           @db.Uuid
+  kind      CourseReviewKind
+  note      String?
+  actorId   String?          @db.Uuid
+  createdAt DateTime         @default(now())
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  actor  User?  @relation("CourseReviewActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([courseId, createdAt])
+  @@index([createdAt])
+}
+
+enum NotificationKind {
+  COURSE_CHANGES_REQUESTED
+  COURSE_PUBLISHED
+  APPLICATION_APPROVED
+  APPLICATION_REJECTED
+  COLLABORATOR_INVITED
+  ASSIGNMENT_REVIEWED
+  WORKING_REVIEWED
+  CONTACT_MESSAGE
+}
+
+/// In-app notifications (bell in the header). The text is built in the browser
+/// from `kind` + `data`, so it follows the reader's language.
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  kind      NotificationKind
+  /// Values for the message, e.g. { courseTitle, note }.
+  data      Json             @default("{}")
+  /// Where clicking the notification goes (path without locale, e.g. /instructor/courses/<id>).
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
 }

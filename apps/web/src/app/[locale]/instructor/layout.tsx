@@ -5,6 +5,7 @@ import { SidebarNav } from '@/components/instructor/sidebar-nav';
 import { Brand } from '@/components/layout/brand';
 import { UserMenu } from '@/components/layout/user-menu';
 import { LocaleSwitcher } from '@/components/locale-switcher';
+import { NotificationBell } from '@/components/layout/notification-bell';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Link } from '@/i18n/navigation';
 import { requireInstructor } from '@/lib/instructor-server';
@@ -48,6 +49,7 @@ export default async function InstructorLayout({
             </span>
           </div>
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <ThemeToggle />
             <LocaleSwitcher label={tCommon('language')} />
             <UserMenu

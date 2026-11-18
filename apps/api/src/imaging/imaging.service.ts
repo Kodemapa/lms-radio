@@ -32,6 +32,7 @@ import { DEFAULT_PASS_PERCENT } from '../learning/grading';
 import { CoursePermissions } from '../courses/course-permissions';
 import { MailService } from '../mail/mail.service';
 import { workingReviewedEmail } from '../mail/templates';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { gradeImaging, readKey, type CaseKey, type GradingImage, type KeyAnnotation } from './grading';
@@ -68,6 +69,7 @@ export class ImagingService {
     private readonly audit: AuditService,
     private readonly permissions: CoursePermissions,
     private readonly mail: MailService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // ---- Upload processing -------------------------------------------------------
@@ -375,6 +377,7 @@ export class ImagingService {
       select: {
         workingStatus: true,
         lessonId: true,
+        userId: true,
         user: { select: { email: true, displayName: true } },
         lesson: { select: { title: true, course: { select: { id: true, instructorId: true, slug: true } } } },
       },
@@ -388,6 +391,14 @@ export class ImagingService {
       data: { workingStatus: review.status, workingFeedback: review.feedback, workingReviewedById: user.userId, workingReviewedAt: new Date() },
     });
     await this.audit.log({ actorId: user.userId, action: 'imaging.working_reviewed', resource: 'imaging_attempt', resourceId: attemptId, metadata: { status: review.status } });
+    if (attempt.userId) {
+      await this.notifications.notify({
+        userId: attempt.userId,
+        kind: 'WORKING_REVIEWED',
+        data: { lessonTitle: attempt.lesson.title, outcome: review.status === 'VERIFIED' ? 'VERIFIED' : 'RETURNED' },
+        link: `/learn/${attempt.lesson.course.slug}/${attempt.lessonId}`,
+      });
+    }
     if (attempt.user?.email) {
       this.mail.sendInBackground([
         workingReviewedEmail(

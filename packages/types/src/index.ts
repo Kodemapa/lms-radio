@@ -15,3 +15,4 @@ export * from './progress.js';
 export * from './resources.js';
 export * from './admin-users.js';
 export * from './admin.js';
+export * from './notifications.js';

@@ -1,11 +1,12 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { type InstructorApplication, type ReviewQueueItem } from '@obgyn/types';
+import { type AdminReviewHistory, type InstructorApplication, type ReviewQueueItem } from '@obgyn/types';
 import { AuditService } from '../audit/audit.service';
 import { type AuthUser } from '../auth/auth-user';
 import { APPLICATION_INCLUDE, toApplication } from '../applications/applications.service';
 import { COURSE_SUMMARY_INCLUDE, toCourseSummary } from '../courses/course-mapper';
 import { MailService } from '../mail/mail.service';
 import { applicationDecisionEmail, courseDecisionEmail } from '../mail/templates';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class AdminService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly mail: MailService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async reviewQueue(): Promise<ReviewQueueItem[]> {
@@ -35,6 +37,7 @@ export class AdminService {
       data: { status: 'PUBLISHED', publishedAt: course.publishedAt ?? new Date(), reviewNote: null },
     });
     await this.log(admin, 'course.published', 'course', course.id);
+    await this.prisma.courseReviewEvent.create({ data: { courseId: course.id, kind: 'PUBLISHED', actorId: admin.userId } });
     await this.notifyInstructor(course, true);
   }
 
@@ -42,10 +45,43 @@ export class AdminService {
     const course = await this.inReview(courseId);
     await this.prisma.course.update({
       where: { id: course.id },
-      data: { status: 'DRAFT', reviewNote: note?.trim() || null },
+      data: { status: 'DRAFT', reviewNote: note?.trim() || '' },
     });
     await this.log(admin, 'course.rejected', 'course', course.id, note);
-    await this.notifyInstructor(course, false);
+    await this.prisma.courseReviewEvent.create({
+      data: { courseId: course.id, kind: 'CHANGES_REQUESTED', note: note?.trim() || null, actorId: admin.userId },
+    });
+    await this.notifyInstructor(course, false, note?.trim() || null);
+  }
+
+  /** Review steps across all courses, newest first: what was decided after a course left the queue. */
+  async reviewHistory(page: number, pageSize: number): Promise<AdminReviewHistory> {
+    const [rows, total] = await Promise.all([
+      this.prisma.courseReviewEvent.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          actor: { select: { displayName: true } },
+          course: { select: { id: true, title: true, slug: true, status: true, instructor: { select: { displayName: true } } } },
+        },
+      }),
+      this.prisma.courseReviewEvent.count(),
+    ]);
+    return {
+      items: rows.map((row) => ({
+        id: row.id,
+        kind: row.kind,
+        note: row.note,
+        actorName: row.actor?.displayName ?? null,
+        createdAt: row.createdAt.toISOString(),
+        course: { id: row.course.id, title: row.course.title, slug: row.course.slug, status: row.course.status },
+        instructorName: row.course.instructor?.displayName ?? null,
+      })),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   async applications(status: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<InstructorApplication[]> {
@@ -95,13 +131,29 @@ export class AdminService {
       id,
       note,
     );
+    await this.notifications.notify({
+      userId: application.userId,
+      kind: approve ? 'APPLICATION_APPROVED' : 'APPLICATION_REJECTED',
+      data: { note: note?.trim() || '' },
+      link: approve ? '/instructor' : '/become-instructor',
+    });
     if (application.user.email) {
       this.mail.sendInBackground([applicationDecisionEmail(application.user.email, application.user.displayName, approve)]);
     }
   }
 
-  private async notifyInstructor(course: { id: string; title: string; instructorId: string | null }, published: boolean) {
+  private async notifyInstructor(
+    course: { id: string; title: string; instructorId: string | null; reviewNote?: string | null },
+    published: boolean,
+    note: string | null = null,
+  ) {
     if (!course.instructorId) return;
+    await this.notifications.notify({
+      userId: course.instructorId,
+      kind: published ? 'COURSE_PUBLISHED' : 'COURSE_CHANGES_REQUESTED',
+      data: { courseTitle: course.title, ...(published ? {} : { note: note ?? '' }) },
+      link: `/instructor/courses/${course.id}`,
+    });
     const owner = await this.prisma.user.findUnique({ where: { id: course.instructorId }, select: { email: true, displayName: true } });
     if (owner?.email) {
       this.mail.sendInBackground([courseDecisionEmail(owner.email, owner.displayName, course.title, course.id, published)]);
