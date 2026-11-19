@@ -7,7 +7,7 @@ import {
   type CourseLevel,
   type InstructorCourse,
 } from '@obgyn/types';
-import { Button, Input, Label, Select, Switch, Textarea } from '@obgyn/ui';
+import { Button, Input, Label, Select, Switch, Textarea, toast } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { useState, type FormEvent } from 'react';
 import { courseApi } from '@/lib/instructor-api';
@@ -72,9 +72,11 @@ export function DetailsTab({
         metaKeywords: form.metaKeywords.trim() || null,
       });
       setStatus('saved');
+      toast.success(tCommon('toast.saved'));
       onSaved(updated);
     } catch (e) {
       setStatus('error');
+      toast.error(tCommon('genericError'));
       setError((e as { messageText?: string }).messageText ?? tCommon('genericError'));
     }
   }

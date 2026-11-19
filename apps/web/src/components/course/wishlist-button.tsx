@@ -4,6 +4,7 @@ import { Bookmark } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { api } from '@/lib/instructor-api';
+import { toast } from '@obgyn/ui';
 
 export function WishlistButton({
   courseId,
@@ -26,6 +27,9 @@ export function WishlistButton({
     try {
       await api(saved ? 'DELETE' : 'PUT', `users/me/wishlist/${courseId}`);
       setSaved(!saved);
+      toast.success(t(saved ? 'toast.wishlistRemoved' : 'toast.wishlistAdded'));
+    } catch {
+      toast.error(t('genericError'));
     } finally {
       setPending(false);
     }

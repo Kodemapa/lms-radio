@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { STAFF_ROLES, UPLOAD_LIMITS, type DicomImageMeta, type UploadTicket } from '@obgyn/types';
+import { AVATAR_MAX_BYTES, STAFF_ROLES, UPLOAD_LIMITS, type DicomImageMeta, type UploadTicket } from '@obgyn/types';
 import { type MediaAsset } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { type Readable } from 'node:stream';
@@ -42,6 +42,10 @@ export class UploadsService {
 
   async create(user: AuthUser, dto: CreateUploadDto): Promise<UploadTicket> {
     const isInstructor = STAFF_ROLES.includes(user.role);
+    const isAvatar = dto.purpose === 'AVATAR';
+    if (isAvatar && (dto.kind !== 'IMAGE' || dto.sizeBytes > AVATAR_MAX_BYTES)) {
+      throw new BadRequestException(`Profile pictures must be JPG, PNG or WebP images up to ${AVATAR_MAX_BYTES / 1024 / 1024} MB`);
+    }
     if (!isInstructor && (dto.kind === 'VIDEO' || dto.kind === 'DICOM' || dto.sizeBytes > LEARNER_MAX_BYTES)) {
       throw new BadRequestException('Learners can upload images or PDFs up to 20 MB');
     }
@@ -54,7 +58,8 @@ export class UploadsService {
     }
     // Instructor images are thumbnails (public, no patient data). Everything else,
     // including any learner upload, needs the de-identification attestation.
-    const isPublic = isInstructor && dto.kind === 'IMAGE';
+    // Profile pictures are public too: they show next to the user's name.
+    const isPublic = (isInstructor && dto.kind === 'IMAGE') || isAvatar;
     if (!isPublic && !dto.deidentified) {
       throw new BadRequestException({
         code: 'DEIDENTIFICATION_REQUIRED',

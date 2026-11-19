@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@obgyn/ui';
+import { Button, toast } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
@@ -65,6 +65,7 @@ export function EnrollPanel({
           if (res.ok) {
             setIsEnrolled(true);
             setState('idle');
+            toast.success(tCommon('toast.enrolled'));
             router.push(`/learn/${slug}`);
             return;
           }

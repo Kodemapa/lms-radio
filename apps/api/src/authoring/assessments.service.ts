@@ -150,7 +150,7 @@ export class AssessmentsService {
     const submission = await this.prisma.assignmentSubmission.findUnique({
       where: { id: submissionId },
       include: {
-        course: { select: { id: true, instructorId: true, slug: true } },
+        course: { select: { id: true, instructorId: true, slug: true, title: true } },
         lesson: { select: { title: true } },
         user: { select: { email: true, displayName: true } },
       },
@@ -188,7 +188,13 @@ export class AssessmentsService {
     await this.notifications.notify({
       userId: submission.userId,
       kind: 'ASSIGNMENT_REVIEWED',
-      data: { lessonTitle: submission.lesson.title, outcome: dto.approve ? 'APPROVED' : 'RETURNED' },
+      data: {
+        lessonTitle: submission.lesson.title,
+        courseTitle: submission.course.title,
+        outcome: dto.approve ? 'APPROVED' : 'RETURNED',
+        // Shown in full when the learner opens the notification.
+        ...(dto.feedback?.trim() ? { feedback: dto.feedback.trim() } : {}),
+      },
       link: `/learn/${submission.course.slug}/${submission.lessonId}`,
     });
     if (submission.user.email) {

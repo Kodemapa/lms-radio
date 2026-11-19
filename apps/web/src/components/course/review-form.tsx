@@ -1,11 +1,12 @@
 'use client';
 
-import { Button, Label, Textarea } from '@obgyn/ui';
+import { Button, Label, Textarea, toast } from '@obgyn/ui';
 import { Star } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { api } from '@/lib/instructor-api';
+import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
 
 export function ReviewForm({
   slug,
@@ -22,6 +23,7 @@ export function ReviewForm({
   const [comment, setComment] = useState(initial?.comment ?? '');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
@@ -30,6 +32,7 @@ export function ReviewForm({
     setError(false);
     try {
       await api('PUT', `courses/${slug}/review`, { rating, comment: comment.trim() || null });
+      toast.success(t(initial ? 'toastUpdated' : 'toastSubmitted'));
       router.refresh();
     } catch {
       setError(true);
@@ -78,18 +81,25 @@ export function ReviewForm({
             type="button"
             variant="ghost"
             disabled={pending}
-            onClick={async () => {
-              setPending(true);
-              await api('DELETE', `courses/${slug}/review`).catch(() => setError(true));
-              setPending(false);
-              router.refresh();
-            }}
+            onClick={() => setConfirmingDelete(true)}
           >
             {t('delete')}
           </Button>
         ) : null}
         {error ? <span role="alert" className="text-sm text-destructive">{tCommon('genericError')}</span> : null}
       </div>
+      <ConfirmDialog
+        open={confirmingDelete}
+        onOpenChange={setConfirmingDelete}
+        title={t('deleteConfirmTitle')}
+        body={tCommon('deleteConfirmBody')}
+        confirmLabel={t('delete')}
+        successMessage={t('toastDeleted')}
+        onConfirm={async () => {
+          await api('DELETE', `courses/${slug}/review`);
+          router.refresh();
+        }}
+      />
     </form>
   );
 }

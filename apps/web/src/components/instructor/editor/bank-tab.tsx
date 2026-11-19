@@ -28,6 +28,7 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  toast,
 } from '@obgyn/ui';
 import { AlertTriangle, ArrowDown, ArrowUp, CheckCircle2, Download, FileSpreadsheet, FolderPlus, Pencil, Plus, Search, Trash2, Upload, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -273,6 +274,7 @@ export function BankTab({ courseId, locked }: { courseId: string; locked: boolea
                         }));
                         setSelected(new Set());
                         setMoveTo('');
+                        toast.success(tCommon('toast.moved'));
                       })}>
                       {t('move')}
                     </Button>
@@ -381,6 +383,7 @@ export function BankTab({ courseId, locked }: { courseId: string; locked: boolea
           title={t('deleteTopicTitle', { name: topicDeleting.name })}
           body={t('deleteTopicBody', { count: topicDeleting.bankCount })}
           confirmLabel={t('deleteTopic')}
+          successMessage={tCommon('toast.deleted')}
           onConfirm={async () => {
             setTopics(await api('DELETE', `instructor/topics/${topicDeleting.id}`));
             setFilter('');
@@ -395,6 +398,7 @@ export function BankTab({ courseId, locked }: { courseId: string; locked: boolea
           title={tCommon('delete')}
           body={t('deleteConfirm')}
           confirmLabel={tCommon('delete')}
+          successMessage={tCommon('toast.questionDeleted')}
           onConfirm={async () => onBank(await api('DELETE', `instructor/bank/${deleting.id}`))}
         />
       ) : null}
@@ -405,6 +409,7 @@ export function BankTab({ courseId, locked }: { courseId: string; locked: boolea
           title={tCommon('delete')}
           body={t('bulkDeleteConfirm', { count: selected.size })}
           confirmLabel={tCommon('delete')}
+          successMessage={tCommon('toast.deleted')}
           onConfirm={async () => {
             onBank(await api('POST', `instructor/courses/${courseId}/bank/bulk`, { action: 'delete', ids: [...selected] }));
             setSelected(new Set());
@@ -444,6 +449,7 @@ function TopicDialog({
         ? await api('PATCH', `instructor/topics/${topic.id}`, input.data)
         : await api('POST', `instructor/courses/${courseId}/topics`, input.data);
       onSaved(data, input.data.name);
+      toast.success(tCommon('toast.saved'));
       onClose();
     } catch (err) {
       setError(err instanceof ApiClientError && err.status === 409 ? t('topicExists') : tCommon('genericError'));
@@ -546,6 +552,7 @@ function ImportDialog({
       onImported(await api('POST', `instructor/courses/${courseId}/bank/import`, {
         questions: parsed.questions.map((q) => ({ ...q, topic: q.topic || fallbackTopic || null })),
       }));
+      toast.success(tCommon('toast.imported', { count: parsed.questions.length }));
       onClose();
     } catch (e) {
       setError((e as { messageText?: string }).messageText ?? tCommon('genericError'));
@@ -735,6 +742,7 @@ function BankQuestionDialog({
     setError(null);
     try {
       onSaved(question ? await api('PATCH', `instructor/bank/${question.id}`, body.data) : await api('POST', `instructor/courses/${courseId}/bank`, body.data));
+      toast.success(tCommon(question ? 'toast.saved' : 'toast.questionAdded'));
       onClose();
     } catch (e) {
       setError((e as { messageText?: string }).messageText ?? tCommon('genericError'));

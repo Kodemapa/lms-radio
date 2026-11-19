@@ -54,3 +54,4 @@ export { Tabs, TabsContent, TabsList, TabsTrigger } from './components/tabs';
 export { Textarea } from './components/textarea';
 export { Watermark, type WatermarkProps } from './components/watermark';
 export { cn } from './lib/cn';
+export { Toaster, currentToasts, dismissToast, toast, type ToastItem, type ToastTone } from './components/toast';

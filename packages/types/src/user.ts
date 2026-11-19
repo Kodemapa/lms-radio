@@ -13,6 +13,8 @@ export const UserProfileSchema = z.object({
   locale: z.string(),
   phone: z.string().nullable(),
   email: z.string().nullable(),
+  /** Profile picture (public image, served at /files/:id), or null. */
+  avatarAssetId: z.string().uuid().nullable().default(null),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 
@@ -22,6 +24,8 @@ export const UpdateProfileSchema = z.object({
   bio: z.string().trim().max(3000).optional(),
   locale: LocaleSchema.optional(),
   learnerType: LearnerTypeSchema.optional(),
+  /** A READY image the user uploaded with purpose AVATAR; null removes the picture. */
+  avatarAssetId: z.string().uuid().nullable().optional(),
 });
 export type UpdateProfile = z.infer<typeof UpdateProfileSchema>;
 

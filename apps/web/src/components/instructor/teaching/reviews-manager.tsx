@@ -1,7 +1,7 @@
 'use client';
 
 import { InstructorReviewSchema, REVIEW_REPORT_REASONS, type InstructorReview } from '@obgyn/types';
-import { Button, Select, Textarea } from '@obgyn/ui';
+import { Button, Select, Textarea, toast } from '@obgyn/ui';
 import { Flag, Star } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -76,6 +76,7 @@ export function ReviewsManager() {
 
 function ReviewItem({ review, onChanged }: { review: InstructorReview; onChanged: () => void }) {
   const t = useTranslations('Teaching');
+  const tCommon = useTranslations('Common');
   const locale = useLocale();
   const [replying, setReplying] = useState(false);
   const [reply, setReply] = useState(review.reply ?? '');
@@ -89,6 +90,7 @@ function ReviewItem({ review, onChanged }: { review: InstructorReview; onChanged
       await fn();
       setReplying(false);
       setReporting(false);
+      toast.success(tCommon('toast.saved'));
       onChanged();
     } catch (e) {
       setError(e instanceof ApiClientError && e.messageText ? e.messageText : t('actionFailed'));

@@ -11,10 +11,15 @@ case "$(uname -s)-$(uname -m)" in
   Darwin-x86_64) ASSET=packager-osx-x64 ;;
   Linux-x86_64) ASSET=packager-linux-x64 ;;
   Linux-aarch64) ASSET=packager-linux-arm64 ;;
+  MINGW*-x86_64|MSYS*-x86_64|CYGWIN*-x86_64)
+    # Windows (Git Bash): prefer tools/install-media-tools.ps1, which also sets up ffmpeg.
+    ASSET=packager-win-x64.exe ;;
   *) echo "Unsupported platform; download Shaka Packager manually" >&2; exit 1 ;;
 esac
-curl -fsSL -o "$DIR/packager" "https://github.com/shaka-project/shaka-packager/releases/download/$VERSION/$ASSET"
-chmod +x "$DIR/packager"
-xattr -d com.apple.quarantine "$DIR/packager" 2>/dev/null || true
-"$DIR/packager" --version
-command -v ffmpeg >/dev/null || echo "ffmpeg missing: brew install ffmpeg (macOS) or apt-get install ffmpeg (Linux)"
+OUT="$DIR/packager"
+case "$ASSET" in *.exe) OUT="$DIR/packager.exe" ;; esac
+curl -fsSL -o "$OUT" "https://github.com/shaka-project/shaka-packager/releases/download/$VERSION/$ASSET"
+chmod +x "$OUT"
+xattr -d com.apple.quarantine "$OUT" 2>/dev/null || true
+"$OUT" --version
+command -v ffmpeg >/dev/null || [ -x "$DIR/ffmpeg.exe" ] || echo "ffmpeg missing: brew install ffmpeg (macOS), apt-get install ffmpeg (Linux), or run tools/install-media-tools.ps1 (Windows)"

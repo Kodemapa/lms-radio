@@ -1,8 +1,19 @@
 'use client';
 
 import { NotificationListSchema, type AppNotification } from '@obgyn/types';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@obgyn/ui';
-import { Bell, CheckCheck, Loader2 } from 'lucide-react';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@obgyn/ui';
+import { ArrowRight, Bell, CheckCheck, Loader2 } from 'lucide-react';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
@@ -13,7 +24,8 @@ const POLL_MS = 60_000;
 
 /**
  * Bell in the header: unread badge, latest notifications, mark one or all as
- * read. Opening a notification marks it read and goes to its page.
+ * read. Opening a notification marks it read and shows it in full (feedback,
+ * notes, course and lesson), with a button to its page.
  */
 export function NotificationBell() {
   const t = useTranslations('Notifications');
@@ -26,6 +38,8 @@ export function NotificationBell() {
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [busy, setBusy] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [selected, setSelected] = useState<AppNotification | null>(null);
+  const tCommon = useTranslations('Common');
   const loaded = useRef(false);
 
   const refreshCount = useCallback(async () => {
@@ -75,11 +89,14 @@ export function NotificationBell() {
       setUnread((count) => Math.max(0, count - 1));
     }
     setBusy(null);
-    if (item.link) {
-      // Close the menu so it doesn't stay open over the page it leads to.
-      setMenuOpen(false);
-      router.push(item.link);
-    }
+    // Close the menu and show the whole notification; its page is one click away.
+    setMenuOpen(false);
+    setSelected(item);
+  };
+
+  const go = (link: string) => {
+    setSelected(null);
+    router.push(link);
   };
 
   const markAll = async () => {
@@ -111,7 +128,24 @@ export function NotificationBell() {
     return { title: t(`kind.${item.kind}`, values), detail };
   };
 
+  /** Every detail the notification carries, labelled, for the full view. */
+  const details = (item: AppNotification) => {
+    const d = item.data;
+    const rows: { label: string; value: string; long?: boolean }[] = [];
+    if (d.courseTitle) rows.push({ label: t('detail.course'), value: d.courseTitle });
+    if (d.lessonTitle) rows.push({ label: t('detail.lesson'), value: d.lessonTitle });
+    if (d.outcome && ['APPROVED', 'RETURNED', 'VERIFIED'].includes(d.outcome)) {
+      rows.push({ label: t('detail.outcome'), value: t(`outcome.${d.outcome as 'APPROVED' | 'RETURNED' | 'VERIFIED'}`) });
+    }
+    if (d.fromName) rows.push({ label: t('detail.from'), value: d.fromName });
+    if (d.subject) rows.push({ label: t('detail.subject'), value: d.subject });
+    if (d.feedback) rows.push({ label: t('detail.feedback'), value: d.feedback, long: true });
+    if (d.note) rows.push({ label: t('detail.note'), value: d.note, long: true });
+    return rows;
+  };
+
   return (
+    <>
     <DropdownMenu
       open={menuOpen}
       onOpenChange={(isOpen) => {
@@ -204,5 +238,41 @@ export function NotificationBell() {
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+    <Dialog open={selected !== null} onOpenChange={(isOpen) => !isOpen && setSelected(null)}>
+      {selected ? (
+        <DialogContent closeLabel={tCommon('close')}>
+          <DialogHeader>
+            <DialogTitle>{describe(selected).title}</DialogTitle>
+            <DialogDescription>
+              {format.dateTime(new Date(selected.createdAt), { dateStyle: 'medium', timeStyle: 'short' })}
+            </DialogDescription>
+          </DialogHeader>
+          {details(selected).length > 0 ? (
+            <dl className="flex flex-col gap-3 text-sm">
+              {details(selected).map((row) => (
+                <div key={row.label} className="flex flex-col gap-1">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{row.label}</dt>
+                  <dd className={row.long ? 'whitespace-pre-line break-words rounded-xl bg-muted p-3 leading-relaxed' : 'font-medium'}>
+                    {row.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelected(null)}>
+              {tCommon('close')}
+            </Button>
+            {selected.link ? (
+              <Button onClick={() => go(selected.link!)}>
+                {t('detail.open')}
+                <ArrowRight aria-hidden className="size-4 rtl:rotate-180" />
+              </Button>
+            ) : null}
+          </DialogFooter>
+        </DialogContent>
+      ) : null}
+    </Dialog>
+    </>
   );
 }

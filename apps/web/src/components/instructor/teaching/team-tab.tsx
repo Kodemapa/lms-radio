@@ -1,7 +1,7 @@
 'use client';
 
 import { CollaboratorSchema, ownsCourse, type Collaborator, type CollaboratorRole, type CourseRole } from '@obgyn/types';
-import { Button, Input, Select } from '@obgyn/ui';
+import { Button, Input, Select, toast } from '@obgyn/ui';
 import { UserPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -17,6 +17,7 @@ import { ConfirmDialog } from '../confirm-dialog';
  */
 export function TeamTab({ courseId, myRole, myUserId }: { courseId: string; myRole: CourseRole; myUserId: string | null }) {
   const t = useTranslations('Teaching');
+  const tCommon = useTranslations('Common');
   const router = useRouter();
   const owner = ownsCourse(myRole);
   const [rows, setRows] = useState<Collaborator[] | null>(null);
@@ -43,6 +44,7 @@ export function TeamTab({ courseId, myRole, myUserId }: { courseId: string; myRo
       setRows(z.array(CollaboratorSchema).parse(await api('POST', `instructor/courses/${courseId}/collaborators`, { email, role })));
       setEmail('');
       setStatus({ kind: 'ok', message: t('invited') });
+      toast.success(t('invited'));
     } catch (e) {
       fail(e);
     }
@@ -51,6 +53,7 @@ export function TeamTab({ courseId, myRole, myUserId }: { courseId: string; myRo
   const changeRole = async (row: Collaborator, next: CollaboratorRole) => {
     try {
       setRows(z.array(CollaboratorSchema).parse(await api('PATCH', `instructor/courses/${courseId}/collaborators/${row.id}`, { role: next })));
+      toast.success(tCommon('toast.saved'));
     } catch (e) {
       fail(e);
     }
@@ -128,6 +131,7 @@ export function TeamTab({ courseId, myRole, myUserId }: { courseId: string; myRo
           try {
             await api('DELETE', `instructor/courses/${courseId}/collaborators/${removing.id}`);
             setRemoving(null);
+            toast.success(tCommon('toast.removed'));
             if (leaving) router.push('/instructor/courses');
             else await load();
           } catch (e) {

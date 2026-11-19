@@ -13,6 +13,7 @@ import {
   Select,
   Switch,
   Textarea,
+  toast,
 } from '@obgyn/ui';
 import { ArrowDown, ArrowUp, ClipboardList, FileText, HelpCircle, Info, ListChecks, Pencil, PlayCircle, Plus, ScanLine, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -56,14 +57,19 @@ export function CurriculumTab({
   const [caseFor, setCaseFor] = useState<InstructorLesson | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const run = async (fn: () => Promise<InstructorCourse>) => {
+  const run = async (fn: () => Promise<InstructorCourse>, success?: string) => {
     setError(null);
     try {
       onChange(await fn());
+      if (success) toast.success(success);
     } catch {
       setError(tCommon('genericError'));
+      toast.error(tCommon('genericError'));
     }
   };
+  const lessons = course.chapters.flatMap((chapter) => chapter.lessons);
+  // A course's first video is a free preview by default, so visitors can try the course.
+  const firstVideo = !lessons.some((lesson) => lesson.kind === 'VIDEO' || lesson.isPreview);
 
   return (
     <div className="flex flex-col gap-4">
@@ -124,7 +130,7 @@ export function CurriculumTab({
                         setConfirm({
                           title: t('deleteChapter'),
                           body: t('deleteChapterConfirm', { title: chapter.title }),
-                          run: () => run(() => courseApi('DELETE', `chapters/${chapter.id}`)),
+                          run: () => run(() => courseApi('DELETE', `chapters/${chapter.id}`), t('toast.chapterDeleted')),
                         })
                       }
                     >
@@ -218,7 +224,7 @@ export function CurriculumTab({
                                 setConfirm({
                                   title: t('deleteLesson'),
                                   body: t('deleteLessonConfirm', { title: lesson.title }),
-                                  run: () => run(() => courseApi('DELETE', `lessons/${lesson.id}`)),
+                                  run: () => run(() => courseApi('DELETE', `lessons/${lesson.id}`), t('toast.lessonDeleted')),
                                 })
                               }
                             >
@@ -256,10 +262,12 @@ export function CurriculumTab({
           edit={chapterEdit}
           onClose={() => setChapterEdit(null)}
           onSave={async (values) => {
-            await run(() =>
-              chapterEdit.mode === 'add'
-                ? courseApi('POST', `courses/${course.id}/chapters`, values)
-                : courseApi('PATCH', `chapters/${chapterEdit.chapter.id}`, values),
+            await run(
+              () =>
+                chapterEdit.mode === 'add'
+                  ? courseApi('POST', `courses/${course.id}/chapters`, values)
+                  : courseApi('PATCH', `chapters/${chapterEdit.chapter.id}`, values),
+              t(chapterEdit.mode === 'add' ? 'toast.chapterAdded' : 'toast.chapterSaved'),
             );
             setChapterEdit(null);
           }}
@@ -268,6 +276,7 @@ export function CurriculumTab({
       {lessonEdit ? (
         <LessonDialog
           edit={lessonEdit}
+          firstVideo={firstVideo}
           onClose={() => setLessonEdit(null)}
           onSave={async (values) => {
             const updated =
@@ -275,6 +284,7 @@ export function CurriculumTab({
                 ? await courseApi('POST', `chapters/${lessonEdit.chapterId}/lessons`, values)
                 : await courseApi('PATCH', `lessons/${lessonEdit.lesson.id}`, values);
             onChange(updated);
+            toast.success(t(lessonEdit.mode === 'add' ? 'toast.lessonAdded' : 'toast.lessonSaved'));
             setLessonEdit(null);
           }}
         />
@@ -411,10 +421,13 @@ interface LessonValues {
 
 function LessonDialog({
   edit,
+  firstVideo,
   onClose,
   onSave,
 }: {
   edit: LessonEdit;
+  /** The course has no video or preview lesson yet: a new video starts as a free preview. */
+  firstVideo: boolean;
   onClose: () => void;
   onSave: (values: LessonValues) => Promise<void>;
 }) {
@@ -425,7 +438,7 @@ function LessonDialog({
     title: existing?.title ?? '',
     description: existing?.description ?? null,
     kind: (['VIDEO', 'PDF', 'QUIZ', 'ASSIGNMENT', 'IMAGING'] as const).find((k) => k === existing?.kind) ?? 'VIDEO',
-    isPreview: existing?.isPreview ?? false,
+    isPreview: existing?.isPreview ?? firstVideo,
     mediaAssetId: existing?.mediaAssetId ?? null,
     skippable: existing?.skippable ?? false,
     passPercent: existing?.passPercent ?? 60,

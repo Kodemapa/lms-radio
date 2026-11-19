@@ -236,14 +236,19 @@ function LoginFormSteps({
 
   const device = () => ({ deviceId: getDeviceId(), deviceLabel: navigator.userAgent.slice(0, 100) });
 
-  async function continueAfterAuthentication() {
+  async function continueAfterAuthentication(session: Response) {
     setRedirecting(true);
     if (next) {
       router.replace(safeNextPath(next, `/${locale}/courses`));
     } else {
-      const res = await fetch('/api/proxy/users/me', { cache: 'no-store' });
-      const profile = res.ok ? UserProfileSchema.safeParse(await res.json()) : null;
-      const role = profile?.success ? profile.data.role : 'LEARNER';
+      // The sign-in response carries the role, so no extra profile request is needed.
+      const body = (await session.json().catch(() => null)) as { role?: unknown } | null;
+      let role = typeof body?.role === 'string' ? body.role : null;
+      if (!role) {
+        const res = await fetch('/api/proxy/users/me', { cache: 'no-store' });
+        const profile = res.ok ? UserProfileSchema.safeParse(await res.json()) : null;
+        role = profile?.success ? profile.data.role : 'LEARNER';
+      }
       router.replace(
         role === 'ADMIN' ? `/${locale}/admin` : role === 'FACULTY' ? `/${locale}/instructor` : `/${locale}/courses`,
       );
@@ -271,7 +276,7 @@ function LoginFormSteps({
     await run(async () => {
       const res = await post('/api/auth/login', { identifier, password, ...device() });
       if (!res.ok) return showFailure(res);
-      await continueAfterAuthentication();
+      await continueAfterAuthentication(res);
     });
   }
 
@@ -328,7 +333,7 @@ function LoginFormSteps({
     await run(async () => {
       const res = await post('/api/auth/otp/verify', { challengeId: step.challengeId, code, ...device() });
       if (!res.ok) return showFailure(res);
-      await continueAfterAuthentication();
+      await continueAfterAuthentication(res);
     });
   }
 
@@ -371,7 +376,7 @@ function LoginFormSteps({
         ...device(),
       });
       if (!res.ok) return showFailure(res);
-      await continueAfterAuthentication();
+      await continueAfterAuthentication(res);
     });
   }
 

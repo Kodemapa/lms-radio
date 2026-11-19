@@ -65,6 +65,25 @@ describe('UploadsService.create (learners)', () => {
   });
 });
 
+describe('UploadsService.create (profile pictures)', () => {
+  const learner: AuthUser = { ...user, role: 'LEARNER' };
+  const avatar = { kind: 'IMAGE' as const, mimeType: 'image/png', sizeBytes: 1000, fileName: 'me.png', deidentified: false, purpose: 'AVATAR' as const };
+
+  it('stores profile pictures as public images without the clinical attestation', async () => {
+    const { service, prisma } = setup();
+    await service.create(learner, avatar);
+    expect(prisma.mediaAsset.create.mock.calls[0][0].data).toMatchObject({ kind: 'IMAGE', isPublic: true });
+  });
+
+  it('refuses profile pictures that are not small images', async () => {
+    const { service } = setup();
+    await expect(service.create(learner, { ...avatar, sizeBytes: 3 * 1024 * 1024 })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.create(learner, { ...avatar, kind: 'PDF', mimeType: 'application/pdf', fileName: 'a.pdf' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+});
+
 describe('UploadsService.create', () => {
   it('creates a pending asset under the uploader’s folder', async () => {
     const { service, prisma } = setup();

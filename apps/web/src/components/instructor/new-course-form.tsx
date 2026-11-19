@@ -1,7 +1,7 @@
 'use client';
 
 import { CreateCourseSchema } from '@obgyn/types';
-import { Button, Input, Label } from '@obgyn/ui';
+import { Button, Input, Label, toast } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from '@/i18n/navigation';
@@ -23,6 +23,7 @@ export function NewCourseForm() {
     setError(null);
     try {
       const course = await courseApi('POST', 'courses', parsed.data);
+      toast.success(tCommon('toast.courseCreated'));
       router.push(`/instructor/courses/${course.id}`);
     } catch {
       setError(tCommon('genericError'));

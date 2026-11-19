@@ -9,7 +9,7 @@ import {
   type ChangePassword,
   type OtpChannel,
 } from '@obgyn/types';
-import { Button, Input, Label } from '@obgyn/ui';
+import { Button, Input, Label, toast } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { useState, type FormEvent } from 'react';
 import { RequiredLabel } from '@/components/admin/required-label';
@@ -132,6 +132,7 @@ export function PasswordChangeForm() {
       setChallengeId(null);
       setCode('');
       setStatus('saved');
+      toast.success(tCommon('toast.passwordChanged'));
     } catch {
       setError(tCommon('genericError'));
     } finally {

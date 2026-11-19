@@ -245,6 +245,9 @@ export const UPLOAD_LIMITS: Record<UploadKind, { maxBytes: number; mimeTypes: re
   DICOM: { maxBytes: 200 * 1024 * 1024, mimeTypes: ['application/dicom', 'image/png', 'image/jpeg'] },
 };
 
+/** Profile pictures are small images. */
+export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+
 export const CreateUploadSchema = z.object({
   kind: UploadKindSchema,
   mimeType: z.string(),
@@ -255,6 +258,8 @@ export const CreateUploadSchema = z.object({
    * (CLAUDE.md rule 6). Required for VIDEO and PDF.
    */
   deidentified: z.boolean(),
+  /** AVATAR: a profile picture (IMAGE, at most AVATAR_MAX_BYTES, public, no clinical content). */
+  purpose: z.enum(['AVATAR']).optional(),
 });
 export type CreateUpload = z.infer<typeof CreateUploadSchema>;
 
@@ -308,6 +313,8 @@ export const PublicInstructorSchema = z.object({
   displayName: z.string(),
   headline: z.string().nullable(),
   bio: z.string().nullable(),
+  /** Profile picture (public image), or null. */
+  avatarAssetId: z.string().uuid().nullable().default(null),
   courseCount: z.number().int(),
   studentCount: z.number().int(),
 });

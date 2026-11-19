@@ -3,6 +3,7 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Bricolage_Grotesque, Geist, Noto_Sans_Devanagari } from 'next/font/google';
 import { notFound } from 'next/navigation';
+import { Toaster } from '@obgyn/ui';
 import { Suspense, type ReactNode } from 'react';
 import { ChunkReloadScript } from '@/components/layout/chunk-reload';
 import { NavigationLoader } from '@/components/layout/navigation-progress';
@@ -88,6 +89,8 @@ export default async function LocaleLayout({ children, params }: Props) {
             <NavigationLoader />
           </Suspense>
           {children}
+          {/* Action confirmations ("Saved", "Deleted") from any page. */}
+          <Toaster closeLabel={t('close')} />
         </NextIntlClientProvider>
       </body>
     </html>

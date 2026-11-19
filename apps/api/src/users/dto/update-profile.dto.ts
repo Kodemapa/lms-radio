@@ -1,5 +1,5 @@
 import { LEARNER_TYPES, SUPPORTED_LOCALES, type LearnerType } from '@obgyn/types';
-import { IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID, MaxLength, MinLength, ValidateIf } from 'class-validator';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -25,4 +25,9 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsIn(LEARNER_TYPES)
   learnerType?: LearnerType;
+
+  /** Profile picture asset (uploaded with purpose AVATAR); null removes it. */
+  @ValidateIf((_, value) => value !== null && value !== undefined)
+  @IsUUID()
+  avatarAssetId?: string | null;
 }

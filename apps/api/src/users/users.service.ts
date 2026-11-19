@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { type Device, type UserProfile } from '@obgyn/types';
 import { AuditService } from '../audit/audit.service';
@@ -15,6 +15,7 @@ const PROFILE_SELECT = {
   locale: true,
   phone: true,
   email: true,
+  avatarAssetId: true,
 } as const;
 
 @Injectable()
@@ -30,7 +31,8 @@ export class UsersService {
     return user;
   }
 
-  updateProfile(userId: string, dto: UpdateProfileDto): Promise<UserProfile> {
+  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<UserProfile> {
+    if (dto.avatarAssetId) await this.assertAvatar(userId, dto.avatarAssetId);
     return this.prisma.user.update({
       where: { id: userId },
       data: {
@@ -41,6 +43,17 @@ export class UsersService {
       },
       select: PROFILE_SELECT,
     });
+  }
+
+  /** A profile picture must be the user's own finished, public image upload. */
+  private async assertAvatar(userId: string, assetId: string): Promise<void> {
+    const asset = await this.prisma.mediaAsset.findUnique({
+      where: { id: assetId },
+      select: { ownerId: true, kind: true, status: true, isPublic: true },
+    });
+    if (!asset || asset.ownerId !== userId || asset.kind !== 'IMAGE' || asset.status !== 'READY' || !asset.isPublic) {
+      throw new BadRequestException({ code: 'INVALID_AVATAR', message: 'Upload a profile picture first' });
+    }
   }
 
   async listDevices(user: AuthUser): Promise<Device[]> {
@@ -112,6 +125,7 @@ export class UsersService {
           headline: null,
           bio: null,
           learnerType: null,
+          avatarAssetId: null,
           role: 'LEARNER',
           passwordHash: null,
           passwordChangedAt: null,

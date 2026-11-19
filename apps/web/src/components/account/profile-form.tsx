@@ -1,11 +1,13 @@
 'use client';
 
 import { LEARNER_TYPES, type UserProfile } from '@obgyn/types';
-import { Button, Input, Label, Select, Textarea } from '@obgyn/ui';
+import { Button, Input, Label, Select, Textarea, toast } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { api } from '@/lib/instructor-api';
+import { UserId } from '@/components/account/user-id';
+import { AvatarUpload } from '@/components/account/avatar-upload';
 
 export function ProfileForm({ me, bio }: { me: UserProfile; bio: string | null }) {
   const t = useTranslations('Account');
@@ -33,15 +35,21 @@ export function ProfileForm({ me, bio }: { me: UserProfile; bio: string | null }
         ...(isInstructor ? { headline: form.headline.trim(), bio: form.bio.trim() } : {}),
       });
       setStatus('saved');
+      toast.success(tCommon('toast.profileSaved'));
       router.refresh();
     } catch {
       setStatus('error');
+      toast.error(tCommon('genericError'));
     }
   }
 
   return (
     <form onSubmit={save} className="flex max-w-2xl flex-col gap-5 surface p-6">
-      <p className="text-sm text-muted-foreground">{t('signedInWith', { contact: me.email ?? me.phone ?? '' })}</p>
+      <AvatarUpload name={me.displayName} assetId={me.avatarAssetId} />
+      <div className="flex flex-col gap-1 border-t border-border pt-4">
+        <p className="text-sm text-muted-foreground">{t('signedInWith', { contact: me.email ?? me.phone ?? '' })}</p>
+        <UserId id={me.id} />
+      </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="displayName">{t('displayName')}</Label>
         <Input id="displayName" value={form.displayName} maxLength={100} required aria-describedby="displayName-hint" onChange={(e) => setForm({ ...form, displayName: e.target.value })} />

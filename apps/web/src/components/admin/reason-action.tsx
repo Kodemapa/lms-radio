@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   Textarea,
+  toast,
 } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useId, useState } from 'react';
@@ -24,6 +25,7 @@ export function ReasonAction({
   description,
   destructive = false,
   errorMessages = {},
+  successMessage,
 }: {
   path: string;
   label: string;
@@ -32,6 +34,8 @@ export function ReasonAction({
   destructive?: boolean;
   /** API error code → message. */
   errorMessages?: Record<string, string>;
+  /** Toast shown when the action succeeds; defaults to a generic "Done". */
+  successMessage?: string;
 }) {
   const t = useTranslations('Admin');
   const tCommon = useTranslations('Common');
@@ -50,6 +54,7 @@ export function ReasonAction({
     try {
       await api('POST', path, { reason: reason.trim() });
       setOpen(false);
+      toast.success(successMessage ?? tCommon('toast.done'));
       router.refresh();
     } catch (requestError) {
       const code = requestError instanceof ApiClientError ? requestError.body?.code : undefined;

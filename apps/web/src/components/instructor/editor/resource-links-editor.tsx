@@ -5,6 +5,7 @@ import { Button, Input } from '@obgyn/ui';
 import { ExternalLink, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { newId } from '@/components/imaging/imaging-workspace';
+import { useConfirmDelete } from '../confirm-dialog';
 
 /** Suggestions for obstetric calculators; instructors can add any https link. */
 const SUGGESTIONS: { title: string; url: string }[] = [
@@ -32,7 +33,9 @@ export function ResourceLinksEditor({
     onChange([...value, { id: newId('c'), title: link?.title ?? '', url: link?.url ?? 'https://', note: null, embed: true }]);
   const unused = SUGGESTIONS.filter((s) => !value.some((link) => link.url === s.url));
 
+  const { confirmDelete, dialog: deleteDialog } = useConfirmDelete();
   return (
+    <>
     <div className="flex flex-col gap-3">
       {value.map((link, index) => (
         <fieldset key={link.id} className="flex flex-col gap-2 rounded-xl border border-border p-3">
@@ -44,7 +47,7 @@ export function ResourceLinksEditor({
               <a href={link.url} target="_blank" rel="noopener noreferrer" aria-label={t('test', { title: link.title || link.url })} className="rounded p-2 text-muted-foreground hover:text-primary">
                 <ExternalLink aria-hidden className="size-4" />
               </a>
-              <button type="button" aria-label={t('remove', { title: link.title || link.url })} disabled={disabled} onClick={() => onChange(value.filter((_, i) => i !== index))} className="rounded p-2 text-muted-foreground hover:text-destructive">
+              <button type="button" aria-label={t('remove', { title: link.title || link.url })} disabled={disabled} onClick={() => confirmDelete(() => onChange(value.filter((_, i) => i !== index)), link.title || link.url)} className="rounded p-2 text-muted-foreground hover:text-destructive">
                 <Trash2 aria-hidden className="size-4" />
               </button>
             </span>
@@ -68,5 +71,7 @@ export function ResourceLinksEditor({
         ))}
       </div>
     </div>
+      {deleteDialog}
+    </>
   );
 }

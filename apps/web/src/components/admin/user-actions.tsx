@@ -11,6 +11,7 @@ import {
   DialogTitle,
   Select,
   Textarea,
+  toast,
 } from '@obgyn/ui';
 import { Eye, Pencil, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -87,6 +88,7 @@ export function AdminUserActions({
         await api('POST', `admin/users/${userId}/${open.choice}`, body);
       }
       const deleted = open.kind === 'delete';
+      toast.success(t(`toast.${deleted ? 'deleted' : open.choice}`));
       setOpen(null);
       if (deleted && afterDelete === 'list') router.push('/admin/users');
       else if (onChanged) onChanged();

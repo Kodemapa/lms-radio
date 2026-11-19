@@ -1,7 +1,7 @@
 'use client';
 
 import { EntranceSettingsSchema, type EntranceSettings } from '@obgyn/types';
-import { Button, Input, Label, Select, Switch } from '@obgyn/ui';
+import { Button, Input, Label, Select, Switch, toast } from '@obgyn/ui';
 import { AlertTriangle, Info } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -42,8 +42,10 @@ export function EntranceTab({ courseId, locked }: { courseId: string; locked: bo
     try {
       await api('PUT', `instructor/courses/${courseId}/entrance`, parsed.data);
       setStatus('saved');
+      toast.success(tCommon('toast.saved'));
     } catch (e) {
       setStatus('error');
+      toast.error(tCommon('genericError'));
       setError(e instanceof ApiClientError && e.body?.code === 'EMPTY_POOL' ? t('emptyPool') : tCommon('genericError'));
     }
   };

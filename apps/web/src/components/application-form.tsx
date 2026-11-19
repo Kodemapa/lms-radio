@@ -11,6 +11,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { bffFetch } from '@/lib/client-fetch';
+import { RequiredLabel } from '@/components/admin/required-label';
+
+/** Built-in fields every application must fill in (see InstructorApplicationInputSchema). */
+const REQUIRED = new Set(['headline', 'qualifications', 'experienceYears', 'bio']);
 
 export function ApplicationForm({
   initial,
@@ -72,7 +76,7 @@ export function ApplicationForm({
 
   const field = (key: keyof typeof values, label: string, input: React.ReactNode, hint?: string) => (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={`app-${key}`}>{label}</Label>
+      {REQUIRED.has(key) ? <RequiredLabel htmlFor={`app-${key}`}>{label}</RequiredLabel> : <Label htmlFor={`app-${key}`}>{label}</Label>}
       {input}
       {hint ? <p id={`app-${key}-hint`} className="text-xs text-muted-foreground">{hint}</p> : null}
       {errors[key] ? (
@@ -88,9 +92,13 @@ export function ApplicationForm({
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-5 surface p-6">
+      <p className="text-sm text-muted-foreground">
+        <span aria-hidden="true" className="me-1 text-destructive">*</span>
+        {t('requiredNote')}
+      </p>
       {field('headline', t('headline'), <Input {...aria('headline')} value={values.headline} onChange={set('headline')} placeholder={t('headlinePlaceholder')} required />)}
       {field('qualifications', t('qualifications'), <Input {...aria('qualifications')} value={values.qualifications} onChange={set('qualifications')} placeholder={t('qualificationsPlaceholder')} required />)}
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2 sm:items-end">
         {field('experienceYears', t('experienceYears'), <Input {...aria('experienceYears')} type="number" min={0} max={60} inputMode="numeric" value={values.experienceYears} onChange={set('experienceYears')} required />)}
         {field('registrationNumber', t('registrationNumber'), <Input {...aria('registrationNumber')} value={values.registrationNumber} onChange={set('registrationNumber')} />)}
       </div>
@@ -128,7 +136,7 @@ export function ApplicationForm({
           <div key={applicationField.id} className="flex flex-col gap-2">
             <Label htmlFor={id}>
               {label}
-              {applicationField.required ? <span aria-hidden="true"> *</span> : null}
+              {applicationField.required ? <span aria-hidden="true" className="ms-1 text-destructive">*</span> : null}
             </Label>
             {applicationField.type === 'LONG_TEXT' ? (
               <Textarea

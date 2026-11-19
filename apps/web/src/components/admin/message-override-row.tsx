@@ -1,7 +1,7 @@
 'use client';
 
 import { isSafeOverride, type ContentLocale } from '@obgyn/types';
-import { Button, Label, Textarea } from '@obgyn/ui';
+import { Button, Label, Textarea, toast } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -43,7 +43,7 @@ export function MessageOverrideRow({
     try {
       await api('PUT', 'admin/content/messages', { locale, key: messageKey, value: next });
       if (next === null) setValue(shipped);
-      setStatus(next === null ? t('restored') : t('saved'));
+      toast.success(next === null ? t('restored') : t('saved'));
       router.refresh();
     } catch (requestError) {
       const code = requestError instanceof ApiClientError ? requestError.body?.code : undefined;

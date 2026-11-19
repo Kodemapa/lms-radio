@@ -1,5 +1,6 @@
 import { Injectable, Logger, type OnApplicationBootstrap } from '@nestjs/common';
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -9,11 +10,13 @@ import { AppConfigService } from '../config/app-config.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { DrmService } from './drm.service';
-import { ffmpegArgs, packageContentType, packagerArgs } from './packaging';
+import { ffmpegArgs, ffprobeFor, packageContentType, packagerArgs, resolveTool, toolErrorMessage } from './packaging';
 
 const run = promisify(execFile);
 const TWO_HOURS = 2 * 60 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
+/** tools/bin at the repo root, where tools/install-media-tools installs ffmpeg and Shaka Packager. */
+const TOOLS_DIR = path.resolve(__dirname, '..', '..', '..', '..', 'tools', 'bin');
 
 /**
  * Encrypts uploaded videos: ffmpeg → H.264/AAC MP4, Shaka Packager → CENC
@@ -35,6 +38,16 @@ export class DrmPackagerService implements OnApplicationBootstrap {
     private readonly config: AppConfigService,
   ) {}
 
+  /** ffmpeg and Shaka Packager, from the environment or tools/bin. */
+  private get tools(): { ffmpeg: string; ffprobe: string; packager: string } {
+    const ffmpeg = resolveTool(this.config.get('FFMPEG_PATH'), 'ffmpeg', TOOLS_DIR, existsSync);
+    return {
+      ffmpeg,
+      ffprobe: ffprobeFor(ffmpeg),
+      packager: resolveTool(this.config.get('SHAKA_PACKAGER_PATH'), 'packager', TOOLS_DIR, existsSync),
+    };
+  }
+
   get autoPackage(): boolean {
     return this.drm.enabled && this.config.get('DRM_AUTO_PACKAGE');
   }
@@ -42,11 +55,24 @@ export class DrmPackagerService implements OnApplicationBootstrap {
   /** Resume jobs interrupted by a restart. */
   async onApplicationBootstrap(): Promise<void> {
     if (!this.drm.enabled || this.config.get('NODE_ENV') === 'test') return;
+    void this.checkTools();
     const stale = await this.prisma.drmPackage.findMany({
       where: { status: { in: ['QUEUED', 'PACKAGING'] }, attempts: { lt: MAX_ATTEMPTS } },
       select: { assetId: true },
     });
     for (const { assetId } of stale) void this.enqueue(assetId);
+  }
+
+  /** Logs, at startup, whether the encryption tools can run, so a missing tool is noticed before an upload fails. */
+  private async checkTools(): Promise<void> {
+    const { ffmpeg, packager } = this.tools;
+    for (const [tool, file, args] of [['ffmpeg', ffmpeg, ['-version']], ['Shaka Packager', packager, ['--version']]] as const) {
+      try {
+        await run(file, [...args], { timeout: 15_000 });
+      } catch (error) {
+        this.logger.warn(`Video encryption is unavailable: ${toolErrorMessage(error, tool)}`);
+      }
+    }
   }
 
   /** Queue a video for packaging. Resolves when the job is queued, not when it finishes. */
@@ -75,16 +101,22 @@ export class DrmPackagerService implements OnApplicationBootstrap {
     });
     const work = await mkdtemp(path.join(tmpdir(), 'elms-drm-'));
     const started = Date.now();
+    // Which tool was running, so a failure says what to fix.
+    let step = 'download';
     try {
       const source = path.join(work, `source${path.extname(asset.storageKey) || '.bin'}`);
       const mezzanine = path.join(work, 'mezzanine.mp4');
       const out = path.join(work, 'out');
       await this.storage.downloadTo(asset.storageKey, source);
-      await run(this.config.get('FFMPEG_PATH'), ffmpegArgs(source, mezzanine), { timeout: TWO_HOURS });
+      const tools = this.tools;
+      step = 'ffmpeg';
+      await run(tools.ffmpeg, ffmpegArgs(source, mezzanine), { timeout: TWO_HOURS });
+      step = 'ffprobe';
       const hasAudio = await this.hasAudio(mezzanine);
       const { keyId, key } = this.drm.contentKey(pkg);
+      step = 'Shaka Packager';
       await run(
-        this.config.get('SHAKA_PACKAGER_PATH'),
+        tools.packager,
         packagerArgs({ input: mezzanine, outDir: out, hasAudio, keyId, key, scheme: pkg.scheme as 'cbcs' | 'cenc' }),
         { timeout: TWO_HOURS, maxBuffer: 64 * 1024 * 1024 },
       );
@@ -107,7 +139,7 @@ export class DrmPackagerService implements OnApplicationBootstrap {
       });
       this.logger.log(`Packaged ${assetId} (${pkg.scheme}) in ${Math.round((Date.now() - started) / 1000)} s`);
     } catch (error) {
-      const message = error instanceof Error ? error.message.slice(0, 500) : 'unknown error';
+      const message = toolErrorMessage(error, step);
       await this.prisma.drmPackage.update({ where: { assetId }, data: { status: 'FAILED', error: message } });
       throw error;
     } finally {
@@ -116,9 +148,7 @@ export class DrmPackagerService implements OnApplicationBootstrap {
   }
 
   private async hasAudio(file: string): Promise<boolean> {
-    const ffmpeg = this.config.get('FFMPEG_PATH');
-    const ffprobe = ffmpeg.includes('/') ? path.join(path.dirname(ffmpeg), 'ffprobe') : 'ffprobe';
-    const { stdout } = await run(ffprobe, [
+    const { stdout } = await run(this.tools.ffprobe, [
       '-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', file,
     ]);
     return stdout.trim().length > 0;

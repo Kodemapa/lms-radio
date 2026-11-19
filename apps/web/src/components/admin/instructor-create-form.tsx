@@ -11,6 +11,7 @@ import {
   DialogTitle,
   Input,
   Label,
+  toast,
 } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { useState, type FormEvent } from 'react';
@@ -29,7 +30,6 @@ export function InstructorCreateForm() {
   const [error, setError] = useState<string | null>(null);
   /** Problems shown under the email or mobile field. */
   const [fieldError, setFieldError] = useState<{ email?: string; phone?: string }>({});
-  const [status, setStatus] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   const close = () => {
@@ -63,7 +63,7 @@ export function InstructorCreateForm() {
     setFieldError({});
     try {
       await api('POST', 'admin/users/instructors', parsed.data satisfies AdminCreateInstructor);
-      setStatus(t('instructorCreated'));
+      toast.success(t('instructorCreated'));
       close();
     } catch (requestError) {
       const code = requestError instanceof ApiClientError ? requestError.body?.code : undefined;
@@ -77,8 +77,7 @@ export function InstructorCreateForm() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p role="status" aria-live="polite" className="text-sm text-muted-foreground">{status}</p>
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <Button onClick={() => { setError(null); setOpen(true); }}>{t('addInstructor')}</Button>
       </div>
       <Dialog

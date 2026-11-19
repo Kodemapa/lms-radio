@@ -1,13 +1,14 @@
 'use client';
 
 import { CertificateTemplateSchema, type CertificateTemplate } from '@obgyn/types';
-import { Button, Input, Label, Textarea } from '@obgyn/ui';
+import { Button, Input, Label, Textarea, toast } from '@obgyn/ui';
 import { Plus, Trash2 } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/instructor-api';
 import { CertificateView } from '../../certificate/certificate-view';
 import { FileUpload } from './file-upload';
+import { useConfirmDelete } from '../confirm-dialog';
 
 /** Certificate designer with a live preview of exactly what learners receive. */
 export function CertificateTab({ courseId, courseTitle, enabled }: { courseId: string; courseTitle: string; enabled: boolean }) {
@@ -15,6 +16,7 @@ export function CertificateTab({ courseId, courseTitle, enabled }: { courseId: s
   const tEditor = useTranslations('Instructor.editor');
   const tCert = useTranslations('Certificate');
   const tCommon = useTranslations('Common');
+  const { confirmDelete, dialog: deleteDialog } = useConfirmDelete();
   const format = useFormatter();
   const [template, setTemplate] = useState<CertificateTemplate | null>(null);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -42,8 +44,10 @@ export function CertificateTab({ courseId, courseTitle, enabled }: { courseId: s
     try {
       setTemplate(CertificateTemplateSchema.parse(await api('PUT', `instructor/courses/${courseId}/certificate-template`, parsed.data)));
       setStatus('saved');
+      toast.success(tCommon('toast.saved'));
     } catch (e) {
       setStatus('error');
+      toast.error(tCommon('genericError'));
       setError((e as { messageText?: string }).messageText ?? tCommon('genericError'));
     }
   };
@@ -61,6 +65,7 @@ export function CertificateTab({ courseId, courseTitle, enabled }: { courseId: s
   );
 
   return (
+    <>
     <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
       <div className="flex flex-col gap-5 surface p-5">
         <p className="text-sm text-muted-foreground">{t('intro')}</p>
@@ -87,7 +92,7 @@ export function CertificateTab({ courseId, courseTitle, enabled }: { courseId: s
             <div key={i} className="flex flex-col gap-2 rounded-xl border border-border p-3">
               <div className="flex items-center gap-2">
                 <Input aria-label={t('signatoryName')} placeholder={t('signatoryName')} value={s.name} maxLength={80} onChange={(e) => setSignatory(i, { name: e.target.value })} />
-                <button type="button" aria-label={tCommon('remove')} className="rounded p-2 text-muted-foreground hover:text-destructive" onClick={() => set({ signatories: template.signatories.filter((_, j) => j !== i) })}>
+                <button type="button" aria-label={tCommon('remove')} className="rounded p-2 text-muted-foreground hover:text-destructive" onClick={() => confirmDelete(() => set({ signatories: template.signatories.filter((_, j) => j !== i) }), s.name)}>
                   <Trash2 aria-hidden className="size-4" />
                 </button>
               </div>
@@ -126,5 +131,7 @@ export function CertificateTab({ courseId, courseTitle, enabled }: { courseId: s
         </div>
       </section>
     </div>
+      {deleteDialog}
+    </>
   );
 }

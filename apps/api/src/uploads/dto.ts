@@ -20,6 +20,11 @@ export class CreateUploadDto {
   /** Uploader confirms there's no patient-identifying information in the file. */
   @IsBoolean()
   deidentified: boolean;
+
+  /** AVATAR: the uploader's own profile picture (small public image). */
+  @IsOptional()
+  @IsIn(['AVATAR'])
+  purpose?: 'AVATAR';
 }
 
 export class CompleteUploadDto {

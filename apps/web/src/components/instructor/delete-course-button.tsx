@@ -29,6 +29,7 @@ export function DeleteCourseButton({ id, title }: { id: string; title: string })
         title={t('deleteConfirmTitle')}
         body={t('deleteConfirmBody', { title })}
         confirmLabel={t('deleteCourse')}
+        successMessage={tCommon('toast.courseDeleted')}
         onConfirm={async () => {
           await api('DELETE', `instructor/courses/${id}`);
           router.refresh();

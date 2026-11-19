@@ -9,6 +9,7 @@ import {
   DialogTitle,
   Label,
   Textarea,
+  toast,
 } from '@obgyn/ui';
 import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -46,6 +47,7 @@ export function ReviewActions({
     try {
       await api('POST', path, body);
       setOpen(false);
+      toast.success(which === 'approve' ? tCommon('toast.approved') : tCommon('toast.sentBack'));
       router.refresh();
     } catch {
       setError(true);

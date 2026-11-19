@@ -8,11 +8,12 @@ import {
   type AnnotationTerm,
   type AnnotationTool,
 } from '@obgyn/types';
-import { Button, Input } from '@obgyn/ui';
+import { Button, Input, toast } from '@obgyn/ui';
 import { Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { api, ApiClientError } from '@/lib/instructor-api';
+import { useConfirmDelete } from '../confirm-dialog';
 
 /**
  * Common fetal-imaging landmark abbreviations, offered as an editable starting
@@ -69,6 +70,8 @@ export function DictionaryEditor({
   onSaved?: (terms: AnnotationTerm[]) => void;
 }) {
   const t = useTranslations('Imaging');
+  const tCommon = useTranslations('Common');
+  const { confirmDelete, dialog: deleteDialog } = useConfirmDelete();
   const [terms, setTerms] = useState<AnnotationTerm[] | null>(null);
   const [status, setStatus] = useState<{ kind: 'saving' | 'saved' } | { kind: 'error'; message: string } | null>(null);
 
@@ -96,6 +99,7 @@ export function DictionaryEditor({
       setTerms(saved);
       onSaved?.(saved);
       setStatus({ kind: 'saved' });
+      toast.success(tCommon('toast.saved'));
     } catch (error) {
       setStatus({ kind: 'error', message: error instanceof ApiClientError && error.messageText ? error.messageText : t('saveFailed') });
     }
@@ -103,6 +107,7 @@ export function DictionaryEditor({
 
   const disabled = locked || status?.kind === 'saving';
   return (
+    <>
     <div className="flex flex-col gap-3">
       <p className="text-sm text-muted-foreground">{t('dictionaryEditorHint')}</p>
       <div className="flex flex-wrap gap-2">
@@ -166,7 +171,7 @@ export function DictionaryEditor({
                     <Input aria-label="LOINC" value={term.loinc ?? ''} placeholder={t('optional')} disabled={disabled} className="h-8 font-mono" onChange={(e) => set(index, { loinc: e.target.value || null })} />
                   </td>
                   <td className="px-2 py-1.5">
-                    <button type="button" aria-label={t('remove')} disabled={disabled} onClick={() => setTerms((current) => current!.filter((_, i) => i !== index))} className="rounded p-1 text-muted-foreground hover:text-destructive">
+                    <button type="button" aria-label={t('remove')} disabled={disabled} onClick={() => confirmDelete(() => setTerms((current) => current!.filter((_, i) => i !== index)), term.name || term.abbr)} className="rounded p-1 text-muted-foreground hover:text-destructive">
                       <Trash2 aria-hidden className="size-4" />
                     </button>
                   </td>
@@ -186,5 +191,7 @@ export function DictionaryEditor({
         {status?.kind === 'error' ? <span role="alert" className="text-sm text-destructive">{status.message}</span> : null}
       </div>
     </div>
+      {deleteDialog}
+    </>
   );
 }

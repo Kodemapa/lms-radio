@@ -1,7 +1,7 @@
 'use client';
 
 import { type ContactMessage } from '@obgyn/types';
-import { Button } from '@obgyn/ui';
+import { Button, toast } from '@obgyn/ui';
 import { CheckCircle2, Mail, RotateCcw, Trash2 } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -17,7 +17,6 @@ export function ContactInbox({ initial }: { initial: ContactMessage[] }) {
   const [deleting, setDeleting] = useState<ContactMessage | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
 
   const setMessageStatus = async (message: ContactMessage, next: ContactMessage['status']) => {
     setBusy(message.id);
@@ -25,7 +24,7 @@ export function ContactInbox({ initial }: { initial: ContactMessage[] }) {
     try {
       const updated = await api<ContactMessage>('PATCH', `admin/content/contact/${message.id}`, { status: next });
       setMessages((list) => list.map((item) => (item.id === message.id ? updated : item)));
-      setStatus(next === 'HANDLED' ? t('markedHandled') : t('reopened'));
+      toast.success(next === 'HANDLED' ? t('markedHandled') : t('reopened'));
     } catch {
       setError(t('errors.failed'));
     } finally {
@@ -45,7 +44,6 @@ export function ContactInbox({ initial }: { initial: ContactMessage[] }) {
 
   return (
     <div className="flex flex-col gap-3">
-      {status ? <p role="status" aria-live="polite" className="text-sm">{status}</p> : null}
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
       {messages.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted-foreground">{t('empty')}</p>
@@ -111,7 +109,7 @@ export function ContactInbox({ initial }: { initial: ContactMessage[] }) {
           try {
             await api('DELETE', `admin/content/contact/${deleting.id}`);
             setMessages((list) => list.filter((item) => item.id !== deleting.id));
-            setStatus(t('deleted'));
+            toast.success(t('deleted'));
             setDeleting(null);
           } catch {
             setError(t('errors.failed'));

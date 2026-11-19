@@ -1,7 +1,7 @@
 'use client';
 
 import { InstructorCourseSchema, TrashItemSchema, TRASH_RETENTION_DAYS, type InstructorCourse, type TrashItem } from '@obgyn/types';
-import { Button } from '@obgyn/ui';
+import { Button, toast } from '@obgyn/ui';
 import { RotateCcw, Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -12,6 +12,7 @@ import { ConfirmDialog } from '../confirm-dialog';
 /** Deleted chapters and lessons: restore them, or delete them for good. Purged after 30 days. */
 export function TrashTab({ courseId, locked, onChange }: { courseId: string; locked: boolean; onChange: (course: InstructorCourse) => void }) {
   const t = useTranslations('Teaching');
+  const tCommon = useTranslations('Common');
   const locale = useLocale();
   const [items, setItems] = useState<TrashItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +32,7 @@ export function TrashTab({ courseId, locked, onChange }: { courseId: string; loc
     setError(null);
     try {
       onChange(InstructorCourseSchema.parse(await api('POST', `instructor/trash/${kind(item)}/${item.id}/restore`)));
+      toast.success(tCommon('toast.restored'));
       await load();
     } catch (e) {
       setError(e instanceof ApiClientError && e.messageText ? e.messageText : t('actionFailed'));
@@ -80,6 +82,7 @@ export function TrashTab({ courseId, locked, onChange }: { courseId: string; loc
           try {
             await api('DELETE', `instructor/trash/${kind(purging)}/${purging.id}`);
             setPurging(null);
+            toast.success(tCommon('toast.deletedForever'));
             await load();
           } catch (e) {
             setError(e instanceof ApiClientError && e.messageText ? e.messageText : t('actionFailed'));

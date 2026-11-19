@@ -154,7 +154,7 @@ const ATTEMPT_INCLUDE = {
 const ATTEMPT_HEADER = ['Learner', 'Course', 'Lesson', 'Score %', 'Passed', 'Submitted (UTC)'];
 
 const HEADERS: Record<AdminExport, string[]> = {
-  courses: ['Title', 'Slug', 'Status', 'Category', 'Instructor', 'Language', 'Level', 'Price (INR)', 'Enrolments', 'Certificates', 'Published', 'Created'],
+  courses: ['Title', 'Slug', 'Status', 'Category', 'Instructor', 'Language', 'Level', 'Price (INR)', 'Enrollments', 'Certificates', 'Published', 'Created'],
   enrolments: ['Learner', 'Email', 'Phone', 'Learner type', 'Course', 'Enrolled', 'Certificate issued'],
   instructors: ['Name', 'Email', 'Phone', 'Headline', 'Courses', 'Published courses', 'Students', 'Status', 'Joined'],
   'quiz-attempts': ATTEMPT_HEADER,

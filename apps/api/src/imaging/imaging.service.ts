@@ -379,7 +379,7 @@ export class ImagingService {
         lessonId: true,
         userId: true,
         user: { select: { email: true, displayName: true } },
-        lesson: { select: { title: true, course: { select: { id: true, instructorId: true, slug: true } } } },
+        lesson: { select: { title: true, course: { select: { id: true, instructorId: true, slug: true, title: true } } } },
       },
     });
     if (!attempt) throw new NotFoundException();
@@ -395,7 +395,12 @@ export class ImagingService {
       await this.notifications.notify({
         userId: attempt.userId,
         kind: 'WORKING_REVIEWED',
-        data: { lessonTitle: attempt.lesson.title, outcome: review.status === 'VERIFIED' ? 'VERIFIED' : 'RETURNED' },
+        data: {
+          lessonTitle: attempt.lesson.title,
+          courseTitle: attempt.lesson.course.title,
+          outcome: review.status === 'VERIFIED' ? 'VERIFIED' : 'RETURNED',
+          ...(review.feedback?.trim() ? { feedback: review.feedback.trim() } : {}),
+        },
         link: `/learn/${attempt.lesson.course.slug}/${attempt.lessonId}`,
       });
     }

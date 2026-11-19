@@ -1,4 +1,5 @@
 /** Pure helpers for the packaging pipeline (kept separate so they're unit-testable). */
+import path from 'node:path';
 
 export const DASH_MANIFEST = 'manifest.mpd';
 export const HLS_MASTER = 'master.m3u8';
@@ -76,4 +77,38 @@ export function packageContentType(file: string): string {
 
 export function isManifest(file: string): boolean {
   return file.endsWith('.mpd') || file.endsWith('.m3u8');
+}
+
+/**
+ * Where to run a media tool from. A bare default name ("ffmpeg", "packager")
+ * means "not configured": use the copy that tools/install-media-tools installed
+ * in `<repo>/tools/bin` if there is one, else rely on PATH. An explicit path
+ * from the environment always wins.
+ */
+export function resolveTool(
+  configured: string,
+  name: 'ffmpeg' | 'ffprobe' | 'packager',
+  toolsDir: string,
+  exists: (file: string) => boolean,
+  platform: NodeJS.Platform = process.platform,
+): string {
+  if (configured !== name) return configured;
+  const file = path.join(toolsDir, platform === 'win32' ? `${name}.exe` : name);
+  return exists(file) ? file : name;
+}
+
+/** ffprobe sits next to ffmpeg: same folder, same extension. */
+export function ffprobeFor(ffmpeg: string): string {
+  if (!/[\\/]/.test(ffmpeg)) return 'ffprobe';
+  const ext = path.extname(ffmpeg);
+  return path.join(path.dirname(ffmpeg), `ffprobe${ext}`);
+}
+
+/** Turns "spawn ffmpeg ENOENT" into an error an admin can act on. */
+export function toolErrorMessage(error: unknown, tool: string): string {
+  const err = error as { code?: unknown; message?: unknown } | null;
+  if (err && err.code === 'ENOENT') {
+    return `${tool} was not found. Install the media tools (tools/install-media-tools.ps1 on Windows, tools/install-media-tools.sh elsewhere) or set FFMPEG_PATH / SHAKA_PACKAGER_PATH, then retry.`;
+  }
+  return err && typeof err.message === 'string' ? err.message.slice(0, 500) : 'unknown error';
 }

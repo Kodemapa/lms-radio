@@ -79,6 +79,7 @@ export function SecurityPanel({ devices }: { devices: Device[] }) {
           title={t('removeDeviceTitle')}
           body={t('removeDeviceBody')}
           confirmLabel={t('removeDevice')}
+          successMessage={tCommon('toast.deviceRemoved')}
           onConfirm={async () => {
             await api('DELETE', `users/me/devices/${removing.id}`);
             setRemoving(null);

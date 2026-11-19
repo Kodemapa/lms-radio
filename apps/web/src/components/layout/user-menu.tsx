@@ -24,8 +24,9 @@ import { createPortal } from 'react-dom';
 import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
 import { useRouter } from '@/i18n/navigation';
 import { GlobalLoader } from './page-loader';
-import { initials } from '@/lib/initials';
 import { useSessionWatch } from './session-watch';
+import { AvatarContent } from '@/components/account/avatar';
+import { UserId } from '@/components/account/user-id';
 
 export interface UserMenuLabels {
   myLearning: string;
@@ -56,8 +57,8 @@ export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenu
           className="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
           aria-label={labels.myAccount}
         >
-          <span className="flex size-10 items-center justify-center rounded-full bg-primary-light font-semibold text-primary">
-            {initials(user.displayName) || '•'}
+          <span className="flex size-10 items-center justify-center overflow-hidden rounded-full bg-primary-light font-semibold text-primary">
+            <AvatarContent name={user.displayName} assetId={user.avatarAssetId} />
           </span>
           <span className="hidden max-w-[10rem] truncate font-medium lg:inline">
             {user.displayName}
@@ -70,6 +71,7 @@ export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenu
             <span className="block truncate text-xs font-normal text-muted-foreground">
               {user.email ?? user.phone}
             </span>
+            <UserId id={user.id} short className="mt-1 font-normal" />
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {!isAdmin ? (

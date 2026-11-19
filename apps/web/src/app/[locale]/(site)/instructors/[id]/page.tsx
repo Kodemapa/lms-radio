@@ -2,7 +2,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { CourseCard, CourseGrid } from '@/components/course/course-card';
 import { getCourses, getInstructor, getWishlistIds } from '@/lib/catalog';
-import { initials } from '@/lib/initials';
+import { AvatarContent } from '@/components/account/avatar';
 
 type Props = { params: Promise<{ locale: string; id: string }> };
 
@@ -29,8 +29,8 @@ export default async function InstructorPage({ params }: Props) {
     <>
       <section className="bg-secondary py-10 text-secondary-foreground md:py-14">
         <div className="container flex flex-col items-start gap-6 md:flex-row md:items-center">
-          <span className="flex size-24 shrink-0 items-center justify-center rounded-full bg-white/15 text-3xl font-bold">
-            {initials(instructor.displayName)}
+          <span className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/15 text-3xl font-bold">
+            <AvatarContent name={instructor.displayName} assetId={instructor.avatarAssetId} />
           </span>
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-bold md:text-4xl">{instructor.displayName}</h1>

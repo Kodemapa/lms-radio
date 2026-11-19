@@ -1,7 +1,7 @@
 'use client';
 
 import { ContentLocale, FaqInputSchema, type Faq, type FaqInput } from '@obgyn/types';
-import { Button, Input, Select, Textarea } from '@obgyn/ui';
+import { Button, Input, Select, Textarea, toast } from '@obgyn/ui';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
@@ -19,7 +19,6 @@ export function FaqsManager({ initial }: { initial: Faq[] }) {
   const [form, setForm] = useState<FaqForm | null>(null);
   const [deleting, setDeleting] = useState<Faq | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   const refresh = async () => setFaqs(await api<Faq[]>('GET', 'admin/content/faqs'));
@@ -45,7 +44,7 @@ export function FaqsManager({ initial }: { initial: Faq[] }) {
       else await api('POST', 'admin/content/faqs', parsed.data);
       await refresh();
       setForm(null);
-      setStatus(t('saved'));
+      toast.success(t('saved'));
     } catch (requestError) {
       const code = requestError instanceof ApiClientError ? requestError.body?.code : undefined;
       setError(code === 'PCPNDT_BLOCKED' ? tCommon('pcpndt') : t('errors.failed'));
@@ -62,7 +61,6 @@ export function FaqsManager({ initial }: { initial: Faq[] }) {
           {t('add')}
         </Button>
       </div>
-      {status ? <p role="status" aria-live="polite" className="text-sm">{status}</p> : null}
       {error && !form ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
       {faqs.length ? (
         <ol className="flex flex-col gap-2">
@@ -133,7 +131,7 @@ export function FaqsManager({ initial }: { initial: Faq[] }) {
           try {
             await api('DELETE', `admin/content/faqs/${deleting.id}`);
             await refresh();
-            setStatus(t('deleted'));
+            toast.success(t('deleted'));
             setDeleting(null);
           } catch {
             setError(t('errors.failed'));

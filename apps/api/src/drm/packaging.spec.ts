@@ -1,4 +1,5 @@
-import { isManifest, packageContentType, packagerArgs, safePackagePath } from './packaging';
+import path from 'node:path';
+import { ffprobeFor, isManifest, packageContentType, packagerArgs, resolveTool, safePackagePath, toolErrorMessage } from './packaging';
 
 describe('packaging helpers', () => {
   const base = { input: '/t/src.mp4', outDir: '/t/out', keyId: 'a'.repeat(32), key: 'b'.repeat(32), scheme: 'cbcs' as const };
@@ -32,5 +33,29 @@ describe('packaging helpers', () => {
     expect(packageContentType('audio/3.m4s')).toBe('audio/mp4');
     expect(isManifest('audio.m3u8')).toBe(true);
     expect(isManifest('video/1.m4s')).toBe(false);
+  });
+});
+
+describe('media tool lookup', () => {
+  const dir = path.join('repo', 'tools', 'bin');
+
+  it('uses the installed copy in tools/bin when the path is not configured', () => {
+    expect(resolveTool('ffmpeg', 'ffmpeg', dir, () => true, 'win32')).toBe(path.join(dir, 'ffmpeg.exe'));
+    expect(resolveTool('packager', 'packager', dir, () => true, 'linux')).toBe(path.join(dir, 'packager'));
+  });
+
+  it('falls back to PATH, and never overrides an explicit path', () => {
+    expect(resolveTool('ffmpeg', 'ffmpeg', dir, () => false, 'win32')).toBe('ffmpeg');
+    expect(resolveTool('/opt/ffmpeg/bin/ffmpeg', 'ffmpeg', dir, () => true, 'linux')).toBe('/opt/ffmpeg/bin/ffmpeg');
+  });
+
+  it('finds ffprobe next to ffmpeg, keeping the extension', () => {
+    expect(ffprobeFor('ffmpeg')).toBe('ffprobe');
+    expect(ffprobeFor(path.join('C:', 'tools', 'ffmpeg.exe'))).toBe(path.join('C:', 'tools', 'ffprobe.exe'));
+  });
+
+  it('explains a missing tool instead of "spawn ENOENT"', () => {
+    expect(toolErrorMessage(Object.assign(new Error('spawn ffmpeg ENOENT'), { code: 'ENOENT' }), 'ffmpeg')).toMatch(/ffmpeg was not found/);
+    expect(toolErrorMessage(new Error('bad input'), 'ffmpeg')).toBe('bad input');
   });
 });

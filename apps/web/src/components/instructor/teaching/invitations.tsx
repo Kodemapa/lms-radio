@@ -1,7 +1,7 @@
 'use client';
 
 import { type CourseInvitation } from '@obgyn/types';
-import { Button } from '@obgyn/ui';
+import { Button, toast } from '@obgyn/ui';
 import { Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -11,6 +11,7 @@ import { api } from '@/lib/instructor-api';
 /** Pending co-instructor invitations on the dashboard: accept to see the course in My courses. */
 export function Invitations({ initial }: { initial: CourseInvitation[] }) {
   const t = useTranslations('Teaching');
+  const tCommon = useTranslations('Common');
   const router = useRouter();
   const [items, setItems] = useState(initial);
   const [error, setError] = useState(false);
@@ -20,6 +21,7 @@ export function Invitations({ initial }: { initial: CourseInvitation[] }) {
     setError(false);
     try {
       await api('POST', `instructor/invitations/${id}/${accept ? 'accept' : 'decline'}`);
+      toast.success(tCommon(accept ? 'toast.invitationAccepted' : 'toast.invitationDeclined'));
       setItems((current) => current.filter((i) => i.id !== id));
       router.refresh();
     } catch {

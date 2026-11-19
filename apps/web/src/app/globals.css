@@ -374,3 +374,19 @@ body:has(.global-loader[data-source='route']) .global-loader[data-source='nav'] 
     opacity: 0.75;
   }
 }
+
+/* Toasts (packages/ui toast.tsx) slide up into view. */
+.toast-in {
+  animation: toast-in 180ms ease-out;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-in {
+    animation: none;
+  }
+}

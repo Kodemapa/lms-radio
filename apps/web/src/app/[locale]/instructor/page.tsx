@@ -1,5 +1,5 @@
 import { InstructorDashboardSchema } from '@obgyn/types';
-import { Activity, BookOpen, CheckCircle2, ClipboardList, Clock3, FilePen, PlayCircle, Trophy, Users } from 'lucide-react';
+import { Activity, ArrowRight, BookOpen, CheckCircle2, ClipboardList, Clock3, FilePen, PlayCircle, Plus, Trophy, Users } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { CoursesTable } from '@/components/instructor/courses-table';
 import { EnrolmentChart } from '@/components/instructor/teaching/enrolment-chart';
@@ -35,54 +35,76 @@ export default async function InstructorDashboardPage({ params }: { params: Prom
   ];
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-2xl font-bold md:text-3xl">{t('dashboardTitle', { name: me?.displayName ?? '' })}</h1>
-        <p className="text-muted-foreground">{t('dashboardSubtitle')}</p>
+    <div className="flex flex-col gap-6 lg:gap-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold md:text-3xl">{t('dashboardTitle', { name: me?.displayName ?? '' })}</h1>
+          <p className="mt-1 text-muted-foreground">{t('dashboardSubtitle')}</p>
+        </div>
+        <Link
+          href="/instructor/courses/new"
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+        >
+          <Plus aria-hidden className="size-4" />
+          {t('nav.newCourse')}
+        </Link>
       </div>
       <Invitations initial={data.invitations} />
-      <section aria-label={t('activityTitle')} className="grid gap-4 xl:grid-cols-[2fr_1fr]">
-        <div className="surface p-5">
+      {/* Six equal tiles: two per row on phones, three on tablets, one row on wide screens. */}
+      <ul aria-label={t('statsTitle')} className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 2xl:grid-cols-6">
+        {stats.map(({ label, value, Icon }) => (
+          <li key={label} className="flex min-w-0 items-center gap-3 surface p-4">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-light text-primary">
+              <Icon aria-hidden className="size-5" />
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="text-2xl font-bold leading-tight tabular-nums">{value.toLocaleString(locale)}</span>
+              <span className="truncate text-sm text-muted-foreground" title={label}>{label}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {/* Chart and activity share one grid row, so both columns end at the same line. */}
+      <section aria-label={t('activityTitle')} className="grid gap-4 xl:grid-cols-3">
+        <div className="surface p-5 xl:col-span-2">
           <EnrolmentChart data={data.enrolmentsByDay} />
         </div>
-        <ul className="grid gap-3">
+        <ul className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1 xl:grid-rows-3">
           {activity.map(({ label, value, Icon, href }) => {
             const body = (
               <>
-                <Icon aria-hidden className="size-5 text-primary" />
-                <span className="flex flex-col">
-                  <span className="text-xl font-semibold tabular-nums">{value.toLocaleString(locale)}</span>
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-light text-primary">
+                  <Icon aria-hidden className="size-5" />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-2xl font-bold leading-tight tabular-nums">{value.toLocaleString(locale)}</span>
                   <span className="text-sm text-muted-foreground">{label}</span>
                 </span>
+                {href ? <ArrowRight aria-hidden className="size-4 shrink-0 text-muted-foreground rtl:rotate-180" /> : null}
               </>
             );
+            const card = 'flex h-full items-center gap-3 surface p-4';
             return (
-              <li key={label}>
+              <li key={label} className="min-w-0">
                 {href ? (
-                  <Link href={href} className="flex items-center gap-3 surface p-4 hover:border-primary">{body}</Link>
+                  <Link href={href} className={`${card} transition-colors hover:border-primary/50`}>{body}</Link>
                 ) : (
-                  <span className="flex items-center gap-3 surface p-4">{body}</span>
+                  <span className={card}>{body}</span>
                 )}
               </li>
             );
           })}
         </ul>
       </section>
-      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {stats.map(({ label, value, Icon }) => (
-          <li key={label} className="flex items-center gap-4 surface p-5">
-            <span className="rounded-xl bg-primary-light p-3 text-primary">
-              <Icon aria-hidden className="size-6" />
-            </span>
-            <span className="flex flex-col">
-              <span className="text-2xl font-bold">{value}</span>
-              <span className="text-sm text-muted-foreground">{label}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
       <section aria-labelledby="recent" className="flex flex-col gap-4">
-        <h2 id="recent" className="text-xl font-semibold">{t('recentCourses')}</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="recent" className="text-xl font-semibold">{t('recentCourses')}</h2>
+          {data.recentCourses.length > 0 ? (
+            <Link href="/instructor/courses" className="text-sm font-semibold text-primary hover:underline">
+              {t('nav.courses')}
+            </Link>
+          ) : null}
+        </div>
         {data.recentCourses.length > 0 ? (
           <CoursesTable courses={data.recentCourses} />
         ) : (

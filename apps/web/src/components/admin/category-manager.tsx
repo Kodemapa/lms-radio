@@ -13,6 +13,7 @@ import {
   Label,
   Select,
   Textarea,
+  toast,
 } from '@obgyn/ui';
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -76,7 +77,7 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
       if (form.id) await api('PATCH', `admin/categories/${form.id}`, parsed.data);
       else await api('POST', 'admin/categories', parsed.data);
       await refresh();
-      setStatus(t(form.id ? 'updated' : 'created', { name: parsed.data.name }));
+      toast.success(t(form.id ? 'updated' : 'created', { name: parsed.data.name }));
       setForm(null);
     } catch (error) {
       setFormError(t(`errors.${errorKey(error)}`));
@@ -100,7 +101,7 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
           items: reordered.map((item, position) => ({ id: item.id, parentId: item.parentId, position })),
         }),
       );
-      setStatus(t('moved', { name: category.name }));
+      toast.success(t('moved', { name: category.name }));
     } catch (error) {
       setStatus(t(`errors.${errorKey(error)}`));
     }
@@ -111,7 +112,7 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
     try {
       await api('DELETE', `admin/categories/${deleting.id}`);
       await refresh();
-      setStatus(t('deleted', { name: deleting.name }));
+      toast.success(t('deleted', { name: deleting.name }));
     } catch (error) {
       setStatus(t(`errors.${errorKey(error)}`));
     }

@@ -94,6 +94,9 @@ model User {
   passwordChangedAt DateTime?
   /// When the user accepted the terms of use and privacy notice at sign-up (DPDP Act).
   termsAcceptedAt   DateTime?
+  /// Profile picture: a public IMAGE asset the user uploaded themselves.
+  avatarAssetId     String?      @db.Uuid
+  avatar            MediaAsset?  @relation("UserAvatar", fields: [avatarAssetId], references: [id], onDelete: SetNull)
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -372,6 +375,7 @@ model MediaAsset {
   lessons          Lesson[]
   courseThumbnails Course[]               @relation("CourseThumbnail")
   coursePreviews   Course[]               @relation("CoursePreview")
+  avatarOf         User[]                 @relation("UserAvatar")
   submissions      AssignmentSubmission[]
   drmPackage       DrmPackage?
   imagingImages    ImagingImage[]

@@ -13,6 +13,7 @@ import {
   Label,
   Select,
   Textarea,
+  toast,
 } from '@obgyn/ui';
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -35,9 +36,19 @@ type Form = {
 const EMPTY: Form = { id: null, key: '', label: '', labelHi: '', helpText: '', type: 'TEXT', options: '', required: false, active: true };
 
 /** Admin editor for the extra questions on "Become an instructor". */
+/** Built-in application questions (InstructorApplicationInputSchema), in form order. */
+const STANDARD_FIELDS = [
+  { key: 'headline', required: true },
+  { key: 'qualifications', required: true },
+  { key: 'experienceYears', required: true },
+  { key: 'registrationNumber', required: false },
+  { key: 'bio', required: true },
+] as const;
+
 export function ApplicationFieldsManager({ initial }: { initial: ApplicationField[] }) {
   const t = useTranslations('Admin.formFields');
   const tCommon = useTranslations('Common');
+  const tApply = useTranslations('BecomeInstructor');
   const [fields, setFields] = useState(initial);
   const [form, setForm] = useState<Form | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +78,7 @@ export function ApplicationFieldsManager({ initial }: { initial: ApplicationFiel
       if (form.id) await api('PATCH', `admin/application-fields/${form.id}`, parsed.data);
       else await api('POST', 'admin/application-fields', parsed.data);
       await refresh();
-      setStatus(t('saved', { label: parsed.data.label }));
+      toast.success(t('saved', { label: parsed.data.label }));
       setForm(null);
     } catch (requestError) {
       const code = requestError instanceof ApiClientError ? requestError.body?.code : undefined;
@@ -84,7 +95,7 @@ export function ApplicationFieldsManager({ initial }: { initial: ApplicationFiel
     [ids[index], ids[target]] = [ids[target]!, ids[index]!];
     try {
       setFields(await api<ApplicationField[]>('PUT', 'admin/application-fields/order', { ids }));
-      setStatus(t('moved'));
+      toast.success(t('moved'));
     } catch {
       setStatus(t('errors.failed'));
     }
@@ -115,6 +126,28 @@ export function ApplicationFieldsManager({ initial }: { initial: ApplicationFiel
       </div>
       <p role="status" aria-live="polite" className="text-sm">{status}</p>
 
+      {/* The standard questions are part of every application; admins can't remove them. */}
+      <section aria-labelledby="standard-fields" className="flex flex-col gap-2">
+        <h2 id="standard-fields" className="font-semibold">{t('standardTitle')}</h2>
+        <p className="text-sm text-muted-foreground">{t('standardIntro')}</p>
+        <ul className="flex flex-col gap-2">
+          {STANDARD_FIELDS.map(({ key, required }) => (
+            <li key={key} className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-muted/40 p-3">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">
+                  {tApply(key)}
+                  {required ? <span className="ms-1 text-destructive" aria-label={t('required')}>*</span> : null}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-mono">{key}</span> · {t('standardBadge')}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <h2 className="mt-2 font-semibold">{t('extraTitle')}</h2>
       {fields.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-muted-foreground">{t('empty')}</p>
       ) : (
@@ -236,7 +269,7 @@ export function ApplicationFieldsManager({ initial }: { initial: ApplicationFiel
           if (!deleting) return;
           await api('DELETE', `admin/application-fields/${deleting.id}`);
           await refresh();
-          setStatus(t('deleted', { label: deleting.label }));
+          toast.success(t('deleted', { label: deleting.label }));
         }}
       />
     </div>

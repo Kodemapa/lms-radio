@@ -12,6 +12,7 @@ import {
   Select,
   Switch,
   Textarea,
+  toast,
 } from '@obgyn/ui';
 import { CheckCircle2, Crosshair, Library, MapPin, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -21,6 +22,7 @@ import { api } from '@/lib/instructor-api';
 import { ProtectedPlayer, type PlayerApi } from '../../protected-player';
 import { BankPicker } from './bank-picker';
 import { useTopics } from './topics';
+import { ConfirmDialog } from '../confirm-dialog';
 
 type Draft = { at: string; topicId: string; text: string; explanation: string; allowMultiple: boolean; options: { text: string; isCorrect: boolean }[] };
 const EMPTY: Draft = {
@@ -76,6 +78,7 @@ export function QuestionsDialog({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [picking, setPicking] = useState<{ atSec: number | null } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const player = useRef<PlayerApi>(null);
   const [now, setNow] = useState(0);
   const nowClock = clock(Math.floor(now));
@@ -129,6 +132,7 @@ export function QuestionsDialog({
         ? await api('PATCH', `instructor/questions/${editing.id}`, parsed.data)
         : await api('POST', `instructor/lessons/${lessonId}/questions`, parsed.data);
       setQuestions(parse(data));
+      toast.success(tCommon(editing.id ? 'toast.saved' : 'toast.questionAdded'));
       setEditing(null);
     } catch {
       setError(tCommon('genericError'));
@@ -149,6 +153,7 @@ export function QuestionsDialog({
     });
 
   return (
+    <>
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className={showPlayer ? 'max-w-4xl' : 'max-w-2xl'} closeLabel={tCommon('close')} aria-describedby={undefined}>
         <DialogHeader>
@@ -207,6 +212,7 @@ export function QuestionsDialog({
             onAdd={async (ids) => {
               try {
                 setQuestions(parse(await api('POST', `instructor/lessons/${lessonId}/questions/from-bank`, { bankQuestionIds: ids, atSec: video ? picking.atSec : null })));
+                toast.success(tCommon('toast.questionAdded'));
                 setPicking(null);
               } catch (e) {
                 setError((e as { messageText?: string }).messageText ?? tCommon('genericError'));
@@ -339,13 +345,7 @@ export function QuestionsDialog({
                             <Pencil aria-hidden className="size-4" />
                           </button>
                           <button type="button" aria-label={t('deleteQuestion')} className="rounded p-1.5 text-muted-foreground hover:text-destructive"
-                            onClick={async () => {
-                              try {
-                                setQuestions(parse(await api('DELETE', `instructor/questions/${question.id}`)));
-                              } catch {
-                                setError(tCommon('genericError'));
-                              }
-                            }}>
+                            onClick={() => setDeletingId(question.id)}>
                             <Trash2 aria-hidden className="size-4" />
                           </button>
                         </>
@@ -379,5 +379,17 @@ export function QuestionsDialog({
         )}
       </DialogContent>
     </Dialog>
+    <ConfirmDialog
+      open={deletingId !== null}
+      onOpenChange={(open) => !open && setDeletingId(null)}
+      title={t('deleteQuestion')}
+      body={tCommon('deleteConfirmBody')}
+      confirmLabel={tCommon('delete')}
+      successMessage={tCommon('toast.questionDeleted')}
+      onConfirm={async () => {
+        if (deletingId) setQuestions(parse(await api('DELETE', `instructor/questions/${deletingId}`)));
+      }}
+    />
+    </>
   );
 }

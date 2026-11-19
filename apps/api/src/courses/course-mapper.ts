@@ -5,7 +5,7 @@ import { LIVE_LESSON } from '../common/soft-delete';
 /** Everything needed to build a CourseSummary, in one query. */
 export const COURSE_SUMMARY_INCLUDE = {
   category: { select: { slug: true, name: true } },
-  instructor: { select: { id: true, displayName: true, headline: true } },
+  instructor: { select: { id: true, displayName: true, headline: true, avatarAssetId: true } },
   lessons: { where: LIVE_LESSON, select: { durationSec: true } },
   // Reviews hidden by an admin don't count towards the rating.
   reviews: { where: { hiddenAt: null }, select: { rating: true } },

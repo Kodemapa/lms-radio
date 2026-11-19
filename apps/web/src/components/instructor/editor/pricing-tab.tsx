@@ -1,7 +1,7 @@
 'use client';
 
 import { type InstructorCourse } from '@obgyn/types';
-import { Button, Input, Label, Switch } from '@obgyn/ui';
+import { Button, Input, Label, Switch, toast } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { useState, type FormEvent } from 'react';
 import { courseApi } from '@/lib/instructor-api';
@@ -43,8 +43,10 @@ export function PricingTab({
         }),
       );
       setStatus('saved');
+      toast.success(tCommon('toast.saved'));
     } catch (e) {
       setStatus('error');
+      toast.error(tCommon('genericError'));
       setError((e as { messageText?: string }).messageText ?? tCommon('genericError'));
     }
   }

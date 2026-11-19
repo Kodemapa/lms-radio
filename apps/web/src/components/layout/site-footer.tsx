@@ -111,9 +111,21 @@ export async function SiteFooter() {
             </nav>
           </div>
 
-          <p className="border-t border-white/10 pt-6 text-center text-sm text-white/50">
-            {t('copyright', { year, appName: tCommon('appName') })}
-          </p>
+          <div className="flex flex-col items-center gap-1.5 border-t border-white/10 pt-6 text-center text-sm text-white/50">
+            <p>{t('copyright', { year, appName: tCommon('appName') })}</p>
+            <p>
+              {t('designedBy')}{' '}
+              <a
+                href="https://kodemapa.co.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-white/80 underline-offset-4 transition-colors hover:text-white hover:underline"
+              >
+                kodemapa
+                <span className="sr-only"> ({t('opensInNewTab')})</span>
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>

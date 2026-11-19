@@ -9,6 +9,7 @@ const SELECT = {
   displayName: true,
   headline: true,
   bio: true,
+  avatarAssetId: true,
   courses: {
     where: { status: 'PUBLISHED' },
     select: { _count: { select: { enrollments: true } } },
@@ -21,6 +22,7 @@ function toPublic(user: Prisma.UserGetPayload<{ select: typeof SELECT }>): Publi
     displayName: user.displayName,
     headline: user.headline,
     bio: user.bio,
+    avatarAssetId: user.avatarAssetId,
     courseCount: user.courses.length,
     studentCount: user.courses.reduce((sum, course) => sum + course._count.enrollments, 0),
   };

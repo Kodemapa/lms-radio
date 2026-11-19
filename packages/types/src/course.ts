@@ -22,6 +22,8 @@ export const InstructorSummarySchema = z.object({
   id: z.string().uuid(),
   displayName: z.string(),
   headline: z.string().nullable(),
+  /** Profile picture (public image), or null. */
+  avatarAssetId: z.string().uuid().nullable().default(null),
 });
 export type InstructorSummary = z.infer<typeof InstructorSummarySchema>;
 

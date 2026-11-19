@@ -5,19 +5,35 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@obgyn/ui';
 import { Lock, Pencil } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { StatusBadge } from '../status-badge';
-import { BankTab } from './bank-tab';
-import { CertificateTab } from './certificate-tab';
-import { CurriculumTab } from './curriculum-tab';
-import { EntranceTab } from './entrance-tab';
 import { DetailsTab } from './details-tab';
-import { PricingTab } from './pricing-tab';
-import { PublishTab } from './publish-tab';
-import { AnalyticsTab } from '../teaching/analytics-tab';
-import { ReportsTab } from '../teaching/reports-tab';
-import { StudentsTab } from '../teaching/students-tab';
-import { TeamTab } from '../teaching/team-tab';
-import { TrashTab } from '../teaching/trash-tab';
+
+/**
+ * Each tab's code loads when the tab is first opened, so the editor opens fast
+ * (the curriculum, question bank and reports are large). Details is the usual
+ * first tab, so it ships with the page.
+ */
+function TabLoading() {
+  return (
+    <div role="status" aria-busy="true" className="mt-6 flex flex-col gap-3">
+      <div className="h-10 w-1/3 animate-pulse rounded-xl bg-muted" />
+      <div className="h-32 animate-pulse rounded-2xl bg-muted" />
+      <div className="h-32 animate-pulse rounded-2xl bg-muted" />
+    </div>
+  );
+}
+const CurriculumTab = dynamic(() => import('./curriculum-tab').then((m) => m.CurriculumTab), { loading: TabLoading });
+const BankTab = dynamic(() => import('./bank-tab').then((m) => m.BankTab), { loading: TabLoading });
+const EntranceTab = dynamic(() => import('./entrance-tab').then((m) => m.EntranceTab), { loading: TabLoading });
+const CertificateTab = dynamic(() => import('./certificate-tab').then((m) => m.CertificateTab), { loading: TabLoading });
+const PricingTab = dynamic(() => import('./pricing-tab').then((m) => m.PricingTab), { loading: TabLoading });
+const PublishTab = dynamic(() => import('./publish-tab').then((m) => m.PublishTab), { loading: TabLoading });
+const StudentsTab = dynamic(() => import('../teaching/students-tab').then((m) => m.StudentsTab), { loading: TabLoading });
+const ReportsTab = dynamic(() => import('../teaching/reports-tab').then((m) => m.ReportsTab), { loading: TabLoading });
+const AnalyticsTab = dynamic(() => import('../teaching/analytics-tab').then((m) => m.AnalyticsTab), { loading: TabLoading });
+const TeamTab = dynamic(() => import('../teaching/team-tab').then((m) => m.TeamTab), { loading: TabLoading });
+const TrashTab = dynamic(() => import('../teaching/trash-tab').then((m) => m.TrashTab), { loading: TabLoading });
 
 type BuildTab =
   'details' | 'curriculum' | 'bank' | 'entrance' | 'pricing' | 'certDesign' | 'publish';

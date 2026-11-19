@@ -37,7 +37,7 @@ import { categoryHref } from '@/lib/categories';
 import { apiGet } from '@/lib/server-api';
 import { EntranceStatusSchema, ReviewListSchema } from '@obgyn/types';
 import { formatClock, formatDuration } from '@/lib/format';
-import { initials } from '@/lib/initials';
+import { AvatarContent } from '@/components/account/avatar';
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
@@ -131,8 +131,8 @@ export default async function CoursePage({ params }: Props) {
             </ul>
             {course.instructor ? (
               <Link href={`/instructors/${course.instructor.id}`} className="group flex w-fit items-center gap-3">
-                <span className="flex size-11 items-center justify-center rounded-full border-2 border-card bg-gradient-to-br from-[#c9b5ef] to-[#fbc9a1] font-semibold text-[#2f2340] shadow-sm">
-                  {initials(course.instructor.displayName)}
+                <span className="flex size-11 items-center justify-center overflow-hidden rounded-full border-2 border-card bg-gradient-to-br from-[#c9b5ef] to-[#fbc9a1] font-semibold text-[#2f2340] shadow-sm">
+                  <AvatarContent name={course.instructor.displayName} assetId={course.instructor.avatarAssetId} />
                 </span>
                 <span className="text-sm font-medium group-hover:text-primary">{tCommon('by', { name: course.instructor.displayName })}</span>
               </Link>
@@ -331,8 +331,8 @@ export default async function CoursePage({ params }: Props) {
           {course.instructor ? (
             <TabsContent value="instructor">
               <Link href={`/instructors/${course.instructor.id}`} className="surface lift flex items-center gap-4 p-6">
-                <span className="flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-[#c9b5ef] to-[#fbc9a1] text-xl font-bold text-[#2f2340]">
-                  {initials(course.instructor.displayName)}
+                <span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#c9b5ef] to-[#fbc9a1] text-xl font-bold text-[#2f2340]">
+                  <AvatarContent name={course.instructor.displayName} assetId={course.instructor.avatarAssetId} />
                 </span>
                 <span className="flex flex-col">
                   <span className="text-lg font-semibold">{course.instructor.displayName}</span>

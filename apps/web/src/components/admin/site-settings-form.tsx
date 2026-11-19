@@ -1,7 +1,7 @@
 'use client';
 
 import { SiteSettingsSchema, THEME_PREFERENCES, type SiteSettings, type ThemePreference } from '@obgyn/types';
-import { Button, Input, Label, Select, Textarea } from '@obgyn/ui';
+import { Button, Input, Label, Select, Textarea, toast } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { ApiClientError, api } from '@/lib/instructor-api';
@@ -11,7 +11,6 @@ export function SiteSettingsForm({ initial }: { initial: SiteSettings }) {
   const tCommon = useTranslations('Common');
   const [settings, setSettings] = useState(initial);
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   const save = async (event: FormEvent) => {
@@ -26,7 +25,7 @@ export function SiteSettingsForm({ initial }: { initial: SiteSettings }) {
     try {
       const saved = await api<SiteSettings>('PUT', 'admin/content/settings', parsed.data);
       setSettings(saved);
-      setStatus(t('saved'));
+      toast.success(t('saved'));
     } catch (requestError) {
       const code = requestError instanceof ApiClientError ? requestError.body?.code : undefined;
       setError(code === 'PCPNDT_BLOCKED' ? tCommon('pcpndt') : t('errors.failed'));
@@ -108,7 +107,6 @@ export function SiteSettingsForm({ initial }: { initial: SiteSettings }) {
       </div>
       <p className="text-sm text-muted-foreground">{t('secretsNote')}</p>
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
-      {status ? <p role="status" aria-live="polite" className="text-sm">{status}</p> : null}
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>{pending ? tCommon('saving') : tCommon('save')}</Button>
       </div>

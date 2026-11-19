@@ -82,7 +82,40 @@
     "themeSystem": "Device setting",
     "themeButton": "Theme: {theme}. Change theme",
     "signOutConfirmTitle": "Sign out?",
-    "signOutConfirmBody": "Are you sure you want to sign out?"
+    "signOutConfirmBody": "Are you sure you want to sign out?",
+    "working": "Working…",
+    "deleteConfirmTitle": "Are you sure you want to delete this?",
+    "deleteNamedTitle": "Are you sure you want to delete “{name}”?",
+    "deleteConfirmBody": "This can't be undone.",
+    "toast": {
+      "done": "Done.",
+      "saved": "Changes saved.",
+      "profileSaved": "Profile updated.",
+      "passwordChanged": "Password changed.",
+      "deleted": "Deleted.",
+      "removed": "Removed.",
+      "moved": "Moved.",
+      "restored": "Restored.",
+      "deletedForever": "Deleted permanently.",
+      "approved": "Approved.",
+      "sentBack": "Sent back with your note.",
+      "questionAdded": "Question added.",
+      "questionDeleted": "Question deleted.",
+      "imported": "{count, plural, one {# question imported.} other {# questions imported.}}",
+      "submittedForReview": "Course submitted for review.",
+      "withdrawn": "Course withdrawn from review.",
+      "courseCreated": "Course created.",
+      "courseDeleted": "Course deleted.",
+      "invitationAccepted": "Invitation accepted.",
+      "invitationDeclined": "Invitation declined.",
+      "enrolled": "You're enrolled. Opening the course…",
+      "deviceRemoved": "Device signed out.",
+      "wishlistAdded": "Added to your wishlist.",
+      "wishlistRemoved": "Removed from your wishlist."
+    },
+    "userId": "User ID",
+    "copyUserId": "Copy user ID",
+    "userIdCopied": "User ID copied."
   },
   "Footer": {
     "about": "Focused fetal ultrasound education for radiology postgraduates and residents. Faculty-led courses, imaging case practice and individual learning reports.",
@@ -97,7 +130,9 @@
     "terms": "Terms & conditions",
     "refund": "Refund policy",
     "copyright": "© {year} {appName}. All rights reserved.",
-    "contact": "Contact us"
+    "contact": "Contact us",
+    "designedBy": "Designed by",
+    "opensInNewTab": "opens in a new tab"
   },
   "PublicContent": {
     "faqTitle": "Frequently asked questions",
@@ -403,12 +438,12 @@
     "includesCertificate": "Certificate of completion",
     "includesLanguage": "Taught in {language}",
     "includesAccess": "Access on web, mobile and desktop",
-    "enroll": "Enrol now",
-    "enrollFree": "Enrol for free",
+    "enroll": "Enroll now",
+    "enrollFree": "Enroll for free",
     "enrolling": "Enrolling…",
     "enrolled": "You're enrolled",
     "startLearning": "Start learning",
-    "signInToEnroll": "Sign in to enrol",
+    "signInToEnroll": "Sign in to enroll",
     "paymentSoon": "Online payment is coming soon. Please check back shortly.",
     "students": "{count, plural, one {# student} other {# students}}",
     "lastUpdated": "Published {date}",
@@ -417,7 +452,7 @@
   },
   "Learn": {
     "backToCourse": "Back to {course}",
-    "notEnrolled": "Enrol in this course to open its lessons.",
+    "notEnrolled": "Enroll in this course to open its lessons.",
     "goToCourse": "Go to course",
     "loadingMedia": "Loading protected video…",
     "mediaError": "This video couldn't be loaded. Please refresh the page.",
@@ -602,7 +637,7 @@
       },
       "publish": {
         "title": "Publish",
-        "body": "Submit for review. Once approved, learners can enrol."
+        "body": "Submit for review. Once approved, learners can enroll."
       }
     },
     "formTitle": "Instructor application",
@@ -633,7 +668,8 @@
     "reviewNote": "Note from the reviewer: {note}",
     "goToDashboard": "Go to instructor dashboard",
     "alreadyInstructor": "You're already an instructor.",
-    "kicker": "For faculty"
+    "kicker": "For faculty",
+    "requiredNote": "Fields marked with an asterisk are required."
   },
   "Instructor": {
     "nav": {
@@ -762,7 +798,7 @@
       "filePending": "Upload not finished",
       "youtubeNote": "YouTube links aren't supported: every video must stream through protected, watermarked playback.",
       "isFree": "This course is free",
-      "isFreeHint": "Learners can enrol without paying.",
+      "isFreeHint": "Learners can enroll without paying.",
       "price": "Price (₹)",
       "discountPrice": "Discount price (₹, optional)",
       "discountHint": "Shown with the original price struck through.",
@@ -893,7 +929,7 @@
         "alreadyUsed": "Already in this lesson"
       },
       "entrance": {
-        "intro": "Learners must pass this test before they can enrol. Each attempt draws a fresh random set of questions from the bank, and the answer order is shuffled.",
+        "intro": "Learners must pass this test before they can enroll. Each attempt draws a fresh random set of questions from the bank, and the answer order is shuffled.",
         "enabled": "Require an entrance test",
         "questionCount": "Questions per attempt",
         "passPercent": "Pass mark (%)",
@@ -936,7 +972,15 @@
         "GRADER": "Grader"
       },
       "yourRole": "You are a {role} on this course.",
-      "topicHint": "Used for the strengths and weaknesses in student reports."
+      "topicHint": "Used for the strengths and weaknesses in student reports.",
+      "toast": {
+        "chapterAdded": "Chapter added.",
+        "chapterSaved": "Chapter saved.",
+        "chapterDeleted": "Chapter moved to trash.",
+        "lessonAdded": "Lesson added.",
+        "lessonSaved": "Lesson saved.",
+        "lessonDeleted": "Lesson moved to trash."
+      }
     },
     "upload": {
       "choose": "Choose file",
@@ -1040,7 +1084,31 @@
     "requestChanges": "Request changes",
     "feedback": "Feedback for the learner",
     "viewFile": "Open attached file",
-    "activityTitle": "Learner activity"
+    "activityTitle": "Learner activity",
+    "statsTitle": "Course statistics",
+    "submissionApproved": "Submission approved. The learner has been notified.",
+    "submissionReturned": "Changes requested. The learner has been notified.",
+    "feedbackPlaceholder": "Write feedback for the learner (optional)…",
+    "learnerWrote": "{name} submitted",
+    "noAnswerText": "No written answer: see the attached file.",
+    "yourFeedback": "Feedback sent to the learner",
+    "noFeedback": "No written feedback.",
+    "submissionsEmptyBy": {
+      "SUBMITTED": "Nothing waiting for review.",
+      "APPROVED": "No approved submissions yet.",
+      "REJECTED": "No submissions are waiting on changes."
+    },
+    "applicationStatus": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Declined"
+    },
+    "applicationsEmptyBy": {
+      "PENDING": "No pending applications.",
+      "APPROVED": "No approved applications yet.",
+      "REJECTED": "No declined applications."
+    },
+    "reviewNoteLabel": "Review note:"
   },
   "Admin": {
     "sectionTitle": "Admin",
@@ -1069,7 +1137,7 @@
       "totalsTitle": "Platform totals",
       "learners": "Learners",
       "instructors": "Instructors",
-      "enrolments": "Enrolments",
+      "enrolments": "Enrollments",
       "certificates": "Certificates",
       "newUsers": "{count, plural, =0 {No new users in the last 30 days} one {# new user in the last 30 days} other {# new users in the last 30 days}}",
       "admins": "{count, plural, one {# administrator} other {# administrators}}",
@@ -1086,8 +1154,8 @@
         "reportedReviews": "Reported reviews",
         "failedVideos": "Failed video packages"
       },
-      "enrolmentsChart": "Daily enrolments (last 30 days)",
-      "enrolmentsCount": "{count, plural, one {# enrolment} other {# enrolments}}",
+      "enrolmentsChart": "Daily enrollments (last 30 days)",
+      "enrolmentsCount": "{count, plural, one {# enrollment} other {# enrollments}}",
       "signupsChart": "Daily sign-ups (last 30 days)",
       "signupsCount": "{count, plural, one {# sign-up} other {# sign-ups}}",
       "showTable": "Show chart data as a table",
@@ -1252,8 +1320,8 @@
           "body": "Course titles, instructors, categories, status and pricing."
         },
         "enrolments": {
-          "title": "Enrolments",
-          "body": "Learner enrolments and progress, optionally for one course."
+          "title": "Enrollments",
+          "body": "Learner enrollments and progress, optionally for one course."
         },
         "instructors": {
           "title": "Instructors",
@@ -1306,7 +1374,11 @@
       "errors": {
         "keyTaken": "That answer key is already in use.",
         "failed": "The question couldn't be saved. Please try again."
-      }
+      },
+      "standardTitle": "Standard questions",
+      "standardIntro": "Every application includes these questions. They can't be removed.",
+      "standardBadge": "Built in",
+      "extraTitle": "Extra questions"
     },
     "contentPages": {
       "title": "Content pages",
@@ -1452,8 +1524,8 @@
     "unknownAdmin": "Unknown admin",
     "reason": "Reason",
     "bio": "About",
-    "enrollments": "Enrolments",
-    "noEnrollments": "No course enrolments.",
+    "enrollments": "Enrollments",
+    "noEnrollments": "No course enrollments.",
     "devices": "Devices",
     "unnamedDevice": "Unnamed device",
     "deviceRevoked": "Revoked",
@@ -1476,7 +1548,7 @@
       "unblockDescription": "The user will be able to sign in again. Enter a reason for the audit log.",
       "delete": "Delete user",
       "deleteTitle": "Erase this user's personal data?",
-      "deleteDescription": "This soft-deletes the account, erases personal details, and revokes sessions. Enrolment and progress records remain anonymised.",
+      "deleteDescription": "This soft-deletes the account, erases personal details, and revokes sessions. Enrollment and progress records remain anonymised.",
       "view": "View",
       "edit": "Edit",
       "viewUser": "View {name}",
@@ -1620,6 +1692,12 @@
       "hidden": "Hidden",
       "reported": "Reported",
       "stars": "{rating}/5"
+    },
+    "toast": {
+      "deleted": "User deleted.",
+      "role": "Role changed.",
+      "block": "User blocked.",
+      "unblock": "User unblocked."
     }
   },
   "NotFound": {
@@ -1641,7 +1719,7 @@
     "lockedBody": "This course is sequential. Finish the earlier lessons to unlock this one.",
     "skip": "Skip",
     "skipped": "Skipped",
-    "previewNotice": "You're watching a free preview. Enrol to track your progress.",
+    "previewNotice": "You're watching a free preview. Enroll to track your progress.",
     "enrollCta": "View course",
     "noMedia": "The instructor hasn't uploaded this lesson's file yet.",
     "comingSoon": "This lesson type is coming soon. Mark it complete when you've finished it.",
@@ -1653,7 +1731,7 @@
     "viewCertificate": "View certificate",
     "certificateFee": "This course has a certificate fee. Online payment is coming soon.",
     "certificateIncomplete": "Complete every lesson to unlock your certificate.",
-    "notEnrolled": "Enrol in this course to start learning.",
+    "notEnrolled": "Enroll in this course to start learning.",
     "goToCourse": "Go to course",
     "openMenu": "Show course content",
     "answerFirst": "Answer the questions in the video first",
@@ -1678,7 +1756,7 @@
     "retry": "Try again",
     "unanswered": "{count, plural, one {# question} other {# questions}} not answered",
     "empty": "This quiz has no questions yet.",
-    "previewOnly": "Enrol to take this quiz."
+    "previewOnly": "Enroll to take this quiz."
   },
   "Assignment": {
     "instructions": "Instructions",
@@ -1698,7 +1776,7 @@
     "feedback": "Instructor feedback: {feedback}",
     "attached": "Attached: {name}",
     "viewFile": "View attached file",
-    "previewOnly": "Enrol to submit this assignment."
+    "previewOnly": "Enroll to submit this assignment."
   },
   "Reviews": {
     "title": "Reviews",
@@ -1715,7 +1793,11 @@
     "delete": "Delete my review",
     "saving": "Saving…",
     "you": "You",
-    "instructorReply": "Instructor reply"
+    "instructorReply": "Instructor reply",
+    "deleteConfirmTitle": "Are you sure you want to delete your review?",
+    "toastSubmitted": "Thanks! Your review is posted.",
+    "toastUpdated": "Review updated.",
+    "toastDeleted": "Review deleted."
   },
   "Account": {
     "nav": {
@@ -1787,7 +1869,21 @@
     "deleteConfirmLabel": "Type DELETE to confirm",
     "deleteButton": "Delete my account",
     "deleteBlocked": "Instructors with published or in-review courses can't delete their account yet. Contact support to hand over your courses.",
-    "progressReport": "Progress report"
+    "progressReport": "Progress report",
+    "avatar": {
+      "label": "Profile picture",
+      "upload": "Upload photo",
+      "change": "Change photo",
+      "remove": "Remove photo",
+      "hint": "JPG, PNG or WebP, up to 2 MB. Shown next to your name.",
+      "wrongType": "Choose a JPG, PNG or WebP image.",
+      "tooLarge": "That image is larger than 2 MB.",
+      "updated": "Profile picture updated.",
+      "failed": "Couldn't upload the picture. Please try again.",
+      "removeTitle": "Remove your profile picture?",
+      "removeBody": "Your initials will be shown instead.",
+      "removed": "Profile picture removed."
+    }
   },
   "Certificate": {
     "title": "Certificate of Completion",
@@ -1819,7 +1915,7 @@
   },
   "Entrance": {
     "title": "Entrance test",
-    "intro": "This course requires an entrance test. Pass it to enrol.",
+    "intro": "This course requires an entrance test. Pass it to enroll.",
     "rules": "{count, plural, one {# question} other {# questions}}, pass mark {pass}%.",
     "attempts": "Attempts used: {used} of {max}",
     "attemptsUnlimited": "Attempts used: {used}",
@@ -1837,7 +1933,7 @@
     "startCourse": "Start the course",
     "alreadyPassed": "You've passed the entrance test.",
     "required": "Entrance test required",
-    "requiredBody": "Pass the entrance test ({count, plural, one {# question} other {# questions}}, {pass}% to pass) to enrol.",
+    "requiredBody": "Pass the entrance test ({count, plural, one {# question} other {# questions}}, {pass}% to pass) to enroll.",
     "takeTest": "Take the entrance test",
     "signInFirst": "Sign in to take the entrance test",
     "selectOne": "Choose one answer",
@@ -1885,7 +1981,7 @@
     "resubmit": "Submit again",
     "grading": "Grading…",
     "passMark": "Pass mark: {percent}%",
-    "enrolToSubmit": "Enrol in the course to submit this case.",
+    "enrolToSubmit": "Enroll in the course to submit this case.",
     "labelAll": "Label every measurement (choose what each drawing measures) before submitting.",
     "submitFailed": "Couldn't submit your report. Please try again.",
     "downloadFailed": "Couldn't download the file.",
@@ -2079,9 +2175,9 @@
       "active7": "Active in the last 7 days"
     },
     "ofEnrolled": "{percent}% of enrolled",
-    "enrolments30": "New enrolments, last 30 days",
-    "enrolments30All": "New enrolments across your courses, last 30 days",
-    "enrolmentsCount": "{count, plural, one {# enrolment} other {# enrolments}}",
+    "enrolments30": "New enrollments, last 30 days",
+    "enrolments30All": "New enrollments across your courses, last 30 days",
+    "enrolmentsCount": "{count, plural, one {# enrollment} other {# enrollments}}",
     "showTable": "Show as table",
     "lessonCompletion": "Completion by lesson",
     "lessonCompletionHint": "Share of enrolled learners who completed each lesson, in course order. A sharp drop shows where learners stop.",
@@ -2373,7 +2469,17 @@
       "RETURNED": "Returned for changes",
       "VERIFIED": "Verified"
     },
-    "from": "From {name}"
+    "from": "From {name}",
+    "detail": {
+      "course": "Course",
+      "lesson": "Lesson",
+      "outcome": "Result",
+      "from": "From",
+      "subject": "Subject",
+      "feedback": "Feedback from your instructor",
+      "note": "Note",
+      "open": "Go to page"
+    }
   },
   "Categories": {
     "kicker": "Category",

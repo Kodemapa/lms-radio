@@ -1,10 +1,43 @@
 'use client';
 
-import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@obgyn/ui';
+import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+import { ApiClientError } from '@/lib/instructor-api';
 
-/** Confirmation dialog; destructive styling unless `confirmVariant` says otherwise. */
+/**
+ * "Are you sure you want to delete …?" for delete buttons inside forms.
+ * `confirmDelete(run, name)` opens the dialog; `run` happens only after Delete
+ * is pressed. Render `dialog` once in the component.
+ */
+export function useConfirmDelete(): {
+  confirmDelete: (run: () => void | Promise<void>, name?: string) => void;
+  dialog: ReactNode;
+} {
+  const t = useTranslations('Common');
+  const [pending, setPending] = useState<{ run: () => void | Promise<void>; name?: string } | null>(null);
+  return {
+    confirmDelete: (run, name) => setPending({ run, name }),
+    dialog: (
+      <ConfirmDialog
+        open={pending !== null}
+        onOpenChange={(open) => !open && setPending(null)}
+        title={pending?.name ? t('deleteNamedTitle', { name: pending.name }) : t('deleteConfirmTitle')}
+        body={t('deleteConfirmBody')}
+        confirmLabel={t('delete')}
+        onConfirm={async () => {
+          await pending?.run();
+        }}
+      />
+    ),
+  };
+}
+
+/**
+ * Confirmation dialog; destructive styling unless `confirmVariant` says otherwise.
+ * With `successMessage`, a toast confirms the action. A failed action shows an
+ * error toast and keeps the dialog open so it can be retried.
+ */
 export function ConfirmDialog({
   open,
   onOpenChange,
@@ -13,6 +46,7 @@ export function ConfirmDialog({
   confirmLabel,
   onConfirm,
   confirmVariant = 'destructive',
+  successMessage,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -21,6 +55,7 @@ export function ConfirmDialog({
   confirmLabel: string;
   onConfirm: () => Promise<void>;
   confirmVariant?: 'destructive' | 'default';
+  successMessage?: string;
 }) {
   const t = useTranslations('Common');
   const [pending, setPending] = useState(false);
@@ -41,12 +76,16 @@ export function ConfirmDialog({
               try {
                 await onConfirm();
                 onOpenChange(false);
+                if (successMessage) toast.success(successMessage);
+              } catch (error) {
+                const message = error instanceof ApiClientError && error.status < 500 ? error.messageText : null;
+                toast.error(message ?? t('genericError'));
               } finally {
                 setPending(false);
               }
             }}
           >
-            {confirmLabel}
+            {pending ? t('working') : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

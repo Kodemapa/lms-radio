@@ -19,7 +19,7 @@ import {
   type ResourceLink,
   type WorkingSettings,
 } from '@obgyn/types';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Label, Textarea } from '@obgyn/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, Label, Textarea, toast } from '@obgyn/ui';
 import { AlertTriangle, Download, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -29,6 +29,7 @@ import { api, ApiClientError } from '@/lib/instructor-api';
 import { DictionaryEditor } from './dictionary-editor';
 import { FileUpload } from './file-upload';
 import { ResourceLinksEditor } from './resource-links-editor';
+import { useConfirmDelete } from '../confirm-dialog';
 
 interface Rule {
   valueToleranceMm: number | null;
@@ -187,6 +188,7 @@ export function ImagingCaseDialog({
     try {
       apply(await api('PUT', `instructor/lessons/${lessonId}/imaging`, parsed.data));
       setStatus({ kind: 'saved' });
+      toast.success(tCommon('toast.saved'));
     } catch (error) {
       setStatus({ kind: 'error', message: error instanceof ApiClientError && error.messageText ? error.messageText : t('saveFailed') });
     }
@@ -272,7 +274,9 @@ export function ImagingCaseDialog({
     teachingPoint: null,
   });
 
+  const { confirmDelete, dialog: deleteDialog } = useConfirmDelete();
   return (
+    <>
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[94vh] max-w-6xl overflow-y-auto" closeLabel={tCommon('close')} aria-describedby={undefined}>
         <DialogHeader>
@@ -334,10 +338,12 @@ export function ImagingCaseDialog({
                       type="button"
                       disabled={disabled}
                       aria-label={t('removeImage')}
-                      onClick={() => {
-                        setImages((current) => current.filter((i) => i.assetId !== image.assetId));
-                        setAnnotations((current) => current.filter((a) => a.assetId !== image.assetId));
-                      }}
+                      onClick={() =>
+                        confirmDelete(() => {
+                          setImages((current) => current.filter((i) => i.assetId !== image.assetId));
+                          setAnnotations((current) => current.filter((a) => a.assetId !== image.assetId));
+                        })
+                      }
                       className="ms-auto rounded p-1 text-muted-foreground hover:bg-muted hover:text-destructive"
                     >
                       <Trash2 aria-hidden className="size-4" />
@@ -399,7 +405,7 @@ export function ImagingCaseDialog({
                       {t('marks')}
                       <Input aria-label={t('marks')} type="number" min={1} max={100} className="h-8 w-16" disabled={disabled} value={finding.marks} onChange={(e) => updateFinding(index, { marks: clampMarks(e.target.value) })} />
                     </label>
-                    <button type="button" aria-label={t('remove')} disabled={disabled} onClick={() => setFindings((current) => current.filter((_, i) => i !== index))} className="rounded p-1 text-muted-foreground hover:text-destructive">
+                    <button type="button" aria-label={t('remove')} disabled={disabled} onClick={() => confirmDelete(() => setFindings((current) => current.filter((_, i) => i !== index)))} className="rounded p-1 text-muted-foreground hover:text-destructive">
                       <Trash2 aria-hidden className="size-4" />
                     </button>
                   </div>
@@ -463,10 +469,12 @@ export function ImagingCaseDialog({
                             aria-label={t('remove')}
                             disabled={disabled}
                             onClick={() =>
-                              updateFinding(index, {
-                                options: finding.options.filter((o) => o.id !== option.id),
-                                correctOptionIds: finding.correctOptionIds.filter((id) => id !== option.id),
-                              })
+                              confirmDelete(() =>
+                                updateFinding(index, {
+                                  options: finding.options.filter((o) => o.id !== option.id),
+                                  correctOptionIds: finding.correctOptionIds.filter((id) => id !== option.id),
+                                }),
+                              )
                             }
                             className="rounded p-1 text-muted-foreground hover:text-destructive"
                           >
@@ -540,7 +548,7 @@ export function ImagingCaseDialog({
                           <option key={r.id} value={r.id}>{r.title || r.url}</option>
                         ))}
                       </select>
-                      <button type="button" aria-label={t('remove')} disabled={disabled} onClick={() => setFields((current) => current.filter((_, i) => i !== index))} className="rounded p-1 text-muted-foreground hover:text-destructive">
+                      <button type="button" aria-label={t('remove')} disabled={disabled} onClick={() => confirmDelete(() => setFields((current) => current.filter((_, i) => i !== index)))} className="rounded p-1 text-muted-foreground hover:text-destructive">
                         <Trash2 aria-hidden className="size-4" />
                       </button>
                     </div>
@@ -606,5 +614,7 @@ export function ImagingCaseDialog({
         )}
       </DialogContent>
     </Dialog>
+      {deleteDialog}
+    </>
   );
 }

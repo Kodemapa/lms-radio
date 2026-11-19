@@ -1,7 +1,7 @@
 'use client';
 
 import { submissionProblems, type InstructorCourse } from '@obgyn/types';
-import { Button } from '@obgyn/ui';
+import { Button, toast } from '@obgyn/ui';
 import { CheckCircle2, CircleAlert, Clock3, ExternalLink, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -37,6 +37,7 @@ export function PublishTab({
     setError(null);
     try {
       onChange(await courseApi('POST', `courses/${course.id}/${path}`));
+      toast.success(tCommon(path === 'submit' ? 'toast.submittedForReview' : 'toast.withdrawn'));
     } catch (e) {
       if (e instanceof ApiClientError && e.body?.pcpndtMatches)
         setServerMatches(e.body.pcpndtMatches);
