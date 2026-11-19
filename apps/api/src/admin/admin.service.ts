@@ -152,7 +152,8 @@ export class AdminService {
       userId: course.instructorId,
       kind: published ? 'COURSE_PUBLISHED' : 'COURSE_CHANGES_REQUESTED',
       data: { courseTitle: course.title, ...(published ? {} : { note: note ?? '' }) },
-      link: `/instructor/courses/${course.id}`,
+      // The review page: the decision in full, what to do next, and the timeline.
+      link: `/instructor/courses/${course.id}/review`,
     });
     const owner = await this.prisma.user.findUnique({ where: { id: course.instructorId }, select: { email: true, displayName: true } });
     if (owner?.email) {

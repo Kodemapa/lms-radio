@@ -3,7 +3,7 @@
 import { NotificationListSchema, type AppNotification } from '@obgyn/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@obgyn/ui';
 import { Bell, CheckCheck, Loader2 } from 'lucide-react';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useNow, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { bffFetch } from '@/lib/client-fetch';
@@ -18,11 +18,14 @@ const POLL_MS = 60_000;
 export function NotificationBell() {
   const t = useTranslations('Notifications');
   const format = useFormatter();
+  // A fixed reference time for "5 minutes ago", refreshed every minute.
+  const now = useNow({ updateInterval: 60_000 });
   const router = useRouter();
   const [unread, setUnread] = useState(0);
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [busy, setBusy] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const loaded = useRef(false);
 
   const refreshCount = useCallback(async () => {
@@ -72,7 +75,11 @@ export function NotificationBell() {
       setUnread((count) => Math.max(0, count - 1));
     }
     setBusy(null);
-    if (item.link) router.push(item.link);
+    if (item.link) {
+      // Close the menu so it doesn't stay open over the page it leads to.
+      setMenuOpen(false);
+      router.push(item.link);
+    }
   };
 
   const markAll = async () => {
@@ -106,7 +113,9 @@ export function NotificationBell() {
 
   return (
     <DropdownMenu
+      open={menuOpen}
       onOpenChange={(isOpen) => {
+        setMenuOpen(isOpen);
         if (isOpen) void load();
       }}
     >
@@ -180,7 +189,7 @@ export function NotificationBell() {
                           </span>
                         ) : null}
                         <span className="text-xs text-muted-foreground">
-                          {format.relativeTime(new Date(item.createdAt))}
+                          {format.relativeTime(new Date(item.createdAt), now)}
                         </span>
                       </span>
                       {busy === item.id ? (

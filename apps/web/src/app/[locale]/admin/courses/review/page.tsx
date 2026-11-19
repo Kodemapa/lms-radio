@@ -8,7 +8,7 @@ import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/serve
 import { z } from 'zod';
 import { CourseThumbnail } from '@/components/course/course-thumbnail';
 import { ReviewActions } from '@/components/instructor/review-actions';
-import { ReviewHistoryList } from '@/components/instructor/review-history';
+import { ReviewActivityTable } from '@/components/admin/review-activity-table';
 import { Link } from '@/i18n/navigation';
 import { ListPager } from '@/components/admin/list-pager';
 import {
@@ -128,26 +128,8 @@ export default async function AdminCourseReviewPage({
           </h2>
           <p className="text-sm text-muted-foreground">{t('recentActivityIntro')}</p>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <ReviewHistoryList
-            events={history.items}
-            courseOf={(event) => (
-              <>
-                <Link
-                  href={`/instructor/courses/${event.course.id}`}
-                  className="font-medium text-primary hover:underline"
-                >
-                  {event.course.title}
-                </Link>
-                {event.instructorName ? (
-                  <span className="text-muted-foreground">
-                    {' '}
-                    · {tCommon('by', { name: event.instructorName })}
-                  </span>
-                ) : null}
-              </>
-            )}
-          />
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <ReviewActivityTable items={history.items} />
         </div>
         {history.total > PAGE_SIZE_OPTIONS[0]!
           ? (() => {

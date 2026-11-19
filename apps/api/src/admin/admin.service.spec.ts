@@ -34,7 +34,7 @@ describe('AdminService review history', () => {
       userId: 'f1',
       kind: 'COURSE_CHANGES_REQUESTED',
       data: { courseTitle: 'Course', note: 'Add one more lesson' },
-      link: '/instructor/courses/c1',
+      link: '/instructor/courses/c1/review',
     });
   });
 

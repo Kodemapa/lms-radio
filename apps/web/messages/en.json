@@ -967,6 +967,56 @@
         "WITHDRAWN": "Withdrawn from review"
       }
     },
+    "reviewHistoryExtra": {
+      "note": "Reviewer's note",
+      "noNote": "No note was added.",
+      "current": "Latest"
+    },
+    "reviewTable": {
+      "when": "When",
+      "course": "Course",
+      "action": "Action",
+      "by": "By",
+      "note": "Note",
+      "instructor": "Instructor: {name}",
+      "open": "Open review page for {title}"
+    },
+    "reviewPage": {
+      "metaTitle": "Review status",
+      "back": "My courses",
+      "heading": "Review status",
+      "timeline": "Timeline",
+      "state": {
+        "CHANGES_REQUESTED": {
+          "title": "The reviewer asked for changes",
+          "body": "{name} sent this course back on {date}. Make the changes below, then submit it again for review."
+        },
+        "IN_REVIEW": {
+          "title": "Waiting for review",
+          "body": "Submitted on {date}. You will get a notification when the reviewer decides."
+        },
+        "PUBLISHED": {
+          "title": "Published",
+          "body": "Approved on {date}. The course is live in the catalogue."
+        },
+        "DRAFT": {
+          "title": "Draft",
+          "body": "This course has not been submitted for review yet."
+        }
+      },
+      "nextSteps": "What to do next",
+      "step1": "Read the reviewer's note and make the changes in the course editor.",
+      "step2": "Open the Publish tab and submit the course again.",
+      "editCourse": "Edit course",
+      "goPublish": "Go to Publish",
+      "viewOnSite": "View on site",
+      "stats": {
+        "submitted": "Times submitted",
+        "changes": "Changes requested",
+        "lastActivity": "Last activity"
+      },
+      "adminDecide": "Your decision"
+    },
     "recentActivity": "Recent review activity",
     "recentActivityIntro": "Submissions and decisions on every course, newest first. Courses sent back for changes stay here after they leave the queue.",
     "rejectNote": "What needs to change?",
