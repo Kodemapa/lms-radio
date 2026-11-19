@@ -7,6 +7,6 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const settings = await getPublicSiteSettings();
   if (!settings.allowIndexing) return [];
-  const { courses, pages } = await loadSitemapSources();
-  return buildSitemap(SITE_URL, courses, pages);
+  const { courses, pages, categories } = await loadSitemapSources();
+  return buildSitemap(SITE_URL, courses, pages, undefined, categories);
 }

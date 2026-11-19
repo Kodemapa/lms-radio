@@ -99,7 +99,6 @@ const mobileNumber = z
   .trim()
   .regex(INDIAN_MOBILE_REGEX, 'Enter a mobile number like +919876543210');
 const optionalEmail = z.union([z.literal(''), emailAddress]).optional();
-const optionalMobile = z.union([z.literal(''), mobileNumber]).optional();
 const loginIdentifier = z.union([emailAddress, mobileNumber]);
 
 export const SignupSchema = z.object({

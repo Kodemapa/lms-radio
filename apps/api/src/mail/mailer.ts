@@ -32,7 +32,13 @@ export interface MailLog {
   warn(message: string): void;
 }
 
-type TransportFactory = (settings: MailSettings) => Pick<Transporter, 'sendMail' | 'close'>;
+export interface DeliveryResult {
+  sent: boolean;
+  error: 'MAIL_DISABLED' | 'UNDELIVERABLE' | 'SMTP_ERROR' | null;
+  detail: string | null;
+}
+
+type TransportFactory =(settings: MailSettings) => Pick<Transporter, 'sendMail' | 'close'>;
 
 const smtpTransport: TransportFactory = (s) =>
   createTransport({
@@ -70,21 +76,36 @@ export class Mailer {
     return this.settings?.appUrl ?? null;
   }
 
+  /** The settings that are safe to show an admin: never the SMTP username or password. */
+  get summary(): Pick<MailSettings, 'host' | 'port' | 'secure' | 'from' | 'appUrl'> | null {
+    if (!this.settings) return null;
+    const { host, port, secure, from, appUrl } = this.settings;
+    return { host, port, secure, from, appUrl };
+  }
+
   async send(message: MailMessage): Promise<boolean> {
-    if (!this.settings) return false;
+    return (await this.deliver(message)).sent;
+  }
+
+  /**
+   * Like `send`, but says why a message wasn't sent (for the admin test email).
+   * `detail` is the SMTP server's message with one-time codes masked.
+   */
+  async deliver(message: MailMessage): Promise<DeliveryResult> {
+    if (!this.settings) return { sent: false, error: 'MAIL_DISABLED', detail: null };
     if (!isDeliverable(message.to)) {
       this.logger.log(`[mail] skipped ${maskCodes(message.subject)}: address cannot receive mail`);
-      return false;
+      return { sent: false, error: 'UNDELIVERABLE', detail: null };
     }
     try {
       const rendered = renderMail(message, this.settings.appUrl);
       this.transport ??= this.factory(this.settings);
       await this.transport.sendMail({ from: this.settings.from, to: message.to.trim(), ...rendered });
-      return true;
+      return { sent: true, error: null, detail: null };
     } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`[mail] could not send ${maskCodes(message.subject)} to ${message.to}: ${maskCodes(reason)}`);
-      return false;
+      const reason = maskCodes(error instanceof Error ? error.message : String(error));
+      this.logger.warn(`[mail] could not send ${maskCodes(message.subject)} to ${message.to}: ${reason}`);
+      return { sent: false, error: 'SMTP_ERROR', detail: reason.slice(0, 300) };
     }
   }
 

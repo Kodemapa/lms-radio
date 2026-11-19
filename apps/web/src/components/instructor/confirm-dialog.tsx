@@ -4,7 +4,7 @@ import { Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogH
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-/** Destructive-action confirmation. */
+/** Confirmation dialog; destructive styling unless `confirmVariant` says otherwise. */
 export function ConfirmDialog({
   open,
   onOpenChange,
@@ -12,6 +12,7 @@ export function ConfirmDialog({
   body,
   confirmLabel,
   onConfirm,
+  confirmVariant = 'destructive',
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -19,6 +20,7 @@ export function ConfirmDialog({
   body: string;
   confirmLabel: string;
   onConfirm: () => Promise<void>;
+  confirmVariant?: 'destructive' | 'default';
 }) {
   const t = useTranslations('Common');
   const [pending, setPending] = useState(false);
@@ -32,7 +34,7 @@ export function ConfirmDialog({
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>{t('cancel')}</Button>
           <Button
-            variant="destructive"
+            variant={confirmVariant}
             disabled={pending}
             onClick={async () => {
               setPending(true);

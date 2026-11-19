@@ -100,3 +100,25 @@ describe('helpers', () => {
     }
   });
 });
+
+describe('Mailer.deliver and summary', () => {
+  it('reports why a message was not sent', async () => {
+    await expect(setup(undefined, null).mailer.deliver(message)).resolves.toEqual({ sent: false, error: 'MAIL_DISABLED', detail: null });
+    await expect(setup().mailer.deliver({ ...message, to: 'x@example.com' })).resolves.toEqual({ sent: false, error: 'UNDELIVERABLE', detail: null });
+    const failing = setup(jest.fn().mockRejectedValue(new Error('535 Authentication failed for code 123456')));
+    await expect(failing.mailer.deliver(message)).resolves.toEqual({
+      sent: false,
+      error: 'SMTP_ERROR',
+      detail: '535 Authentication failed for code ••••••',
+    });
+    await expect(setup().mailer.deliver(message)).resolves.toEqual({ sent: true, error: null, detail: null });
+  });
+
+  it('summary never exposes the SMTP username or password', () => {
+    const summary = setup().mailer.summary;
+    expect(summary).toEqual({ host: SETTINGS.host, port: 465, secure: true, from: SETTINGS.from, appUrl: SETTINGS.appUrl });
+    expect(JSON.stringify(summary)).not.toContain('token-never-logged');
+    expect(JSON.stringify(summary)).not.toContain('emailapikey');
+    expect(setup(undefined, null).mailer.summary).toBeNull();
+  });
+});

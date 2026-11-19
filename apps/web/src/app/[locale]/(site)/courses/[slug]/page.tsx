@@ -32,7 +32,8 @@ import { RatingStars } from '@/components/course/rating-stars';
 import { ReviewsSection } from '@/components/course/reviews-section';
 import { WishlistButton } from '@/components/course/wishlist-button';
 import { Link } from '@/i18n/navigation';
-import { getCourse, getEnrollment, getMe, getWishlistIds } from '@/lib/catalog';
+import { getCategories, getCourse, getEnrollment, getMe, getWishlistIds } from '@/lib/catalog';
+import { categoryHref } from '@/lib/categories';
 import { apiGet } from '@/lib/server-api';
 import { EntranceStatusSchema, ReviewListSchema } from '@obgyn/types';
 import { formatClock, formatDuration } from '@/lib/format';
@@ -55,7 +56,7 @@ export default async function CoursePage({ params }: Props) {
   setRequestLocale(locale);
   const [course, me] = await Promise.all([getCourse(slug), getMe()]);
   if (!course) notFound();
-  const [t, tCommon, tReviews, format, enrolled, wishlist, reviews] = await Promise.all([
+  const [t, tCommon, tReviews, format, enrolled, wishlist, reviews, categories] = await Promise.all([
     getTranslations('CourseDetail'),
     getTranslations('Common'),
     getTranslations('Reviews'),
@@ -63,6 +64,7 @@ export default async function CoursePage({ params }: Props) {
     me ? getEnrollment(slug) : Promise.resolve(false),
     getWishlistIds(),
     apiGet(`/courses/${encodeURIComponent(slug)}/reviews`, ReviewListSchema, { auth: !!me }).catch(() => null),
+    getCategories(),
   ]);
   const tEntrance = await getTranslations('Entrance');
   const entrance =
@@ -93,7 +95,7 @@ export default async function CoursePage({ params }: Props) {
                   <>
                     <ChevronRight aria-hidden className="size-4 rtl:rotate-180" />
                     <li>
-                      <Link href={`/courses?category=${course.category.slug}`} className="font-medium hover:text-primary">
+                      <Link href={categoryHref(categories, course.category.slug)} className="font-medium hover:text-primary">
                         {course.category.name}
                       </Link>
                     </li>

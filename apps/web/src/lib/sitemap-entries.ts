@@ -1,7 +1,14 @@
-import { CourseListResponseSchema, PublicPageRefSchema, type PublicPageRef } from '@obgyn/types';
+import {
+  CategoryTreeSchema,
+  CourseListResponseSchema,
+  PublicPageRefSchema,
+  type CategoryNode,
+  type PublicPageRef,
+} from '@obgyn/types';
 import { type MetadataRoute } from 'next';
 import { z } from 'zod';
 import { routing } from '@/i18n/routing';
+import { categoryPath } from './categories';
 import { API_URL } from './env';
 
 /** Public, indexable pages that exist in every language. */
@@ -33,12 +40,22 @@ export function buildSitemap(
   courses: Course[],
   pages: PublicPageRef[],
   locales: readonly string[] = routing.locales,
+  categories: CategoryNode[] = [],
 ): MetadataRoute.Sitemap {
   const alternates = (path: string) => ({
     languages: Object.fromEntries(locales.map((locale) => [locale, `${baseUrl}/${locale}${path}`])),
   });
   const entries: MetadataRoute.Sitemap = [];
-  for (const path of [...STATIC_PATHS, ...courses.map((course) => `/courses/${course.slug}`)]) {
+  // Category pages that list at least one published course (counts include sub-categories).
+  const categoryPaths = categories.flatMap((main) =>
+    main.courseCount === 0
+      ? []
+      : [
+          categoryPath(main.slug),
+          ...main.children.filter((sub) => sub.courseCount > 0).map((sub) => categoryPath(main.slug, sub.slug)),
+        ],
+  );
+  for (const path of [...STATIC_PATHS, ...categoryPaths, ...courses.map((course) => `/courses/${course.slug}`)]) {
     for (const locale of locales) entries.push({ url: `${baseUrl}/${locale}${path}`, alternates: alternates(path) });
   }
   // A page shows English when its translation is missing, so list it once per site language.
@@ -56,8 +73,12 @@ export function buildSitemap(
 }
 
 /** If the API is down the sitemap still lists the static pages. */
-export async function loadSitemapSources(): Promise<{ courses: Course[]; pages: PublicPageRef[] }> {
-  const [courses, pages] = await Promise.all([
+export async function loadSitemapSources(): Promise<{
+  courses: Course[];
+  pages: PublicPageRef[];
+  categories: CategoryNode[];
+}> {
+  const [courses, pages, categories] = await Promise.all([
     publishedCourses().catch((error) => {
       console.error('Sitemap: course list unavailable', error);
       return [];
@@ -66,6 +87,10 @@ export async function loadSitemapSources(): Promise<{ courses: Course[]; pages: 
       console.error('Sitemap: page list unavailable', error);
       return [];
     }),
+    getJson('/categories', CategoryTreeSchema).catch((error) => {
+      console.error('Sitemap: category list unavailable', error);
+      return [];
+    }),
   ]);
-  return { courses, pages };
+  return { courses, pages, categories };
 }

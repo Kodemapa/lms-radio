@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
+import { categoryPath } from '@/lib/categories';
 import { SectionHeading } from './section-heading';
 
 const ICONS: Record<string, LucideIcon> = {
@@ -41,7 +42,7 @@ export async function TopCategories({ categories }: { categories: CategoryNode[]
             return (
               <li key={category.id}>
                 <Link
-                  href={`/courses?category=${category.slug}`}
+                  href={categoryPath(category.slug)}
                   className="group flex h-full items-center gap-4 rounded-xl border border-border bg-card p-6 transition-all hover:-translate-y-1 hover:border-primary hover:shadow-sm"
                 >
                   <span className="rounded-xl bg-primary-light p-3 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">

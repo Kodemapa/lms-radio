@@ -1,7 +1,7 @@
 import { Injectable, Logger, type OnApplicationShutdown } from '@nestjs/common';
 import { AppConfigService } from '../config/app-config.service';
 import { type MailMessage } from './mail-message';
-import { Mailer, mailSettingsFrom } from './mailer';
+import { Mailer, mailSettingsFrom, type DeliveryResult } from './mailer';
 
 /**
  * The app's single way to send email (ZeptoMail over SMTP). With SMTP_HOST
@@ -30,9 +30,19 @@ export class MailService implements OnApplicationShutdown {
     return this.mailer.enabled;
   }
 
+  /** Host, port, TLS, sender and link base; null when email is off. No credentials. */
+  get summary() {
+    return this.mailer.summary;
+  }
+
   /** Resolves true when the message was accepted by the SMTP server; never throws. */
   sendMail(message: MailMessage): Promise<boolean> {
     return this.mailer.send(message);
+  }
+
+  /** Sends now and reports why a message wasn't sent; never throws. */
+  deliver(message: MailMessage): Promise<DeliveryResult> {
+    return this.mailer.deliver(message);
   }
 
   /** Queues messages to send one at a time after the current request returns. */

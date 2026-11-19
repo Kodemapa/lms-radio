@@ -21,6 +21,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
 import { useRouter } from '@/i18n/navigation';
 import { GlobalLoader } from './page-loader';
 import { initials } from '@/lib/initials';
@@ -42,6 +43,7 @@ export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenu
   const tCommon = useTranslations('Common');
   // True from "Sign out" until the page reloads: shows the global loader meanwhile.
   const [signingOut, setSigningOut] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
   // Signed in on every page that shows this menu: sign out here if the session ends elsewhere.
   useSessionWatch();
   const isAdmin = user.role === 'ADMIN';
@@ -104,20 +106,29 @@ export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenu
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onSelect={async () => {
-              // The loader stays up through the full page load that follows.
-              setSigningOut(true);
-              await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
-              // A full page load re-runs the theme script, so the signed-out site uses the admin default.
-              window.location.assign('/');
-            }}
-          >
+          {/* Asks first: a stray click shouldn't end the session (and stop a lesson or quiz). */}
+          <DropdownMenuItem onSelect={() => setConfirmSignOut(true)}>
             <LogOut aria-hidden className="size-4" />
             {labels.signOut}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      {/* Outside the menu, so it stays open after the menu closes. */}
+      <ConfirmDialog
+        open={confirmSignOut}
+        onOpenChange={setConfirmSignOut}
+        title={tCommon('signOutConfirmTitle')}
+        body={tCommon('signOutConfirmBody')}
+        confirmLabel={labels.signOut}
+        confirmVariant="default"
+        onConfirm={async () => {
+          // The loader stays up through the full page load that follows.
+          setSigningOut(true);
+          await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
+          // A full page load re-runs the theme script, so the signed-out site uses the admin default.
+          window.location.assign('/');
+        }}
+      />
       {/* Rendered on <body>: the header's backdrop blur would otherwise pin it inside the header. */}
       {signingOut ? createPortal(<GlobalLoader label={tCommon('signingOut')} source="nav" />, document.body) : null}
     </>

@@ -80,7 +80,9 @@
     "themeLight": "Light",
     "themeDark": "Dark",
     "themeSystem": "Device setting",
-    "themeButton": "Theme: {theme}. Change theme"
+    "themeButton": "Theme: {theme}. Change theme",
+    "signOutConfirmTitle": "Sign out?",
+    "signOutConfirmBody": "Are you sure you want to sign out?"
   },
   "Footer": {
     "about": "Focused fetal ultrasound education for radiology postgraduates and residents. Faculty-led courses, imaging case practice and individual learning reports.",
@@ -1331,7 +1333,11 @@
       "errors": {
         "exists": "A page with that slug and language already exists.",
         "failed": "The page couldn't be saved. Please try again."
-      }
+      },
+      "bodyView": "Page body view",
+      "write": "Write",
+      "preview": "Preview",
+      "previewEmpty": "Nothing to preview yet. Write the page body first."
     },
     "faqs": {
       "title": "Frequently asked questions",
@@ -1555,6 +1561,34 @@
     "searching": "Searching…",
     "instructorMobile": "Mobile number",
     "instructorMobileHint": "10-digit Indian mobile number, e.g. 9876543210.",
+    "mail": {
+      "title": "Outgoing email",
+      "on": "On",
+      "off": "Off",
+      "intro": "Sign-in codes, invitations, review results and contact-form alerts are sent with these settings.",
+      "offIntro": "Email is turned off: no SMTP server is configured, so the site sends no email. Notifications still appear in the bell.",
+      "host": "SMTP server",
+      "tls": "Encryption",
+      "tlsOn": "TLS (implicit)",
+      "tlsOff": "None or STARTTLS",
+      "from": "Sender",
+      "appUrl": "Links in emails open",
+      "secretsNote": "These values come from the server's environment secrets (SMTP_HOST, MAIL_FROM, APP_URL …) and can't be changed here. The SMTP username and password are never shown.",
+      "testLabel": "Send a test email to",
+      "testHelp": "Sends a short fixed message, so you can check delivery (look in the spam folder too). Each test is recorded in the audit log.",
+      "sendTest": "Send test email",
+      "sending": "Sending…",
+      "sent": "Test email sent to {to}. Check that inbox (and its spam folder).",
+      "errors": {
+        "invalid": "Enter a valid email address.",
+        "disabled": "Email is turned off on this server, so nothing was sent.",
+        "undeliverable": "That address can't receive mail (placeholder or test domain). Use a real mailbox.",
+        "smtp": "The mail server refused the message: {detail}",
+        "tooMany": "Too many test emails. Wait a minute and try again.",
+        "failed": "The test email couldn't be sent. Please try again.",
+        "unavailable": "The email status couldn't be loaded."
+      }
+    },
     "userHistory": {
       "roleTitle": "Role history",
       "roleEmpty": "No role changes or instructor applications.",
@@ -2340,5 +2374,12 @@
       "VERIFIED": "Verified"
     },
     "from": "From {name}"
+  },
+  "Categories": {
+    "kicker": "Category",
+    "breadcrumb": "Breadcrumb",
+    "allCourses": "All courses",
+    "allIn": "All {name}",
+    "subcategories": "Sub-categories of {name}"
   }
 }

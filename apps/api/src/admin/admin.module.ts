@@ -11,6 +11,8 @@ import { AdminCategoriesController } from './categories/admin-categories.control
 import { AdminCategoriesService } from './categories/admin-categories.service';
 import { AdminExportsController } from './exports/admin-exports.controller';
 import { AdminExportsService } from './exports/admin-exports.service';
+import { AdminMailController } from './mail/admin-mail.controller';
+import { AdminMailService } from './mail/admin-mail.service';
 import { AdminMediaController } from './media/admin-media.controller';
 import { AdminMediaService } from './media/admin-media.service';
 import { AdminReviewsController } from './reviews/admin-reviews.controller';
@@ -30,6 +32,7 @@ import { AdminUsersModule } from './users/admin-users.module';
     AdminMediaController,
     AdminExportsController,
     AdminApplicationFieldsController,
+    AdminMailController,
   ],
   providers: [
     AdminService,
@@ -40,6 +43,7 @@ import { AdminUsersModule } from './users/admin-users.module';
     AdminMediaService,
     AdminExportsService,
     AdminApplicationFieldsService,
+    AdminMailService,
   ],
 })
 export class AdminModule {}

@@ -28,6 +28,24 @@ describe('buildSitemap', () => {
     });
   });
 
+  it('lists category pages that have published courses', () => {
+    const node = (slug: string, courseCount: number, children: { slug: string; courseCount: number }[] = []) => ({
+      id: slug,
+      slug,
+      name: slug,
+      description: null,
+      courseCount,
+      children: children.map((child) => ({ id: child.slug, name: child.slug, description: null, children: [], ...child })),
+    });
+    const urls = buildSitemap('https://example.org', [], [], ['en'], [
+      node('ultrasound', 3, [{ slug: 'doppler', courseCount: 3 }, { slug: 'empty-sub', courseCount: 0 }]),
+      node('empty-main', 0),
+    ]).map((entry) => entry.url);
+    expect(urls).toContain('https://example.org/en/categories/ultrasound');
+    expect(urls).toContain('https://example.org/en/categories/ultrasound/doppler');
+    expect(urls.some((url) => url.includes('empty'))).toBe(false);
+  });
+
   it('never lists protected areas', () => {
     const urls = buildSitemap('https://example.org', [], [], ['en']).map((entry) => entry.url);
     expect(urls.some((url) => /\/(admin|instructor|learn|account|login)(\/|$)/.test(url))).toBe(false);

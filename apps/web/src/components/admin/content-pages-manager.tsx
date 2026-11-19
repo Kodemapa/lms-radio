@@ -10,6 +10,7 @@ import { Button, Input, Select, Textarea } from '@obgyn/ui';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
+import { ContentBlocks } from '@/components/content/content-blocks';
 import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
 import { ApiClientError, api } from '@/lib/instructor-api';
 import { RequiredLabel } from './required-label';
@@ -33,6 +34,7 @@ export function ContentPagesManager({ initial }: { initial: ContentPage[] }) {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [bodyMode, setBodyMode] = useState<'write' | 'preview'>('write');
 
   const refresh = async () => setPages(await api<ContentPage[]>('GET', 'admin/content/pages'));
 
@@ -75,13 +77,14 @@ export function ContentPagesManager({ initial }: { initial: ContentPage[] }) {
 
   const edit = (page: ContentPage) => {
     setError(null);
+    setBodyMode('write');
     setForm({ id: page.id, slug: page.slug, locale: page.locale, title: page.title, body: page.body, published: page.published });
   };
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex justify-end">
-        <Button onClick={() => { setError(null); setForm({ ...EMPTY }); }}>
+        <Button onClick={() => { setError(null); setBodyMode('write'); setForm({ ...EMPTY }); }}>
           <Plus aria-hidden className="size-4" />
           {t('add')}
         </Button>
@@ -136,8 +139,49 @@ export function ContentPagesManager({ initial }: { initial: ContentPage[] }) {
             <Input id="content-page-title" required maxLength={150} value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <RequiredLabel htmlFor="content-page-body">{t('body')}</RequiredLabel>
-            <Textarea id="content-page-body" required maxLength={50000} rows={12} value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} />
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <RequiredLabel htmlFor="content-page-body">{t('body')}</RequiredLabel>
+              <div role="group" aria-label={t('bodyView')} className="inline-flex rounded-full border border-border bg-muted p-0.5 text-sm">
+                {(['write', 'preview'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={bodyMode === mode}
+                    aria-controls={mode === 'write' ? 'content-page-body' : 'content-page-preview'}
+                    onClick={() => setBodyMode(mode)}
+                    className={`rounded-full px-3 py-1 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring ${
+                      bodyMode === mode ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {mode === 'write' ? t('write') : t('preview')}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* The textarea stays mounted (hidden in preview) so the label and form value keep working. */}
+            <Textarea
+              id="content-page-body"
+              required
+              maxLength={50000}
+              rows={12}
+              hidden={bodyMode === 'preview'}
+              value={form.body}
+              onChange={(event) => setForm({ ...form, body: event.target.value })}
+            />
+            {bodyMode === 'preview' ? (
+              <div
+                id="content-page-preview"
+                aria-label={t('preview')}
+                className="max-h-[32rem] min-h-[12rem] overflow-y-auto rounded-xl border border-border bg-background p-5"
+              >
+                {form.title.trim() ? <h1 className="mb-5 text-2xl font-bold">{form.title}</h1> : null}
+                {form.body.trim() ? (
+                  <ContentBlocks body={form.body} />
+                ) : (
+                  <p className="text-sm text-muted-foreground">{t('previewEmpty')}</p>
+                )}
+              </div>
+            ) : null}
             <p className="text-xs text-muted-foreground">{t('bodyHint')}</p>
           </div>
           <label className="flex items-center gap-2 text-sm">

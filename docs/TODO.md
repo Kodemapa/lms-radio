@@ -132,7 +132,7 @@ Plan: `docs/IMAGE-TASKS-GAP-ANALYSIS.md`. Done: dictionary, pin/box/outline/cali
   - List, search, filter by role; view a user's enrolments and devices.
   - Block/unblock (revokes sessions); change role; soft-delete.
   - Every change is audit-logged.
-- [~] **ADM-2 Categories CRUD + sub-categories + ordering** · M — Admin can create, edit, move and order categories (two levels). Remaining: the learner catalogue routes `courses/[main]/[sub]`.
+- [x] **ADM-2 Categories CRUD + sub-categories + ordering** · M — Admin can create, edit, move and order categories (two levels). Learner pages `/categories/<main>[/<sub>]` (done 19 Nov 2026; URL decision in `LEGACY-FEATURE-GAPS.md`).
 - [x] **ADM-3 Admin dashboard** · M — User/course/enrolment/certificate totals, pending queues and 30-day enrolment/sign-up charts. Revenue and refund queues wait for COM-*.
 - [x] **ADM-4 CSV exports** · S — Courses, enrolments, instructors, quiz attempts and imaging attempts; streamed, optional course filter, contacts masked unless requested, downloads audit-logged.
 - [x] **ADM-5 Instructor application custom fields** · S — Admin-defined fields render on the application form; answers are validated, PC-PNDT screened, saved and shown in review.
@@ -220,10 +220,10 @@ Still open from the old instructor area:
 
 ## P2 — Content pages & settings
 
-- [~] **CMS-1 Pages** · M — Admin page and FAQ editors, published public pages/FAQ, English/Hindi fallback and legal footer links are shipped. Public `/contact` form → admin inbox at `/admin/messages` (mark handled/reopen/delete, consent + honeypot, 5/min rate limit; migration `20261116170000_admin_contact_and_overrides`). Remaining: an in-editor Markdown preview; emailing admins about new messages waits for a mail provider.
+- [~] **CMS-1 Pages** · M — Admin page and FAQ editors, published public pages/FAQ, English/Hindi fallback and legal footer links are shipped. Public `/contact` form → admin inbox at `/admin/messages` (mark handled/reopen/delete, consent + honeypot, 5/min rate limit; migration `20261116170000_admin_contact_and_overrides`). Done 19 Nov 2026: Write/Preview toggle in the page editor (shares the public renderer); admins are emailed about new messages (ZeptoMail). Remaining: nothing for pages; home sections are CMS-2.
 - [ ] **CMS-2 Home sections** · M — Sliders/banners, feature sections, "why choose us"; ordering.
 - [x] **CMS-3 SEO settings** · S — Default title/description, social preview (OG/Twitter) image and a search-indexing switch; `/robots.txt` and `/sitemap.xml` (static pages, published courses and pages, hreflang alternates). Needs `NEXT_PUBLIC_WEB_URL` set in each environment.
-- [~] **CMS-4 Mail & app settings** · S — Public support contact and SEO values are editable; mail-provider, app and push settings remain out of scope until configured.
+- [~] **CMS-4 Mail & app settings** · S — Public support contact and SEO values are editable. Mail (19 Nov 2026): read-only SMTP status + "send test email" on `/admin/settings` (`GET /admin/mail`, `POST /admin/mail/test`; credentials stay in env secrets). Remaining: push settings (needs a provider decision).
 - [~] **CMS-5 Language editor** · M — `/admin/languages`: search all UI texts, edit per language as DB overrides merged over `messages/*.json` (unknown keys and edits that change `{arguments}` are ignored, PC-PNDT screened, audit-logged, ~1 min cache), restore shipped text, missing-translation count. Remaining: auto-translate (needs a provider decision) and adding regional languages (needs translated message files).
 
 ## P2 — Accounts & teams

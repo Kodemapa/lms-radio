@@ -69,6 +69,12 @@ time, so requests return immediately. Placeholder addresses (`@example.com`,
   token is never logged.
 - **Test the settings:** `pnpm --filter @obgyn/api mail:test -- --to you@yourdomain.com`
   reads `apps/api/.env` like the API does and prints success or the exact error.
+- **From the admin site:** `/admin/settings` → *Outgoing email* shows the status
+  (`GET /admin/mail`: server, port, TLS, sender, link base, never the username or
+  password) and sends a fixed test message (`POST /admin/mail/test {"to"}`,
+  admin-only, 5/min). The response says why a send failed (`MAIL_DISABLED`,
+  `UNDELIVERABLE`, or `SMTP_ERROR` plus the server's message). Each test is
+  audit-logged as `admin.mail_test_sent` with the recipient's domain only.
 
 Existing local test accounts keep their roles and data. After applying the
 non-destructive local migrations, set `DEV_ADMIN_PASSWORD`,

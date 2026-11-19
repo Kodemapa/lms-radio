@@ -1,6 +1,7 @@
-import { ContentPageSchema, parseContentBlocks } from '@obgyn/types';
+import { ContentPageSchema } from '@obgyn/types';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { ContentBlocks } from '@/components/content/content-blocks';
 import { ApiError, apiGet } from '@/lib/server-api';
 
 export default async function ContentPage({
@@ -20,7 +21,6 @@ export default async function ContentPage({
     throw error;
   }
   const t = await getTranslations('PublicContent');
-  const blocks = parseContentBlocks(page.body);
 
   return (
     <article className="container section-gap max-w-3xl">
@@ -30,25 +30,7 @@ export default async function ContentPage({
           {t('updated', { date: new Intl.DateTimeFormat(locale).format(new Date(page.updatedAt)) })}
         </p>
       </header>
-      <div className="flex flex-col gap-5 leading-7">
-        {blocks.map((block, index) => {
-          if (block.kind === 'heading') {
-            return block.level === 2 ? (
-              <h2 key={index} className="mt-3 text-xl font-semibold">{block.text}</h2>
-            ) : (
-              <h3 key={index} className="mt-2 text-lg font-semibold">{block.text}</h3>
-            );
-          }
-          if (block.kind === 'list') {
-            return (
-              <ul key={index} className="list-disc space-y-2 ps-6">
-                {block.items.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}
-              </ul>
-            );
-          }
-          return <p key={index} className="whitespace-pre-wrap">{block.text}</p>;
-        })}
-      </div>
+      <ContentBlocks body={page.body} />
     </article>
   );
 }
