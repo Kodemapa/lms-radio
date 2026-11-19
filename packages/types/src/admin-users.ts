@@ -67,7 +67,58 @@ export const AdminUserDetailSchema = z.object({
     courseTitle: z.string(),
     courseSlug: z.string(),
     enrolledAt: z.string().datetime(),
+    /** Lessons completed of the course's live lessons. */
+    progress: z.object({ completed: z.number().int(), total: z.number().int() }).default({ completed: 0, total: 0 }),
+    certificateSerial: z.string().nullable().default(null),
   })),
+  /**
+   * Everything the person did as a learner. Kept whatever their role is now, so
+   * a learner who became an instructor (or the reverse) keeps their history.
+   */
+  learning: z
+    .object({
+      submissions: z.array(z.object({
+        courseTitle: z.string(),
+        lessonTitle: z.string(),
+        status: z.enum(['SUBMITTED', 'APPROVED', 'REJECTED']),
+        updatedAt: z.string().datetime(),
+      })),
+      quizAttempts: z.array(z.object({
+        courseTitle: z.string(),
+        lessonTitle: z.string(),
+        scorePercent: z.number().int(),
+        passed: z.boolean(),
+        createdAt: z.string().datetime(),
+      })),
+      entranceAttempts: z.array(z.object({
+        courseTitle: z.string(),
+        scorePercent: z.number().int().nullable(),
+        passed: z.boolean().nullable(),
+        startedAt: z.string().datetime(),
+      })),
+      reviews: z.array(z.object({
+        courseId: z.string().uuid(),
+        courseTitle: z.string(),
+        rating: z.number().int(),
+        comment: z.string().nullable(),
+        createdAt: z.string().datetime(),
+        reported: z.boolean(),
+        hidden: z.boolean(),
+      })),
+    })
+    .default({ submissions: [], quizAttempts: [], entranceAttempts: [], reviews: [] }),
+  /** Role changes and instructor applications, newest first. */
+  roleHistory: z
+    .array(z.object({
+      kind: z.enum(['ROLE_CHANGED', 'APPLICATION']),
+      from: z.string().nullable(),
+      to: z.string().nullable(),
+      /** APPLICATION: PENDING / APPROVED / REJECTED. */
+      status: z.string().nullable(),
+      note: z.string().nullable(),
+      at: z.string().datetime(),
+    }))
+    .default([]),
   devices: z.array(z.object({
     id: z.string().uuid(),
     label: z.string().nullable(),

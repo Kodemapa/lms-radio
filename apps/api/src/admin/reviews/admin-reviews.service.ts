@@ -31,7 +31,7 @@ export class AdminReviewsService {
         ? { reportedAt: { not: null }, hiddenAt: null }
         : query.status === 'HIDDEN'
           ? { hiddenAt: { not: null } }
-          : { OR: [{ reportedAt: { not: null } }, { hiddenAt: { not: null } }] };
+          : {};
     const [rows, total] = await Promise.all([
       this.prisma.courseReview.findMany({
         where,

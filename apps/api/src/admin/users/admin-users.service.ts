@@ -13,6 +13,7 @@ import { type AuthUser } from '../../auth/auth-user';
 import { hashPassword } from '../../common/password';
 import { MailService } from '../../mail/mail.service';
 import { instructorAccountEmail } from '../../mail/templates';
+import { LIVE_LESSON } from '../../common/soft-delete';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UsersService } from '../../users/users.service';
 import { pageArgs, pageCount } from '../paging';
@@ -101,7 +102,8 @@ export class AdminUsersService {
   }
 
   async detail(id: string): Promise<AdminUserDetail> {
-    const [user, activity] = await Promise.all([
+    const RECENT = 50;
+    const [user, activity, progress, liveLessons, certificates, submissions, quizAttempts, entranceAttempts, reviews, roleChanges, applications] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id },
         include: {
@@ -119,8 +121,57 @@ export class AdminUsersService {
         orderBy: { createdAt: 'desc' },
         take: 20,
       }),
+      this.prisma.lessonProgress.groupBy({
+        by: ['courseId'],
+        where: { userId: id, completedAt: { not: null }, lesson: LIVE_LESSON },
+        _count: { _all: true },
+      }),
+      this.prisma.lesson.groupBy({
+        by: ['courseId'],
+        where: { course: { enrollments: { some: { userId: id } } }, ...LIVE_LESSON },
+        _count: { _all: true },
+      }),
+      this.prisma.certificate.findMany({ where: { userId: id }, select: { courseId: true, serial: true } }),
+      this.prisma.assignmentSubmission.findMany({
+        where: { userId: id },
+        orderBy: { updatedAt: 'desc' },
+        take: RECENT,
+        select: { status: true, updatedAt: true, course: { select: { title: true } }, lesson: { select: { title: true } } },
+      }),
+      this.prisma.quizAttempt.findMany({
+        where: { userId: id },
+        orderBy: { createdAt: 'desc' },
+        take: RECENT,
+        select: { scorePercent: true, passed: true, createdAt: true, lesson: { select: { title: true, course: { select: { title: true } } } } },
+      }),
+      this.prisma.entranceAttempt.findMany({
+        where: { userId: id },
+        orderBy: { startedAt: 'desc' },
+        take: RECENT,
+        select: { scorePercent: true, passed: true, startedAt: true, course: { select: { title: true } } },
+      }),
+      this.prisma.courseReview.findMany({
+        where: { userId: id },
+        orderBy: { createdAt: 'desc' },
+        take: RECENT,
+        select: { courseId: true, rating: true, comment: true, createdAt: true, reportedAt: true, hiddenAt: true, course: { select: { title: true } } },
+      }),
+      this.prisma.auditLog.findMany({
+        where: { action: 'admin.user_role_changed', resource: 'user', resourceId: id },
+        orderBy: { createdAt: 'desc' },
+        select: { metadata: true, createdAt: true },
+      }),
+      this.prisma.instructorApplication.findMany({
+        where: { userId: id },
+        orderBy: { createdAt: 'desc' },
+        select: { status: true, reviewNote: true, createdAt: true, reviewedAt: true },
+      }),
     ]);
     if (!user) throw new NotFoundException();
+    const doneBy = new Map(progress.map((row) => [row.courseId, row._count._all]));
+    const totalBy = new Map(liveLessons.map((row) => [row.courseId, row._count._all]));
+    const serialBy = new Map(certificates.map((row) => [row.courseId, row.serial]));
+    const text = (value: unknown) => (typeof value === 'string' ? value : null);
 
     return {
       user: {
@@ -143,7 +194,53 @@ export class AdminUsersService {
         courseTitle: enrollment.course.title,
         courseSlug: enrollment.course.slug,
         enrolledAt: enrollment.createdAt.toISOString(),
+        progress: { completed: doneBy.get(enrollment.courseId) ?? 0, total: totalBy.get(enrollment.courseId) ?? 0 },
+        certificateSerial: serialBy.get(enrollment.courseId) ?? null,
       })),
+      learning: {
+        submissions: submissions.map((row) => ({
+          courseTitle: row.course.title,
+          lessonTitle: row.lesson.title,
+          status: row.status,
+          updatedAt: row.updatedAt.toISOString(),
+        })),
+        quizAttempts: quizAttempts.map((row) => ({
+          courseTitle: row.lesson.course.title,
+          lessonTitle: row.lesson.title,
+          scorePercent: row.scorePercent,
+          passed: row.passed,
+          createdAt: row.createdAt.toISOString(),
+        })),
+        entranceAttempts: entranceAttempts.map((row) => ({
+          courseTitle: row.course.title,
+          scorePercent: row.scorePercent,
+          passed: row.passed,
+          startedAt: row.startedAt.toISOString(),
+        })),
+        reviews: reviews.map((row) => ({
+          courseId: row.courseId,
+          courseTitle: row.course.title,
+          rating: row.rating,
+          comment: row.comment,
+          createdAt: row.createdAt.toISOString(),
+          reported: row.reportedAt !== null,
+          hidden: row.hiddenAt !== null,
+        })),
+      },
+      roleHistory: [
+        ...roleChanges.map((row) => {
+          const meta = (row.metadata ?? {}) as Record<string, unknown>;
+          return { kind: 'ROLE_CHANGED' as const, from: text(meta.from), to: text(meta.to), status: null, note: text(meta.reason), at: row.createdAt.toISOString() };
+        }),
+        ...applications.map((row) => ({
+          kind: 'APPLICATION' as const,
+          from: null,
+          to: null,
+          status: row.status,
+          note: row.reviewNote,
+          at: (row.reviewedAt ?? row.createdAt).toISOString(),
+        })),
+      ].sort((a, b) => b.at.localeCompare(a.at)),
       devices: user.devices.map((device) => ({
         id: device.id,
         label: device.label,

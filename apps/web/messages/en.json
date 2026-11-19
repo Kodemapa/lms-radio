@@ -1554,7 +1554,39 @@
     "searchLabel": "Search",
     "searching": "Searching…",
     "instructorMobile": "Mobile number",
-    "instructorMobileHint": "10-digit Indian mobile number, e.g. 9876543210."
+    "instructorMobileHint": "10-digit Indian mobile number, e.g. 9876543210.",
+    "userHistory": {
+      "roleTitle": "Role history",
+      "roleEmpty": "No role changes or instructor applications.",
+      "roleChanged": "Role changed from {from} to {to}",
+      "application": {
+        "PENDING": "Applied to become an instructor",
+        "APPROVED": "Instructor application approved",
+        "REJECTED": "Instructor application rejected"
+      },
+      "reason": "Reason: {reason}",
+      "learningTitle": "Learning history",
+      "learningIntro": "Kept whatever the person's role is now, including after a change to or from instructor.",
+      "progress": "{completed} of {total} lessons",
+      "certificate": "Certificate {serial}",
+      "assignments": "Assignments",
+      "quizzes": "Quiz attempts",
+      "entrance": "Entrance tests",
+      "reviews": "Course reviews",
+      "none": "None yet.",
+      "submission": {
+        "SUBMITTED": "Waiting for review",
+        "APPROVED": "Approved",
+        "REJECTED": "Changes requested"
+      },
+      "score": "{score}%",
+      "passed": "Passed",
+      "failed": "Not passed",
+      "inProgress": "Not finished",
+      "hidden": "Hidden",
+      "reported": "Reported",
+      "stars": "{rating}/5"
+    }
   },
   "NotFound": {
     "title": "Page not found",

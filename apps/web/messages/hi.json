@@ -1554,7 +1554,39 @@
     "searchLabel": "खोजें",
     "searching": "खोजा जा रहा है…",
     "instructorMobile": "मोबाइल नंबर",
-    "instructorMobileHint": "10 अंकों का भारतीय मोबाइल नंबर, जैसे 9876543210।"
+    "instructorMobileHint": "10 अंकों का भारतीय मोबाइल नंबर, जैसे 9876543210।",
+    "userHistory": {
+      "roleTitle": "भूमिका इतिहास",
+      "roleEmpty": "कोई भूमिका परिवर्तन या प्रशिक्षक आवेदन नहीं।",
+      "roleChanged": "भूमिका {from} से {to} की गई",
+      "application": {
+        "PENDING": "प्रशिक्षक बनने के लिए आवेदन किया",
+        "APPROVED": "प्रशिक्षक आवेदन स्वीकृत",
+        "REJECTED": "प्रशिक्षक आवेदन अस्वीकृत"
+      },
+      "reason": "कारण: {reason}",
+      "learningTitle": "सीखने का इतिहास",
+      "learningIntro": "व्यक्ति की वर्तमान भूमिका चाहे जो हो, यह इतिहास बना रहता है।",
+      "progress": "{total} में से {completed} पाठ",
+      "certificate": "प्रमाणपत्र {serial}",
+      "assignments": "असाइनमेंट",
+      "quizzes": "क्विज़ प्रयास",
+      "entrance": "प्रवेश परीक्षाएँ",
+      "reviews": "कोर्स समीक्षाएँ",
+      "none": "अभी कुछ नहीं।",
+      "submission": {
+        "SUBMITTED": "समीक्षा की प्रतीक्षा में",
+        "APPROVED": "स्वीकृत",
+        "REJECTED": "बदलाव माँगे गए"
+      },
+      "score": "{score}%",
+      "passed": "उत्तीर्ण",
+      "failed": "अनुत्तीर्ण",
+      "inProgress": "पूरा नहीं हुआ",
+      "hidden": "छिपी हुई",
+      "reported": "रिपोर्ट की गई",
+      "stars": "{rating}/5"
+    }
   },
   "NotFound": {
     "title": "पेज नहीं मिला",
