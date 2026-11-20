@@ -1,6 +1,6 @@
 'use client';
 
-import { type InstructorChapter, type InstructorCourse, type InstructorLesson } from '@obgyn/types';
+import { type InstructorChapter, type InstructorCourse, type InstructorLesson, LESSON_DOCUMENT_TYPES } from '@obgyn/types';
 import {
   Button,
   Dialog,
@@ -389,7 +389,7 @@ function ChapterDialog({
             <DialogTitle>{edit.mode === 'add' ? t('addChapter') : t('editChapter')}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="chapter-title">{t('chapterTitle')}</Label>
+            <Label htmlFor="chapter-title" required>{t('chapterTitle')}</Label>
             <Input id="chapter-title" value={title} maxLength={150} autoFocus required onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div className="flex flex-col gap-2">
@@ -478,13 +478,13 @@ function LessonDialog({
             <DialogTitle>{edit.mode === 'add' ? t('addLesson') : t('editLesson')}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="lesson-title">{t('lessonTitle')}</Label>
+            <Label htmlFor="lesson-title" required>{t('lessonTitle')}</Label>
             <Input id="lesson-title" value={values.title} maxLength={150} autoFocus required onChange={(e) => set({ title: e.target.value })} />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="lesson-kind">{t('lessonType')}</Label>
+            <Label htmlFor="lesson-kind" required>{t('lessonType')}</Label>
             <Select
-              id="lesson-kind"
+              id="lesson-kind" aria-required="true"
               value={values.kind}
               disabled={edit.mode === 'edit' && (existing?.kind === 'QUIZ') && (existing?.questionCount ?? 0) > 0}
               onChange={(e) => {
@@ -504,6 +504,9 @@ function LessonDialog({
             <FileUpload
               key={values.kind}
               kind={values.kind as 'VIDEO' | 'PDF'}
+              // Lesson documents open in the protected PDF viewer, so PDF only.
+              accept={values.kind === 'PDF' ? [...LESSON_DOCUMENT_TYPES] : undefined}
+              hint={values.kind === 'PDF' ? t('pdfLessonHint') : undefined}
               label={t('lessonFile')}
               currentName={fileName}
               onUploaded={({ assetId, fileName: name }) => {

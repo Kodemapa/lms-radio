@@ -1,6 +1,12 @@
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { type ReactNode } from 'react';
+import { Brand } from '@/components/layout/brand';
+import { NotificationBell } from '@/components/layout/notification-bell';
+import { UserMenu } from '@/components/layout/user-menu';
+import { LocaleSwitcher } from '@/components/locale-switcher';
 import { PlayerShell } from '@/components/player/player-shell';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { getMe } from '@/lib/catalog';
 import { getOutline } from '@/lib/learning-server';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +21,38 @@ export default async function PlayerLayout({
 }) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
-  const outline = await getOutline(locale, slug);
-  return <PlayerShell outline={outline}>{children}</PlayerShell>;
+  // In parallel: the outline and the signed-in user are independent requests.
+  const [outline, me, t] = await Promise.all([getOutline(locale, slug), getMe(), getTranslations('Common')]);
+
+  // The same account controls as every other page, so the player header looks and works the same.
+  const account = (
+    <>
+      {me ? <NotificationBell /> : null}
+      <ThemeToggle />
+      <span className="hidden md:block">
+        <LocaleSwitcher label={t('language')} />
+      </span>
+      {me ? (
+        <UserMenu
+          user={me}
+          labels={{
+            myLearning: t('myLearning'),
+            wishlist: t('wishlist'),
+            account: t('account'),
+            instructorDashboard: t('instructorDashboard'),
+            adminDashboard: t('adminDashboard'),
+            becomeInstructor: t('becomeInstructor'),
+            signOut: t('signOut'),
+            myAccount: t('myAccount'),
+          }}
+        />
+      ) : null}
+    </>
+  );
+
+  return (
+    <PlayerShell outline={outline} brand={<Brand name={t('appName')} />} account={account}>
+      {children}
+    </PlayerShell>
+  );
 }

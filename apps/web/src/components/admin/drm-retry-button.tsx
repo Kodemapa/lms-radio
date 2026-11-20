@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@obgyn/ui';
+import { Button, toast } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
@@ -20,6 +20,7 @@ export function DrmRetryButton({ assetId, ready }: { assetId: string; ready: boo
     setError(null);
     try {
       await api('POST', `admin/media/${assetId}/drm/retry${ready ? '?force=true' : ''}`);
+      toast.success(t('toastQueued'));
       router.refresh();
     } catch (requestError) {
       const code = requestError instanceof ApiClientError ? requestError.body?.code : undefined;

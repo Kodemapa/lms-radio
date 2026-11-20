@@ -12,12 +12,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  toast,
 } from '@obgyn/ui';
 import { ArrowRight, Bell, CheckCheck, Loader2 } from 'lucide-react';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { bffFetch } from '@/lib/client-fetch';
+import { showNavigationLoader } from './navigation-progress';
 
 /** How often the unread badge refreshes while the page is open and visible. */
 const POLL_MS = 60_000;
@@ -96,6 +98,7 @@ export function NotificationBell() {
 
   const go = (link: string) => {
     setSelected(null);
+    showNavigationLoader(link);
     router.push(link);
   };
 
@@ -106,6 +109,7 @@ export function NotificationBell() {
     setItems((current) => current?.map((n) => ({ ...n, readAt: n.readAt ?? now })) ?? null);
     setUnread(0);
     setBusy(null);
+    toast.success(t('allRead'));
   };
 
   const describe = (item: AppNotification) => {

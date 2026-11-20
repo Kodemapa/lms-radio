@@ -234,10 +234,24 @@ export const UPLOAD_KINDS = ['IMAGE', 'VIDEO', 'PDF', 'DICOM'] as const;
 export const UploadKindSchema = z.enum(UPLOAD_KINDS);
 export type UploadKind = z.infer<typeof UploadKindSchema>;
 
+/** PowerPoint: .ppt and .pptx. */
+export const SLIDE_MIME_TYPES = [
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+] as const;
+
+/** What a PDF lesson may hold: the protected viewer renders PDF only. */
+export const LESSON_DOCUMENT_TYPES = ['application/pdf'] as const;
+
 export const UPLOAD_LIMITS: Record<UploadKind, { maxBytes: number; mimeTypes: readonly string[] }> = {
   IMAGE: { maxBytes: 5 * 1024 * 1024, mimeTypes: ['image/jpeg', 'image/png', 'image/webp'] },
   VIDEO: { maxBytes: 4 * 1024 * 1024 * 1024, mimeTypes: ['video/mp4', 'video/webm'] },
-  PDF: { maxBytes: 100 * 1024 * 1024, mimeTypes: ['application/pdf'] },
+  /**
+   * Documents. PowerPoint is accepted for files a reviewer opens (assignment
+   * submissions, imaging working); lesson documents must be PDF (see LESSON_DOCUMENT_TYPES)
+   * because the protected in-app viewer only renders PDF.
+   */
+  PDF: { maxBytes: 100 * 1024 * 1024, mimeTypes: ['application/pdf', ...SLIDE_MIME_TYPES] },
   /**
    * Case images: a DICOM Part 10 file (one image, possibly multi-frame), or a
    * PNG/JPEG screenshot converted to DICOM. De-identified server-side.

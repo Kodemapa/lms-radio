@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { courseApi } from '@/lib/instructor-api';
+import { showNavigationLoader } from '@/components/layout/navigation-progress';
 
 export function NewCourseForm() {
   const t = useTranslations('Instructor');
@@ -24,6 +25,7 @@ export function NewCourseForm() {
     try {
       const course = await courseApi('POST', 'courses', parsed.data);
       toast.success(tCommon('toast.courseCreated'));
+      showNavigationLoader();
       router.push(`/instructor/courses/${course.id}`);
     } catch {
       setError(tCommon('genericError'));
@@ -34,9 +36,9 @@ export function NewCourseForm() {
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4 surface p-6">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="new-course-title">{t('courseTitle')}</Label>
+        <Label htmlFor="new-course-title" required>{t('courseTitle')}</Label>
         <Input
-          id="new-course-title"
+          id="new-course-title" aria-required="true"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder={t('courseTitlePlaceholder')}

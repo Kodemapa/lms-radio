@@ -1,7 +1,7 @@
 'use client';
 
 import { ContactMessageInputSchema } from '@obgyn/types';
-import { Button, Input, Label, Textarea } from '@obgyn/ui';
+import { Button, Input, Label, Textarea, toast } from '@obgyn/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { Link } from '@/i18n/navigation';
@@ -40,6 +40,7 @@ export function ContactForm() {
       if (response.ok) {
         setForm(EMPTY);
         setStatus('sent');
+        toast.success(t('toastSent'));
       } else setStatus(response.status === 429 ? 'limited' : 'failed');
     } catch {
       setStatus('failed');
@@ -64,12 +65,12 @@ export function ContactForm() {
     <form onSubmit={submit} noValidate className="surface flex flex-col gap-5 rounded-2xl p-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="contact-name">{t('name')}</Label>
+          <Label htmlFor="contact-name" required>{t('name')}</Label>
           <Input id="contact-name" autoComplete="name" required maxLength={120} value={form.name} aria-invalid={!!errors.name} aria-describedby={describedBy('name')} onChange={(event) => setForm({ ...form, name: event.target.value })} />
           {fieldError('name')}
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="contact-email">{t('email')}</Label>
+          <Label htmlFor="contact-email" required>{t('email')}</Label>
           <Input id="contact-email" type="email" autoComplete="email" required maxLength={120} value={form.email} aria-invalid={!!errors.email} aria-describedby={describedBy('email')} onChange={(event) => setForm({ ...form, email: event.target.value })} />
           {fieldError('email')}
         </div>
@@ -80,12 +81,12 @@ export function ContactForm() {
         {fieldError('phone')}
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="contact-subject">{t('subject')}</Label>
+        <Label htmlFor="contact-subject" required>{t('subject')}</Label>
         <Input id="contact-subject" required maxLength={150} value={form.subject} aria-invalid={!!errors.subject} aria-describedby={describedBy('subject')} onChange={(event) => setForm({ ...form, subject: event.target.value })} />
         {fieldError('subject')}
       </div>
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="contact-message">{t('message')}</Label>
+        <Label htmlFor="contact-message" required>{t('message')}</Label>
         <Textarea id="contact-message" required rows={6} maxLength={5000} value={form.message} aria-invalid={!!errors.message} aria-describedby={describedBy('message')} onChange={(event) => setForm({ ...form, message: event.target.value })} />
         {fieldError('message')}
       </div>

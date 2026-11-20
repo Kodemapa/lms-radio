@@ -7,7 +7,7 @@ import {
   UserProfileSchema,
   type OtpChannel,
 } from '@obgyn/types';
-import { Button, Input, Label } from '@obgyn/ui';
+import { Button, Input, Label, toast } from '@obgyn/ui';
 import { Eye, EyeOff } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -17,6 +17,7 @@ import { GlobalLoader } from '@/components/layout/page-loader';
 import { Link } from '@/i18n/navigation';
 import { getDeviceId } from '@/lib/device';
 import { safeNextPath } from '@/lib/paths';
+import { showNavigationLoader } from '@/components/layout/navigation-progress';
 
 /** 10 digits after +91, starting 6–9 (Indian mobile numbers). */
 const MOBILE_DIGITS = /^[6-9]\d{9}$/;
@@ -236,8 +237,11 @@ function LoginFormSteps({
 
   const device = () => ({ deviceId: getDeviceId(), deviceLabel: navigator.userAgent.slice(0, 100) });
 
-  async function continueAfterAuthentication(session: Response) {
+  async function continueAfterAuthentication(session: Response, kind: 'signedIn' | 'accountCreated' = 'signedIn') {
     setRedirecting(true);
+    // The app stays loaded through the redirect, so the toast shows on the next page.
+    toast.success(t(`toast.${kind}`));
+    showNavigationLoader();
     if (next) {
       router.replace(safeNextPath(next, `/${locale}/courses`));
     } else {
@@ -300,6 +304,7 @@ function LoginFormSteps({
       setFieldErrors({});
       setError(null);
       setNotice(resend ? t('codeResent') : null);
+      toast.info(resend ? t('codeResent') : t('codeSentTo', { target: shownTarget }));
       setResendIn(RESEND_SECONDS);
     });
   }
@@ -376,7 +381,7 @@ function LoginFormSteps({
         ...device(),
       });
       if (!res.ok) return showFailure(res);
-      await continueAfterAuthentication(res);
+      await continueAfterAuthentication(res, 'accountCreated');
     });
   }
 
@@ -425,6 +430,7 @@ function LoginFormSteps({
       setPassword('');
       setConfirmPassword('');
       setNotice(t('resetSuccess'));
+      toast.success(t('resetSuccess'));
     });
   }
 

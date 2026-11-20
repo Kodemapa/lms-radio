@@ -1,6 +1,6 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Toaster, currentToasts, dismissToast, toast } from './toast';
+import { Toaster, currentToasts, dismissToast, toast, toastAfterReload } from './toast';
 
 describe('toast', () => {
   afterEach(() => {
@@ -36,5 +36,12 @@ describe('toast', () => {
       for (let i = 0; i < 6; i++) toast(`Message ${i}`);
     });
     expect(currentToasts().map((item) => item.message)).toEqual(['Message 2', 'Message 3', 'Message 4', 'Message 5']);
+  });
+
+  it('shows a toast saved before a full page load once the next page renders', () => {
+    toastAfterReload('success', 'Signed out.');
+    render(<Toaster closeLabel="Dismiss" />);
+    expect(screen.getByText('Signed out.')).toBeTruthy();
+    expect(sessionStorage.getItem('obgyn:pending-toast')).toBeNull();
   });
 });

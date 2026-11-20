@@ -47,8 +47,8 @@ export function SecurityPanel({ devices }: { devices: Device[] }) {
         <h2 id="delete" className="text-lg font-semibold text-destructive">{t('deleteTitle')}</h2>
         <p className="text-sm">{t('deleteBody')}</p>
         <div className="flex max-w-sm flex-col gap-2">
-          <Label htmlFor="confirm-delete">{t('deleteConfirmLabel')}</Label>
-          <Input id="confirm-delete" value={confirmText} autoComplete="off" onChange={(e) => setConfirmText(e.target.value)} />
+          <Label htmlFor="confirm-delete" required>{t('deleteConfirmLabel')}</Label>
+          <Input id="confirm-delete" aria-required="true" value={confirmText} autoComplete="off" onChange={(e) => setConfirmText(e.target.value)} />
         </div>
         <Button
           variant="destructive"

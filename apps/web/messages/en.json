@@ -111,7 +111,9 @@
       "enrolled": "You're enrolled. Opening the course…",
       "deviceRemoved": "Device signed out.",
       "wishlistAdded": "Added to your wishlist.",
-      "wishlistRemoved": "Removed from your wishlist."
+      "wishlistRemoved": "Removed from your wishlist.",
+      "signedOut": "You've been signed out.",
+      "reviewSent": "Review sent to the learner."
     },
     "userId": "User ID",
     "copyUserId": "Copy user ID",
@@ -599,7 +601,11 @@
     "becomeInstructor": "apply to become an instructor",
     "signingIn": "Signing you in…",
     "creatingAccount": "Creating your account…",
-    "sessionEnded": "You have been signed out. Your session ended or your account was changed by an administrator. Sign in again to continue."
+    "sessionEnded": "You have been signed out. Your session ended or your account was changed by an administrator. Sign in again to continue.",
+    "toast": {
+      "signedIn": "Signed in. Welcome back!",
+      "accountCreated": "Your account is ready. Welcome!"
+    }
   },
   "BecomeInstructor": {
     "title": "Teach on GIFS e-LMS",
@@ -669,7 +675,8 @@
     "goToDashboard": "Go to instructor dashboard",
     "alreadyInstructor": "You're already an instructor.",
     "kicker": "For faculty",
-    "requiredNote": "Fields marked with an asterisk are required."
+    "requiredNote": "Fields marked with an asterisk are required.",
+    "toastSubmitted": "Application submitted. We'll let you know once it's reviewed."
   },
   "Instructor": {
     "nav": {
@@ -836,7 +843,7 @@
       "points": "Points",
       "submissionKinds": "Learners may attach",
       "kindImage": "Images (JPG, PNG, WebP)",
-      "kindPdf": "PDF documents",
+      "kindPdf": "PDF or PowerPoint documents",
       "manageQuestions": "Questions ({count})",
       "questionsTitle": "Quiz questions: {title}",
       "addQuestion": "Add question",
@@ -980,7 +987,8 @@
         "lessonAdded": "Lesson added.",
         "lessonSaved": "Lesson saved.",
         "lessonDeleted": "Lesson moved to trash."
-      }
+      },
+      "pdfLessonHint": "Learners read lesson documents in the protected viewer, which shows PDF only. For PowerPoint slides, choose File → Save As → PDF first."
     },
     "upload": {
       "choose": "Choose file",
@@ -993,7 +1001,9 @@
       "tooLarge": "This file is too large.",
       "wrongType": "This file type isn't supported.",
       "deidentified": "I confirm this file contains no patient-identifying information (name, ID, face, hospital number).",
-      "deidentifiedRequired": "Please confirm the file is de-identified before uploading."
+      "deidentifiedRequired": "Please confirm the file is de-identified before uploading.",
+      "uploadedToast": "Uploaded {name}.",
+      "formats": "Accepted formats: {formats} · up to {size}"
     },
     "reviewTitle": "Course review",
     "reviewIntro": "Courses waiting for review, oldest first.",
@@ -1303,7 +1313,8 @@
         "queued": "This video is already queued.",
         "disabled": "DRM packaging is disabled.",
         "failed": "The video couldn't be queued. Please try again."
-      }
+      },
+      "toastQueued": "Video queued for processing."
     },
     "exports": {
       "title": "Data exports",
@@ -1737,7 +1748,10 @@
     "answerFirst": "Answer the questions in the video first",
     "beforeYouStart": "Before you start",
     "entranceItem": "Entrance test",
-    "entranceHint": "Pass ({pass}%) to unlock the course"
+    "entranceHint": "Pass ({pass}%) to unlock the course",
+    "toastCompleted": "Lesson marked as complete.",
+    "toastNotCompleted": "Lesson marked as not complete.",
+    "toastSkipped": "Lesson skipped."
   },
   "Quiz": {
     "questionsCount": "{count, plural, one {# question} other {# questions}}",
@@ -1756,7 +1770,8 @@
     "retry": "Try again",
     "unanswered": "{count, plural, one {# question} other {# questions}} not answered",
     "empty": "This quiz has no questions yet.",
-    "previewOnly": "Enroll to take this quiz."
+    "previewOnly": "Enroll to take this quiz.",
+    "toastSubmitted": "Quiz submitted."
   },
   "Assignment": {
     "instructions": "Instructions",
@@ -1776,7 +1791,8 @@
     "feedback": "Instructor feedback: {feedback}",
     "attached": "Attached: {name}",
     "viewFile": "View attached file",
-    "previewOnly": "Enroll to submit this assignment."
+    "previewOnly": "Enroll to submit this assignment.",
+    "toastSubmitted": "Assignment submitted. Your instructor will review it."
   },
   "Reviews": {
     "title": "Reviews",
@@ -1941,7 +1957,9 @@
     "back": "Back to course",
     "devOnly": "Development only",
     "devSkipNote": "Marks the entrance test as passed for this account so you can test the course. This button doesn't exist in production.",
-    "devSkip": "Skip entrance test"
+    "devSkip": "Skip entrance test",
+    "toastPassed": "You passed the entrance test. The course is unlocked.",
+    "toastNotPassed": "Test submitted. You didn't reach the pass mark this time."
   },
   "Imaging": {
     "images": "Images",
@@ -2132,7 +2150,8 @@
     },
     "workingPrompt": "What to ask for",
     "workingPromptPlaceholder": "e.g. Show how you calculated EFW (Hadlock 4) and its centile, with the formula and values used.",
-    "calculateWith": "Calculate with {title}"
+    "calculateWith": "Calculate with {title}",
+    "toastSubmitted": "Case submitted and graded."
   },
   "Teaching": {
     "loading": "Loading…",
@@ -2398,7 +2417,7 @@
     "attached": "Attached files",
     "removeFile": "Remove {name}",
     "attach": "Attach a photo or PDF of your working",
-    "attachHint": "JPG, PNG, WebP or PDF, up to {max} files. Remove patient details first.",
+    "attachHint": "Up to {max} files. Remove patient details first.",
     "required": "This case needs your working: write an explanation or attach a photo of your calculations.",
     "noExplanation": "No written explanation.",
     "openFailed": "Couldn’t open the file. Try again.",
@@ -2444,7 +2463,8 @@
       "consent": "Please agree so we can use your details to reply.",
       "failed": "Your message couldn't be sent. Please try again.",
       "limited": "Too many messages were sent from your connection. Please wait a minute and try again."
-    }
+    },
+    "toastSent": "Message sent. We'll get back to you soon."
   },
   "Notifications": {
     "title": "Notifications",
@@ -2479,7 +2499,8 @@
       "feedback": "Feedback from your instructor",
       "note": "Note",
       "open": "Go to page"
-    }
+    },
+    "allRead": "All notifications marked as read."
   },
   "Categories": {
     "kicker": "Category",

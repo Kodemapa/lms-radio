@@ -1,7 +1,7 @@
 'use client';
 
 import { EntrancePaperSchema, EntranceResultSchema, type EntrancePaper, type EntranceResult, type EntranceStatus } from '@obgyn/types';
-import { Button } from '@obgyn/ui';
+import { Button, toast } from '@obgyn/ui';
 import { CheckCircle2, ClipboardCheck, FlaskConical, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -85,6 +85,8 @@ export function EntranceRunner({
       const outcome = EntranceResultSchema.parse(await api('POST', `courses/${slug}/entrance/attempts/${paper.attemptId}`, { answers }));
       setResult(outcome);
       setPaper(null);
+      if (outcome.passed) toast.success(t('toastPassed'));
+      else toast.info(t('toastNotPassed'));
       setStatus({
         ...status,
         passed: outcome.passed,

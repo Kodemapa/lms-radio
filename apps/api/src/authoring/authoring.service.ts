@@ -13,6 +13,7 @@ import {
   type InstructorCourseRow,
   type InstructorDashboard,
   type TrashItem,
+  LESSON_DOCUMENT_TYPES,
 } from '@obgyn/types';
 import { type MediaKind, Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
@@ -610,6 +611,10 @@ export class AuthoringService {
   private async lessonMedia(user: AuthUser, dto: LessonDto, courseId: string): Promise<number | null> {
     if (!dto.mediaAssetId || (dto.kind !== 'VIDEO' && dto.kind !== 'PDF')) return null;
     const asset = await this.assertAsset(user, dto.mediaAssetId, dto.kind, courseId);
+    // Learners read lesson documents in the protected PDF viewer, which can't show slides.
+    if (dto.kind === 'PDF' && !(LESSON_DOCUMENT_TYPES as readonly string[]).includes(asset.mimeType)) {
+      throw new BadRequestException('Lesson documents must be PDF. Save PowerPoint slides as PDF first.');
+    }
     return asset.durationSec;
   }
 

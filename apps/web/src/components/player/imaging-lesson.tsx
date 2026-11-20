@@ -11,8 +11,9 @@ import {
   type AnnotationTool,
   type ImagingCasePublic,
   type ImagingResult,
+  SLIDE_MIME_TYPES,
 } from '@obgyn/types';
-import { Button } from '@obgyn/ui';
+import { Button, toast } from '@obgyn/ui';
 import { Calculator, CheckCircle2, Circle, Download, Eye, EyeOff, Lightbulb, MinusCircle, X, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -139,6 +140,7 @@ export function ImagingLesson({
         }));
       setResult(graded);
       setJustGraded(graded);
+      toast.success(t('toastSubmitted'));
       setShowReference(false);
       // Results render at the top of the lesson; bring them into view.
       requestAnimationFrame(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -381,7 +383,7 @@ export function ImagingLesson({
               key={uploadKey}
               scope="learner"
               kind="IMAGE"
-              accept={['image/jpeg', 'image/png', 'image/webp', 'application/pdf']}
+              accept={['image/jpeg', 'image/png', 'image/webp', 'application/pdf', ...SLIDE_MIME_TYPES]}
               label={tWorking('attach')}
               hint={tWorking('attachHint', { max: MAX_WORKING_FILES })}
               currentName={null}

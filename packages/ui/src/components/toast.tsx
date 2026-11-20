@@ -52,6 +52,32 @@ export const toast = Object.assign((message: string) => show('info', message), {
   info: (message: string) => show('info', message),
 });
 
+const PENDING_KEY = 'obgyn:pending-toast';
+
+/**
+ * For actions followed by a full page load (sign out, some sign-ins): the
+ * toast is kept in sessionStorage and shown by the next page's `<Toaster />`.
+ */
+export function toastAfterReload(tone: ToastTone, message: string): void {
+  try {
+    sessionStorage.setItem(PENDING_KEY, JSON.stringify({ tone, message }));
+  } catch {
+    // Storage blocked (private mode): the page still works, just without the toast.
+  }
+}
+
+function showPendingToast(): void {
+  try {
+    const raw = sessionStorage.getItem(PENDING_KEY);
+    if (!raw) return;
+    sessionStorage.removeItem(PENDING_KEY);
+    const { tone, message } = JSON.parse(raw) as { tone?: unknown; message?: unknown };
+    if (typeof message === 'string' && (tone === 'success' || tone === 'error' || tone === 'info')) show(tone, message);
+  } catch {
+    // Ignore unreadable storage.
+  }
+}
+
 /** Test helper: the toasts currently queued. */
 export function currentToasts(): readonly ToastItem[] {
   return items;
@@ -100,11 +126,13 @@ function ToastView({ item, closeLabel }: { item: ToastItem; closeLabel: string }
  */
 export function Toaster({ closeLabel = 'Dismiss' }: { closeLabel?: string }) {
   const list = useSyncExternalStore(subscribe, () => items, () => EMPTY);
+  useEffect(showPendingToast, []);
   const errors = list.filter((item) => item.tone === 'error');
   const others = list.filter((item) => item.tone !== 'error');
   const region = 'pointer-events-none flex flex-col gap-2';
   return (
-    <div className="fixed inset-x-4 bottom-4 z-[100] flex flex-col gap-2 sm:inset-x-auto sm:end-4 sm:w-[380px]">
+    // Top right, just below the sticky header (64–72px tall depending on the area).
+    <div className="pointer-events-none fixed inset-x-4 top-[84px] z-[100] flex flex-col gap-2 sm:inset-x-auto sm:end-4 sm:w-[380px]">
       <ol aria-live="polite" className={region}>
         {others.map((item) => (
           <ToastView key={item.id} item={item} closeLabel={closeLabel} />

@@ -1,7 +1,7 @@
 'use client';
 
 import { type PlayerLessonDetail } from '@obgyn/types';
-import { Button, Skeleton } from '@obgyn/ui';
+import { Button, Skeleton, toast } from '@obgyn/ui';
 import { ArrowLeft, ArrowRight, CheckCircle2, SkipForward } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
@@ -56,6 +56,7 @@ export function LessonView({ lesson }: { lesson: PlayerLessonDetail }) {
     try {
       await save({ completed: done });
       setCompleted(done);
+      toast.success(t(done ? 'toastCompleted' : 'toastNotCompleted'));
       router.refresh();
     } catch {
       setError(true);
@@ -68,6 +69,7 @@ export function LessonView({ lesson }: { lesson: PlayerLessonDetail }) {
     setPending(true);
     try {
       await api('POST', `learn/lessons/${lesson.id}/skip`);
+      toast.info(t('toastSkipped'));
       router.refresh();
     } catch {
       setError(true);

@@ -60,16 +60,16 @@ export function EntranceTab({ courseId, locked }: { courseId: string; locked: bo
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="entrance-count">{t('questionCount')}</Label>
-            <Input id="entrance-count" type="number" min={1} max={100} value={settings.questionCount} onChange={(e) => set({ questionCount: Number(e.target.value) || 1 })} />
+            <Label htmlFor="entrance-count" required>{t('questionCount')}</Label>
+            <Input id="entrance-count" aria-required="true" type="number" min={1} max={100} value={settings.questionCount} onChange={(e) => set({ questionCount: Number(e.target.value) || 1 })} />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="entrance-pass">{t('passPercent')}</Label>
-            <Input id="entrance-pass" type="number" min={1} max={100} value={settings.passPercent} onChange={(e) => set({ passPercent: Number(e.target.value) || 1 })} />
+            <Label htmlFor="entrance-pass" required>{t('passPercent')}</Label>
+            <Input id="entrance-pass" aria-required="true" type="number" min={1} max={100} value={settings.passPercent} onChange={(e) => set({ passPercent: Number(e.target.value) || 1 })} />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="entrance-attempts">{t('maxAttempts')}</Label>
-            <Select id="entrance-attempts" value={settings.maxAttempts ?? ''} onChange={(e) => set({ maxAttempts: e.target.value ? Number(e.target.value) : null })}>
+            <Label htmlFor="entrance-attempts" required>{t('maxAttempts')}</Label>
+            <Select id="entrance-attempts" aria-required="true" value={settings.maxAttempts ?? ''} onChange={(e) => set({ maxAttempts: e.target.value ? Number(e.target.value) : null })}>
               <option value="">{t('unlimited')}</option>
               {[1, 2, 3, 4, 5, 10].map((n) => <option key={n} value={n}>{n}</option>)}
             </Select>

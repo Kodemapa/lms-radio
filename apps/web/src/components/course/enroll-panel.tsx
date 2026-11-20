@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { bffFetch } from '@/lib/client-fetch';
+import { showNavigationLoader } from '@/components/layout/navigation-progress';
 
 export function EnrollPanel({
   slug,
@@ -66,6 +67,7 @@ export function EnrollPanel({
             setIsEnrolled(true);
             setState('idle');
             toast.success(tCommon('toast.enrolled'));
+            showNavigationLoader();
             router.push(`/learn/${slug}`);
             return;
           }

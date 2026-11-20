@@ -10,7 +10,23 @@ import { WishlistButton } from '../course/wishlist-button';
 import { CertificateCard } from './certificate-card';
 import { CurriculumNav } from './curriculum-nav';
 
-export function PlayerShell({ outline, children }: { outline: PlayerOutline; children: ReactNode }) {
+/**
+ * Course player: the same light header as the rest of the site (logo, notifications,
+ * theme, language, account), plus the course's own controls, then lesson + curriculum.
+ */
+export function PlayerShell({
+  outline,
+  children,
+  brand,
+  account,
+}: {
+  outline: PlayerOutline;
+  children: ReactNode;
+  /** Logo link home (server-rendered). */
+  brand: ReactNode;
+  /** Notifications, theme, language and account menu (server-rendered). */
+  account: ReactNode;
+}) {
   const t = useTranslations('Player');
   const tCommon = useTranslations('Common');
   const [open, setOpen] = useState(false);
@@ -38,27 +54,39 @@ export function PlayerShell({ outline, children }: { outline: PlayerOutline; chi
 
   return (
     <div className="page-glow flex h-dvh flex-col overflow-hidden bg-background">
-      <header
-        className="z-20 flex shrink-0 items-center gap-3 bg-secondary px-4 py-3 text-secondary-foreground"
-        style={{ backgroundImage: 'var(--grain), linear-gradient(100deg, #2f2340 0%, #3d2b56 60%, #4a2f45 100%)', backgroundBlendMode: 'soft-light, normal' }}
-      >
-        <Link href={`/courses/${course.slug}`} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-white/10" aria-label={t('backToCourse')}>
-          <ArrowLeft aria-hidden className="size-5 rtl:rotate-180" />
-          <span className="hidden sm:inline">{t('backToCourse')}</span>
-        </Link>
-        <span aria-hidden className="h-6 w-px bg-white/20" />
-        <p className="min-w-0 flex-1 truncate font-semibold">{course.title}</p>
-        <span className="hidden rounded-full bg-white/10 px-3 py-1 text-sm font-medium md:inline">{t('progress', { percent: progress.percent })}</span>
-        <WishlistButton courseId={course.id} initial={outline.wishlisted} variant="dark" className="px-2.5 py-1.5" />
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger className="rounded-full p-2 hover:bg-white/10 lg:hidden" aria-label={t('openMenu')}>
-            <ListTree aria-hidden className="size-5" />
-          </DialogTrigger>
-          <SheetContent side="right" closeLabel={tCommon('close')} aria-describedby={undefined}>
-            <DialogTitle className="text-lg font-semibold">{t('curriculum')}</DialogTitle>
-            {sidebar(() => setOpen(false))}
-          </SheetContent>
-        </Dialog>
+      <header className="site-header shrink-0">
+        <div className="flex h-[68px] items-center gap-2 px-3 sm:gap-3 lg:px-6">
+          <span className="hidden md:flex">{brand}</span>
+          <span aria-hidden className="hidden h-7 w-px bg-border md:block" />
+          <Link
+            href={`/courses/${course.slug}`}
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary"
+            aria-label={t('backToCourse')}
+          >
+            <ArrowLeft aria-hidden className="size-4 rtl:rotate-180" />
+            <span className="hidden sm:inline">{t('backToCourse')}</span>
+          </Link>
+          <p className="min-w-0 flex-1 truncate font-semibold">{course.title}</p>
+          {outline.enrolled ? (
+            <span className="hidden shrink-0 rounded-full bg-primary-light px-3 py-1.5 text-sm font-semibold text-primary xl:inline">
+              {t('progress', { percent: progress.percent })}
+            </span>
+          ) : null}
+          <WishlistButton courseId={course.id} initial={outline.wishlisted} variant="labelled" className="hidden shrink-0 px-3 lg:flex" />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger
+              className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-card transition-colors hover:border-primary/40 hover:text-primary lg:hidden"
+              aria-label={t('openMenu')}
+            >
+              <ListTree aria-hidden className="size-4" />
+            </DialogTrigger>
+            <SheetContent side="right" closeLabel={tCommon('close')} aria-describedby={undefined}>
+              <DialogTitle className="text-lg font-semibold">{t('curriculum')}</DialogTitle>
+              {sidebar(() => setOpen(false))}
+            </SheetContent>
+          </Dialog>
+          <div className="flex shrink-0 items-center gap-2">{account}</div>
+        </div>
       </header>
       {/* Each column scrolls on its own: browsing chapters never moves the video. */}
       <div className="flex min-h-0 flex-1">

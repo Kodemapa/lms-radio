@@ -86,8 +86,8 @@ export function DetailsTab({
       <fieldset disabled={locked} className="flex flex-col gap-6">
         <div className="grid gap-6 surface p-5 md:p-6">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="title">{t('title')}</Label>
-            <Input id="title" value={form.title} maxLength={120} onChange={(e) => set('title', e.target.value)} required />
+            <Label htmlFor="title" required>{t('title')}</Label>
+            <Input id="title" aria-required="true" value={form.title} maxLength={120} onChange={(e) => set('title', e.target.value)} required />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="short">{t('shortDescription')}</Label>
@@ -114,16 +114,16 @@ export function DetailsTab({
               </Select>
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="level">{t('level')}</Label>
-              <Select id="level" value={form.level} onChange={(e) => set('level', e.target.value as CourseLevel)}>
+              <Label htmlFor="level" required>{t('level')}</Label>
+              <Select id="level" aria-required="true" value={form.level} onChange={(e) => set('level', e.target.value as CourseLevel)}>
                 {COURSE_LEVELS.map((level) => (
                   <option key={level} value={level}>{tCommon(`level.${level}`)}</option>
                 ))}
               </Select>
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="language">{t('language')}</Label>
-              <Select id="language" value={form.language} onChange={(e) => set('language', e.target.value)}>
+              <Label htmlFor="language" required>{t('language')}</Label>
+              <Select id="language" aria-required="true" value={form.language} onChange={(e) => set('language', e.target.value)}>
                 {COURSE_LANGUAGES.map((code) => (
                   <option key={code} value={code}>{tCommon(`languages.${code}`)}</option>
                 ))}

@@ -51,7 +51,7 @@ export function ProfileForm({ me, bio }: { me: UserProfile; bio: string | null }
         <UserId id={me.id} />
       </div>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="displayName">{t('displayName')}</Label>
+        <Label htmlFor="displayName" required>{t('displayName')}</Label>
         <Input id="displayName" value={form.displayName} maxLength={100} required aria-describedby="displayName-hint" onChange={(e) => setForm({ ...form, displayName: e.target.value })} />
         <p id="displayName-hint" className="text-xs text-muted-foreground">{t('displayNameHint')}</p>
       </div>

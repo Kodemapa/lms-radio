@@ -69,8 +69,8 @@ export function PricingTab({
           {!isFree ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="price">{t('price')}</Label>
-                <Input id="price" type="number" min={1} step="0.01" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} required />
+                <Label htmlFor="price" required>{t('price')}</Label>
+                <Input id="price" aria-required="true" type="number" min={1} step="0.01" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} required />
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="discount">{t('discountPrice')}</Label>

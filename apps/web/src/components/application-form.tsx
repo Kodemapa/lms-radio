@@ -6,7 +6,7 @@ import {
   type ApplicationField,
   type InstructorApplication,
 } from '@obgyn/types';
-import { Button, Input, Label, Select, Textarea } from '@obgyn/ui';
+import { Button, Input, Label, Select, Textarea, toast } from '@obgyn/ui';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
@@ -70,7 +70,11 @@ export function ApplicationForm({
       body: JSON.stringify(parsed.data),
     });
     setPending(false);
-    if (!res.ok) return setFailed(true);
+    if (!res.ok) {
+      toast.error(tCommon('genericError'));
+      return setFailed(true);
+    }
+    toast.success(t('toastSubmitted'));
     router.refresh();
   }
 

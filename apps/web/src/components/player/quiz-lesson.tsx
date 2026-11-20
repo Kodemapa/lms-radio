@@ -1,7 +1,7 @@
 'use client';
 
 import { QuizResultSchema, type PlayerLessonDetail, type QuizResult } from '@obgyn/types';
-import { Button } from '@obgyn/ui';
+import { Button, toast } from '@obgyn/ui';
 import { CheckCircle2, RotateCcw, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -40,6 +40,7 @@ export function QuizLesson({ lessonId, quiz, enrolled }: { lessonId: string; qui
     setError(false);
     try {
       setResult(QuizResultSchema.parse(await api('POST', `learn/lessons/${lessonId}/quiz`, { answers })));
+      toast.success(t('toastSubmitted'));
       router.refresh();
     } catch {
       setError(true);

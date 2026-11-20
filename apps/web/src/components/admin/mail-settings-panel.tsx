@@ -98,10 +98,10 @@ export function MailSettingsPanel({ status }: { status: AdminMailStatus | null }
           <p className="text-xs text-muted-foreground">{t('secretsNote')}</p>
 
           <form onSubmit={send} noValidate className="flex flex-col gap-2 border-t border-border pt-5">
-            <Label htmlFor="mail-test-to">{t('testLabel')}</Label>
+            <Label htmlFor="mail-test-to" required>{t('testLabel')}</Label>
             <div className="flex flex-col gap-2 sm:flex-row">
               <Input
-                id="mail-test-to"
+                id="mail-test-to" aria-required="true"
                 type="email"
                 inputMode="email"
                 autoComplete="email"

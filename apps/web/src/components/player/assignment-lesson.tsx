@@ -1,7 +1,7 @@
 'use client';
 
-import { MySubmissionSchema, type PlayerLessonDetail } from '@obgyn/types';
-import { Button, Label, Textarea } from '@obgyn/ui';
+import { MySubmissionSchema, type PlayerLessonDetail, SLIDE_MIME_TYPES } from '@obgyn/types';
+import { Button, Label, Textarea, toast } from '@obgyn/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
@@ -18,7 +18,7 @@ const STATUS_TONE = {
 
 const MIME: Record<'IMAGE' | 'PDF', string[]> = {
   IMAGE: ['image/jpeg', 'image/png', 'image/webp'],
-  PDF: ['application/pdf'],
+  PDF: ['application/pdf', ...SLIDE_MIME_TYPES],
 };
 
 export function AssignmentLesson({
@@ -53,6 +53,7 @@ export function AssignmentLesson({
         await api('PUT', `learn/lessons/${lessonId}/assignment`, { text: text.trim() || null, fileAssetId: file?.id ?? null }),
       );
       setSubmission(saved);
+      toast.success(t('toastSubmitted'));
       router.refresh();
     } catch {
       setError(tCommon('genericError'));
@@ -92,7 +93,6 @@ export function AssignmentLesson({
               kind={kinds[0]!}
               accept={kinds.flatMap((k) => MIME[k])}
               label={t('attach')}
-              hint={t('accepted', { kinds: kinds.map((k) => (k === 'PDF' ? 'PDF' : 'JPG / PNG / WebP')).join(', ') })}
               currentName={file?.name ?? null}
               onUploaded={({ assetId, fileName }) => setFile({ id: assetId, name: fileName })}
             />

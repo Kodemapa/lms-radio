@@ -45,7 +45,10 @@ export function ReviewForm({
     <form onSubmit={save} className="flex flex-col gap-4 surface p-5">
       <h3 className="font-semibold">{initial ? t('editTitle') : t('writeTitle')}</h3>
       <fieldset>
-        <legend className="mb-2 text-sm font-medium">{t('yourRating')}</legend>
+        <legend className="mb-2 text-sm font-medium">
+          {t('yourRating')}
+          <span aria-hidden="true" className="ms-1 text-destructive">*</span>
+        </legend>
         <div className="flex gap-1" onMouseLeave={() => setHover(0)}>
           {[1, 2, 3, 4, 5].map((value) => (
             <label key={value} className="cursor-pointer" onMouseEnter={() => setHover(value)}>

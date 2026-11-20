@@ -19,6 +19,7 @@ import { type FormEvent, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { ApiClientError, api } from '@/lib/instructor-api';
 import { RequiredLabel } from './required-label';
+import { showNavigationLoader } from '@/components/layout/navigation-progress';
 
 type Status = 'ACTIVE' | 'BLOCKED' | 'DELETED';
 /** Edit covers the role change and block/unblock; delete is its own icon. */
@@ -90,7 +91,10 @@ export function AdminUserActions({
       const deleted = open.kind === 'delete';
       toast.success(t(`toast.${deleted ? 'deleted' : open.choice}`));
       setOpen(null);
-      if (deleted && afterDelete === 'list') router.push('/admin/users');
+      if (deleted && afterDelete === 'list') {
+        showNavigationLoader();
+        router.push('/admin/users');
+      }
       else if (onChanged) onChanged();
       else router.refresh();
     } catch (requestError) {
@@ -172,7 +176,7 @@ export function AdminUserActions({
 
               {isEdit ? (
                 <fieldset className="flex flex-col gap-2">
-                  <legend className="mb-1 text-sm font-medium">{t('actions.whatToChange')}</legend>
+                  <legend className="mb-1 text-sm font-medium">{t('actions.whatToChange')}<span aria-hidden="true" className="ms-1 text-destructive">*</span></legend>
                   <div className="flex flex-wrap gap-2">
                     {(['role', blockChoice] as const).map((value) => (
                       <label

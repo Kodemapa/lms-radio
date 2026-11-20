@@ -4,6 +4,7 @@ import { useLocale } from 'next-intl';
 import { useTransition } from 'react';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { routing, type AppLocale } from '@/i18n/routing';
+import { showNavigationLoader } from '@/components/layout/navigation-progress';
 
 const NAMES: Record<AppLocale, string> = { en: 'English', hi: 'हिन्दी' };
 
@@ -23,6 +24,7 @@ export function LocaleSwitcher({ label }: { label: string }) {
         disabled={pending}
         onChange={(event) => {
           const next = event.target.value as AppLocale;
+          showNavigationLoader();
           startTransition(() => router.replace(pathname, { locale: next }));
         }}
       >

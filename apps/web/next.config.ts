@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
     // Lower webpack memory use. The dev server restarts itself near its memory limit,
     // which breaks open pages (ChunkLoadError); this makes those restarts rarer.
     webpackMemoryOptimizations: true,
+    // Compile and ship only the shared UI components a page actually imports (the package
+    // index re-exports all of them), which cuts dev compile time and page JavaScript.
+    optimizePackageImports: ['@obgyn/ui'],
   },
   // Development only: serve dev files from /dev/_next/... instead of /_next/...
   // Dev file names are not hashed, and for a short time on 16 Nov 2026 they were sent with a

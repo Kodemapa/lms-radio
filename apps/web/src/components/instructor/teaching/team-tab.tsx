@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { useRouter } from '@/i18n/navigation';
 import { api, ApiClientError } from '@/lib/instructor-api';
 import { ConfirmDialog } from '../confirm-dialog';
+import { showNavigationLoader } from '@/components/layout/navigation-progress';
 
 /**
  * Co-instructors. Owners invite faculty by email as Editor (edits content and
@@ -132,7 +133,10 @@ export function TeamTab({ courseId, myRole, myUserId }: { courseId: string; myRo
             await api('DELETE', `instructor/courses/${courseId}/collaborators/${removing.id}`);
             setRemoving(null);
             toast.success(tCommon('toast.removed'));
-            if (leaving) router.push('/instructor/courses');
+            if (leaving) {
+              showNavigationLoader();
+              router.push('/instructor/courses');
+            }
             else await load();
           } catch (e) {
             fail(e);

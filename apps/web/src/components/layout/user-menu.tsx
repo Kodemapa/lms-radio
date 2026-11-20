@@ -8,6 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  toastAfterReload,
 } from '@obgyn/ui';
 import {
   BookOpen,
@@ -27,6 +28,7 @@ import { GlobalLoader } from './page-loader';
 import { useSessionWatch } from './session-watch';
 import { AvatarContent } from '@/components/account/avatar';
 import { UserId } from '@/components/account/user-id';
+import { showNavigationLoader } from '@/components/layout/navigation-progress';
 
 export interface UserMenuLabels {
   myLearning: string;
@@ -47,6 +49,10 @@ export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenu
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   // Signed in on every page that shows this menu: sign out here if the session ends elsewhere.
   useSessionWatch();
+  const go = (href: '/account/learning' | '/account/wishlist' | '/account/profile' | '/admin' | '/instructor' | '/become-instructor') => {
+    showNavigationLoader(href);
+    router.push(href);
+  };
   const isAdmin = user.role === 'ADMIN';
   const isInstructor = user.role === 'FACULTY' || user.role === 'ADMIN';
 
@@ -76,33 +82,33 @@ export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenu
           <DropdownMenuSeparator />
           {!isAdmin ? (
             <>
-              <DropdownMenuItem onSelect={() => router.push('/account/learning')}>
+              <DropdownMenuItem onSelect={() => go('/account/learning')}>
                 <BookOpen aria-hidden className="size-4" />
                 {labels.myLearning}
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push('/account/wishlist')}>
+              <DropdownMenuItem onSelect={() => go('/account/wishlist')}>
                 <Bookmark aria-hidden className="size-4" />
                 {labels.wishlist}
               </DropdownMenuItem>
             </>
           ) : null}
-          <DropdownMenuItem onSelect={() => router.push('/account/profile')}>
+          <DropdownMenuItem onSelect={() => go('/account/profile')}>
             <Settings aria-hidden className="size-4" />
             {labels.account}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {isAdmin ? (
-            <DropdownMenuItem onSelect={() => router.push('/admin')}>
+            <DropdownMenuItem onSelect={() => go('/admin')}>
               <LayoutDashboard aria-hidden className="size-4" />
               {labels.adminDashboard}
             </DropdownMenuItem>
           ) : isInstructor ? (
-            <DropdownMenuItem onSelect={() => router.push('/instructor')}>
+            <DropdownMenuItem onSelect={() => go('/instructor')}>
               <LayoutDashboard aria-hidden className="size-4" />
               {labels.instructorDashboard}
             </DropdownMenuItem>
           ) : (
-            <DropdownMenuItem onSelect={() => router.push('/become-instructor')}>
+            <DropdownMenuItem onSelect={() => go('/become-instructor')}>
               <GraduationCap aria-hidden className="size-4" />
               {labels.becomeInstructor}
             </DropdownMenuItem>
@@ -126,6 +132,7 @@ export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenu
         onConfirm={async () => {
           // The loader stays up through the full page load that follows.
           setSigningOut(true);
+          toastAfterReload('success', tCommon('toast.signedOut'));
           await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
           // A full page load re-runs the theme script, so the signed-out site uses the admin default.
           window.location.assign('/');

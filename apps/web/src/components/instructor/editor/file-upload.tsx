@@ -1,7 +1,7 @@
 'use client';
 
-import { DicomImageMetaSchema, UPLOAD_LIMITS, UploadTicketSchema, type DicomImageMeta, type UploadKind } from '@obgyn/types';
-import { Progress } from '@obgyn/ui';
+import { DicomImageMetaSchema, SLIDE_MIME_TYPES, UPLOAD_LIMITS, UploadTicketSchema, type DicomImageMeta, type UploadKind } from '@obgyn/types';
+import { Progress, toast } from '@obgyn/ui';
 import { CheckCircle2, FileUp, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useId, useRef, useState, type DragEvent } from 'react';
@@ -21,6 +21,32 @@ type State =
   | { phase: 'finishing' }
   | { phase: 'done'; fileName: string }
   | { phase: 'error'; message: string };
+
+/** File-type names people recognise, for the "Accepted formats" line. */
+const FORMAT_NAMES: Record<string, string> = {
+  'image/jpeg': 'JPG',
+  'image/png': 'PNG',
+  'image/webp': 'WebP',
+  'video/mp4': 'MP4',
+  'video/webm': 'WebM',
+  'application/pdf': 'PDF',
+  'application/vnd.ms-powerpoint': 'PPT',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PPTX',
+  'application/dicom': 'DICOM (.dcm)',
+};
+
+/** Types by file extension, for files the browser gives no type. */
+const EXTENSION_TYPES: Record<string, string> = {
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  pdf: 'application/pdf',
+};
+
+const isSlides = (mimeType: string) => (SLIDE_MIME_TYPES as readonly string[]).includes(mimeType);
+
+function formatSize(bytes: number): string {
+  return bytes >= 1024 ** 3 ? `${Math.round(bytes / 1024 ** 3)} GB` : `${Math.round(bytes / 1024 ** 2)} MB`;
+}
 
 /** Reads a video's length in the browser so lessons show durations. */
 function videoDuration(file: File): Promise<number | null> {
@@ -88,12 +114,18 @@ export function FileUpload({
   const base = scope === 'learner' ? 'uploads' : 'instructor/uploads';
   const accepted = accept ?? limits.mimeTypes;
   const busy = state.phase === 'uploading' || state.phase === 'finishing';
+  // Shown under every upload box, so people know what they can pick before choosing a file.
+  const formats = [...new Set(accepted.map((type) => FORMAT_NAMES[type] ?? type))].join(', ');
+  const maxSize = formatSize(scope === 'learner' ? 20 * 1024 * 1024 : Math.max(...accepted.map((type) => (type === 'application/pdf' || isSlides(type) ? UPLOAD_LIMITS.PDF : type.startsWith('image/') && kind !== 'DICOM' ? UPLOAD_LIMITS.IMAGE : UPLOAD_LIMITS[kind]).maxBytes)));
 
   async function upload(file: File) {
     // Browsers rarely know DICOM's MIME type (.dcm or no extension); the server validates the content.
-    const mimeType = kind === 'DICOM' && file.type !== 'image/png' && file.type !== 'image/jpeg' ? 'application/dicom' : file.type;
+    // Some browsers report PowerPoint files with no type; fall back to the extension.
+    const detected = file.type || EXTENSION_TYPES[file.name.split('.').pop()?.toLowerCase() ?? ''] || '';
+    const mimeType = kind === 'DICOM' && detected !== 'image/png' && detected !== 'image/jpeg' ? 'application/dicom' : detected;
     if (!accepted.includes(mimeType)) return setState({ phase: 'error', message: t('wrongType') });
-    const fileKind: UploadKind = kind === 'DICOM' ? 'DICOM' : file.type === 'application/pdf' ? 'PDF' : file.type.startsWith('image/') ? 'IMAGE' : kind;
+    const fileKind: UploadKind =
+      kind === 'DICOM' ? 'DICOM' : mimeType === 'application/pdf' || isSlides(mimeType) ? 'PDF' : mimeType.startsWith('image/') ? 'IMAGE' : kind;
     const maxBytes = scope === 'learner' ? 20 * 1024 * 1024 : UPLOAD_LIMITS[fileKind].maxBytes;
     if (file.size > maxBytes) return setState({ phase: 'error', message: t('tooLarge') });
     if (needsAttestation && !attested) return setState({ phase: 'error', message: t('deidentifiedRequired') });
@@ -116,6 +148,7 @@ export function FileUpload({
       setState({ phase: 'finishing' });
       const done = await api<{ dicom?: unknown }>('POST', `${base}/${ticket.assetId}/complete`, durationSec ? { durationSec } : {});
       setState({ phase: 'done', fileName: file.name });
+      toast.success(t('uploadedToast', { name: file.name }));
       const dicom = done?.dicom ? DicomImageMetaSchema.parse(done.dicom) : undefined;
       onUploaded({ assetId: ticket.assetId, fileName: file.name, durationSec, dicom });
     } catch (error) {
@@ -169,10 +202,10 @@ export function FileUpload({
           ref={input}
           id={id}
           type="file"
-          accept={kind === 'DICOM' ? undefined : accepted.join(',')}
+          accept={kind === 'DICOM' ? undefined : [...accepted, ...(accepted.some(isSlides) ? ['.ppt', '.pptx'] : [])].join(',')}
           className="sr-only"
           aria-labelledby={`${id}-label`}
-          aria-describedby={hint ? `${id}-hint` : undefined}
+          aria-describedby={hint ? `${id}-formats ${id}-hint` : `${id}-formats`}
           disabled={disabled || busy}
           onChange={(event) => {
             const file = event.target.files?.[0];
@@ -190,6 +223,9 @@ export function FileUpload({
           {shownName ? t('replace') : t('choose')}
         </button>
         <span className="text-xs text-muted-foreground">{t('dropHint')}</span>
+        <span id={`${id}-formats`} className="text-xs font-medium text-muted-foreground">
+          {t('formats', { formats, size: maxSize })}
+        </span>
         {hint ? <span id={`${id}-hint`} className="text-xs text-muted-foreground">{hint}</span> : null}
       </div>
       <div aria-live="polite" className="text-sm">

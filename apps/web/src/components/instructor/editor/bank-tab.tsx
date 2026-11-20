@@ -466,7 +466,7 @@ function TopicDialog({
         </DialogHeader>
         <form onSubmit={save} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="topic-name">{t('topicName')}</Label>
+            <Label htmlFor="topic-name" required>{t('topicName')}</Label>
             <Input id="topic-name" autoFocus required maxLength={80} value={name} placeholder={t('topicNamePlaceholder')} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="flex flex-col gap-2">
@@ -765,11 +765,11 @@ function BankQuestionDialog({
           </Select>
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="bank-text">{t('questionText')}</Label>
-          <Textarea id="bank-text" rows={3} autoFocus value={draft.text} onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
+          <Label htmlFor="bank-text" required>{t('questionText')}</Label>
+          <Textarea id="bank-text" aria-required="true" rows={3} autoFocus value={draft.text} onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
         </div>
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-sm font-medium">{t('options')}</legend>
+          <legend className="mb-1 text-sm font-medium">{t('options')}<span aria-hidden="true" className="ms-1 text-destructive">*</span></legend>
           <p className="text-xs text-muted-foreground">{t('bank.tickCorrect')}</p>
           {draft.options.map((o, i) => (
             <div key={i} className="flex items-center gap-2">

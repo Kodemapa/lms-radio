@@ -248,8 +248,8 @@ export function QuestionsDialog({
               <p id="q-topic-hint" className="text-xs text-muted-foreground">{t('topicHint')}</p>
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="q-text">{t('questionText')}</Label>
-              <Textarea id="q-text" rows={3} maxLength={1000} autoFocus={!showPlayer} value={editing.draft.text}
+              <Label htmlFor="q-text" required>{t('questionText')}</Label>
+              <Textarea id="q-text" aria-required="true" rows={3} maxLength={1000} autoFocus={!showPlayer} value={editing.draft.text}
                 onChange={(e) => setEditing({ ...editing, draft: { ...editing.draft, text: e.target.value } })} />
             </div>
             <div className="flex items-center justify-between gap-4">
@@ -258,7 +258,7 @@ export function QuestionsDialog({
                 onCheckedChange={(checked) => setEditing({ ...editing, draft: { ...editing.draft, allowMultiple: checked } })} />
             </div>
             <fieldset className="flex flex-col gap-2">
-              <legend className="mb-2 text-sm font-medium">{t('options')}</legend>
+              <legend className="mb-2 text-sm font-medium">{t('options')}<span aria-hidden="true" className="ms-1 text-destructive">*</span></legend>
               {editing.draft.options.map((option, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <label className="flex shrink-0 items-center gap-1.5 text-sm">

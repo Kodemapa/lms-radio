@@ -49,6 +49,12 @@ describe('UploadsService.create (learners)', () => {
     expect(prisma.mediaAsset.create.mock.calls.map((c) => c[0].data.isPublic)).toEqual([false, false]);
   });
 
+  it('accepts PowerPoint files as documents', async () => {
+    const { service, prisma } = setup();
+    await service.create(learner, { ...pdf, mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', fileName: 'case.pptx' });
+    expect(prisma.mediaAsset.create.mock.calls[0][0].data).toMatchObject({ kind: 'PDF', storageKey: expect.stringMatching(/\.pptx$/) });
+  });
+
   it('refuses learner videos and large files', async () => {
     const { service } = setup();
     await expect(service.create(learner, video)).rejects.toBeInstanceOf(BadRequestException);

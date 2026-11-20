@@ -13,7 +13,7 @@ import {
   type AssessmentSummary,
   type AttemptDetail,
 } from '@obgyn/types';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea } from '@obgyn/ui';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Textarea, toast } from '@obgyn/ui';
 import { ArrowLeft, CheckCircle2, MinusCircle, XCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -291,6 +291,7 @@ function WorkingReviewForm({ attemptId, current, onSaved }: { attemptId: string;
     setError(null);
     try {
       onSaved(AttemptWorkingSchema.parse(await api('PUT', `instructor/imaging-attempts/${attemptId}/working`, body.data)));
+      toast.success(tCommon('toast.reviewSent'));
     } catch {
       setError(tCommon('genericError'));
     } finally {
