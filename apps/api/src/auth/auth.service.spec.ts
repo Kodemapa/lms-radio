@@ -191,6 +191,52 @@ describe('AuthService password accounts', () => {
     expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { email: 'admin@example.com' } });
   });
 
+  it('lets a removed device sign in again with the right password, within the device limit', async () => {
+    const { service, prisma } = await make(await account());
+    const removed = { id: 'device-row-9', clientDeviceId: device.deviceId, label: 'Old laptop', revokedAt: new Date('2026-11-01') };
+    prisma.device.findUnique.mockResolvedValue(removed);
+    (prisma.device as Record<string, jest.Mock>).update = jest.fn().mockResolvedValue({ ...removed, revokedAt: null });
+    prisma.device.count.mockResolvedValue(1);
+
+    const pair = await service.passwordLogin({ email: 'admin@example.com', password: 'Right1pass', ...device }, ctx);
+
+    expect(pair.accessToken).toEqual(expect.any(String));
+    expect((prisma.device as Record<string, jest.Mock>).update).toHaveBeenCalledWith({
+      where: { id: 'device-row-9' },
+      data: { revokedAt: null, lastSeenAt: expect.any(Date), label: 'Old laptop' },
+    });
+  });
+
+  it('still refuses a removed device when a learner is at the device limit', async () => {
+    const { service, prisma } = await make(await account({ role: 'LEARNER' }));
+    prisma.device.findUnique.mockResolvedValue({ id: 'device-row-9', clientDeviceId: device.deviceId, label: null, revokedAt: new Date() });
+    prisma.device.count.mockResolvedValue(2);
+
+    await expect(
+      service.passwordLogin({ email: 'admin@example.com', password: 'Right1pass', ...device }, ctx),
+    ).rejects.toMatchObject({ response: { code: 'DEVICE_LIMIT' } });
+  });
+
+  it('lets admins sign in on any number of devices', async () => {
+    const { service, prisma } = await make(await account({ role: 'ADMIN' }));
+    prisma.device.count.mockResolvedValue(25);
+
+    const pair = await service.passwordLogin({ email: 'admin@example.com', password: 'Right1pass', ...device }, ctx);
+
+    expect(pair.accessToken).toEqual(expect.any(String));
+    expect(prisma.device.create).toHaveBeenCalled();
+  });
+
+  it('still applies the device limit to learners and instructors', async () => {
+    for (const role of ['LEARNER', 'FACULTY'] as const) {
+      const { service, prisma } = await make(await account({ role }));
+      prisma.device.count.mockResolvedValue(2);
+      await expect(
+        service.passwordLogin({ email: 'admin@example.com', password: 'Right1pass', ...device }, ctx),
+      ).rejects.toMatchObject({ response: { code: 'DEVICE_LIMIT' } });
+    }
+  });
+
   it('signs in with a mobile number for accounts without email', async () => {
     const { service, prisma } = await make(await account({ email: null, phone: '+919876543210' }));
     const pair = await service.passwordLogin(
