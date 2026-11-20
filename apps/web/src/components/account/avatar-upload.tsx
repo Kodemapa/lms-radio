@@ -1,21 +1,18 @@
 'use client';
 
-import { AVATAR_MAX_BYTES, UploadTicketSchema } from '@obgyn/types';
+import { AVATAR_MAX_BYTES } from '@obgyn/types';
 import { Button, toast } from '@obgyn/ui';
 import { Camera, Loader2, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
-import { api, ApiClientError } from '@/lib/instructor-api';
+import { api } from '@/lib/instructor-api';
+import { UploadError, uploadErrorMessage, uploadFile } from '@/lib/upload-file';
 import { AvatarContent } from './avatar';
 
 const TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-async function putFile(url: string, file: File, headers: Record<string, string>): Promise<void> {
-  const res = await fetch(url, { method: 'PUT', headers, body: file });
-  if (!res.ok) throw new Error(String(res.status));
-}
 
 /**
  * Profile picture for learners and instructors: upload (JPG/PNG/WebP up to
@@ -23,6 +20,7 @@ async function putFile(url: string, file: File, headers: Record<string, string>)
  */
 export function AvatarUpload({ name, assetId }: { name: string; assetId: string | null }) {
   const t = useTranslations('Account.avatar');
+  const tUpload = useTranslations('Instructor.upload');
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [current, setCurrent] = useState(assetId);
@@ -34,25 +32,13 @@ export function AvatarUpload({ name, assetId }: { name: string; assetId: string 
     if (file.size > AVATAR_MAX_BYTES) return toast.error(t('tooLarge'));
     setBusy(true);
     try {
-      const ticket = UploadTicketSchema.parse(
-        await api('POST', 'uploads', {
-          kind: 'IMAGE',
-          purpose: 'AVATAR',
-          mimeType: file.type,
-          sizeBytes: file.size,
-          fileName: file.name.slice(0, 200),
-          deidentified: false,
-        }),
-      );
-      await putFile(ticket.uploadUrl, file, ticket.headers);
-      await api('POST', `uploads/${ticket.assetId}/complete`, {});
-      await api('PATCH', 'users/me', { avatarAssetId: ticket.assetId });
-      setCurrent(ticket.assetId);
+      const { assetId } = await uploadFile({ base: 'uploads', file, kind: 'IMAGE', mimeType: file.type, deidentified: false, purpose: 'AVATAR' });
+      await api('PATCH', 'users/me', { avatarAssetId: assetId });
+      setCurrent(assetId);
       toast.success(t('updated'));
       router.refresh();
     } catch (error) {
-      const message = error instanceof ApiClientError && error.status === 400 ? error.messageText : null;
-      toast.error(message ?? t('failed'));
+      toast.error(error instanceof UploadError ? uploadErrorMessage(error, tUpload) : t('failed'));
     } finally {
       setBusy(false);
     }

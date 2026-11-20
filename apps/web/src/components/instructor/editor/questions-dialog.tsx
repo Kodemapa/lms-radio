@@ -155,7 +155,7 @@ export function QuestionsDialog({
   return (
     <>
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className={showPlayer ? 'max-w-4xl' : 'max-w-2xl'} closeLabel={tCommon('close')} aria-describedby={undefined}>
+      <DialogContent keepOpenOnOutsideClick className={showPlayer ? 'max-w-4xl' : 'max-w-2xl'} closeLabel={tCommon('close')} aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>{video ? t('videoQuestionsTitle', { title: lessonTitle }) : t('questionsTitle', { title: lessonTitle })}</DialogTitle>
         </DialogHeader>

@@ -333,6 +333,7 @@ export class AuthService {
 
   async refresh(dto: RefreshDto, ctx: RequestContext): Promise<TokenPair> {
     const unauthorized = () => new UnauthorizedException();
+    const refreshRace = () => new ConflictException({ code: AUTH_ERROR_CODES.refreshRace });
     const parsed = this.tokens.parseRefreshToken(dto.refreshToken);
     if (!parsed) throw unauthorized();
 
@@ -371,7 +372,8 @@ export class AuthService {
           lastUsedAt: now,
         },
       });
-      if (count !== 1) throw unauthorized(); // lost a concurrent rotation
+      // Lost a concurrent rotation: the other request already has the new tokens.
+      if (count !== 1) throw refreshRace();
       await this.prisma.device.update({
         where: { id: session.deviceId },
         data: { lastSeenAt: now },
@@ -388,7 +390,11 @@ export class AuthService {
       if (!withinGrace) {
         // An old token came back: assume it was stolen and kill the session.
         await this.revokeSession(session.id, 'REFRESH_TOKEN_REUSE', session.userId, ctx);
+        throw unauthorized();
       }
+      // Several requests from one browser refreshed at once and this one lost: the
+      // session is still valid, so say so instead of looking like a sign-out.
+      throw refreshRace();
     }
     throw unauthorized();
   }

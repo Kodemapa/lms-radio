@@ -1,6 +1,6 @@
 import { ACCESS_TOKEN_COOKIE } from '@obgyn/types';
 import { getLocale } from 'next-intl/server';
-import { cookies } from 'next/headers';
+import { cookies, headers as requestHeaders } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type z } from 'zod';
 import { routing } from '@/i18n/routing';
@@ -42,6 +42,17 @@ export async function apiGet<T>(
   } = {},
 ): Promise<T> {
   const headers: Record<string, string> = { accept: 'application/json' };
+  // Signed-in calls pass the visitor's IP on, so the API's rate limits apply per visitor.
+  // Without it every server-rendered request counts against the web server's single IP.
+  // (Only for `auth` calls: they already read cookies, so this doesn't make a cached page dynamic.)
+  if (auth) {
+    try {
+      const forwardedFor = (await requestHeaders()).get('x-forwarded-for');
+      if (forwardedFor) headers['x-forwarded-for'] = forwardedFor;
+    } catch {
+      // Outside a request (build time): nothing to forward.
+    }
+  }
   if (auth) {
     const token = (await cookies()).get(ACCESS_TOKEN_COOKIE)?.value;
     if (!token) {

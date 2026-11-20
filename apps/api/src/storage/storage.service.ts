@@ -1,9 +1,10 @@
 import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Injectable, PayloadTooLargeException } from '@nestjs/common';
+import { ConflictException, Injectable, PayloadTooLargeException } from '@nestjs/common';
 import { createHmac } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { copyFile, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { Transform, type Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -95,6 +96,47 @@ export class StorageService {
       await rm(partial, { force: true });
       throw error;
     }
+  }
+
+  /**
+   * Chunked uploads through this API (the fallback when the browser can't upload straight
+   * to storage, e.g. bucket CORS or a proxy body limit). Chunks are appended in order to a
+   * spool file on this server; `finishSpooledUpload` moves the result into storage.
+   * Returns the new total size. A chunk for the wrong offset is refused with the size
+   * already received, so the browser can resume from there.
+   */
+  async appendUploadChunk(assetId: string, body: Readable, offset: number, maxBytes: number): Promise<number> {
+    const spool = this.spoolPath(assetId);
+    await mkdir(path.dirname(spool), { recursive: true });
+    const current = await stat(spool).then((info) => info.size, () => 0);
+    if (offset !== current) throw new ConflictException({ code: 'UPLOAD_OFFSET', received: current });
+    let written = current;
+    const limiter = new Transform({
+      transform(chunk: Buffer, _encoding, callback) {
+        written += chunk.length;
+        if (written > maxBytes) callback(new PayloadTooLargeException());
+        else callback(null, chunk);
+      },
+    });
+    await pipeline(body, limiter, createWriteStream(spool, { flags: 'a' }));
+    return written;
+  }
+
+  /** Moves a finished chunked upload into storage. False when there was none. */
+  async finishSpooledUpload(assetId: string, key: string, contentType: string): Promise<boolean> {
+    const spool = this.spoolPath(assetId);
+    const exists = await stat(spool).then(() => true, () => false);
+    if (!exists) return false;
+    try {
+      await this.putFile(key, spool, contentType);
+    } finally {
+      await rm(spool, { force: true });
+    }
+    return true;
+  }
+
+  private spoolPath(assetId: string): string {
+    return path.join(tmpdir(), 'elms-uploads', `${assetId}.part`);
   }
 
   /** Size of a stored object, or null if it doesn't exist. */

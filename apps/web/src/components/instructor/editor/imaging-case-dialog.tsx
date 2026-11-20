@@ -278,7 +278,7 @@ export function ImagingCaseDialog({
   return (
     <>
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[94vh] max-w-6xl overflow-y-auto" closeLabel={tCommon('close')} aria-describedby={undefined}>
+      <DialogContent keepOpenOnOutsideClick className="max-h-[94vh] max-w-6xl overflow-y-auto" closeLabel={tCommon('close')} aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>{t('editorTitle', { title: lessonTitle })}</DialogTitle>
         </DialogHeader>

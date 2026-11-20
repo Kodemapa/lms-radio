@@ -17,6 +17,25 @@ describe('StorageService (local driver)', () => {
   });
   afterEach(() => rm(dir, { recursive: true, force: true }));
 
+  it('assembles a chunked upload in order and moves it into storage', async () => {
+    const id = '6f1c2a3b-0000-4000-8000-0000000000c1';
+    expect(await storage.appendUploadChunk(id, Readable.from([Buffer.from('hello ')]), 0, 100)).toBe(6);
+    // A chunk for the wrong offset is refused with what's already there, so the browser can resume.
+    await expect(storage.appendUploadChunk(id, Readable.from([Buffer.from('x')]), 0, 100)).rejects.toMatchObject({
+      response: { code: 'UPLOAD_OFFSET', received: 6 },
+    });
+    expect(await storage.appendUploadChunk(id, Readable.from([Buffer.from('world')]), 6, 100)).toBe(11);
+    expect(await storage.finishSpooledUpload(id, 'uploads/u/c.pdf', 'application/pdf')).toBe(true);
+    expect(await readFile(path.join(dir, 'uploads/u/c.pdf'), 'utf8')).toBe('hello world');
+    expect(await storage.finishSpooledUpload(id, 'uploads/u/c.pdf', 'application/pdf')).toBe(false);
+  });
+
+  it('refuses chunks beyond the declared size', async () => {
+    const id = '6f1c2a3b-0000-4000-8000-0000000000c2';
+    await expect(storage.appendUploadChunk(id, Readable.from([Buffer.alloc(20)]), 0, 10)).rejects.toMatchObject({ status: 413 });
+    await storage.finishSpooledUpload(id, 'uploads/u/d.pdf', 'application/pdf').catch(() => undefined);
+  });
+
   it('signs upload URLs that only work for that asset and before expiry', async () => {
     const target = await storage.createUploadTarget(ASSET, 'uploads/u/a.mp4', 'video/mp4');
     const url = new URL(target.url);

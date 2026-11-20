@@ -90,7 +90,7 @@ describe('AuthService.refresh', () => {
     session.rotatedAt = new Date(Date.now() - REFRESH_REUSE_GRACE_MS / 2);
     await expect(
       service.refresh({ refreshToken: token(previousSecret), deviceId: DEVICE_ID }, ctx),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toMatchObject({ status: 409, response: { code: 'REFRESH_RACE' } });
     expect(prisma.session.update).not.toHaveBeenCalled();
   });
 

@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
+  ParseIntPipe,
   HttpCode,
   Param,
   ParseUUIDPipe,
@@ -68,6 +70,26 @@ export class UploadsController {
     @Body() dto: CompleteUploadDto,
   ): Promise<{ status: 'READY' }> {
     return this.uploads.complete(user, id, dto);
+  }
+
+  /**
+   * One chunk of the file, sent by the browser to our own site and forwarded here (see the
+   * web app's /api/upload/:id). The fallback when a direct upload to storage fails; works
+   * the same for local and S3 storage, with no bucket CORS or proxy size limit involved.
+   */
+  @Put('uploads/:id/content')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  // Large files take a while; the upload was already authorised and rate-limited when it started.
+  @SkipThrottle()
+  @HttpCode(200)
+  content(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Req() req: Request,
+  ): Promise<{ received: number }> {
+    return this.uploads.receiveChunk(user, id, offset, req);
   }
 
   /** Local storage driver only (development): the signed PUT target. */

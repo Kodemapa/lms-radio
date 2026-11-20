@@ -186,7 +186,7 @@ export function ApplicationFieldsManager({ initial }: { initial: ApplicationFiel
 
       <Dialog open={form !== null} onOpenChange={(open) => !open && !pending && setForm(null)}>
         {form ? (
-          <DialogContent closeLabel={tCommon('close')}>
+          <DialogContent keepOpenOnOutsideClick closeLabel={tCommon('close')}>
             <form onSubmit={save} noValidate className="flex max-h-[80vh] flex-col gap-4 overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{form.id ? t('editTitle') : t('addTitle')}</DialogTitle>

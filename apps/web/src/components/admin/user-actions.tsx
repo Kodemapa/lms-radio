@@ -167,7 +167,7 @@ export function AdminUserActions({
         }}
       >
         {open ? (
-          <DialogContent closeLabel={tCommon('close')}>
+          <DialogContent keepOpenOnOutsideClick closeLabel={tCommon('close')}>
             <form onSubmit={submit} className="flex flex-col gap-4">
               <DialogHeader>
                 <DialogTitle>{isEdit ? t('actions.editTitle', { name: userName }) : copy.title}</DialogTitle>

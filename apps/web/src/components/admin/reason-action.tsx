@@ -78,7 +78,7 @@ export function ReasonAction({
         {label}
       </Button>
       <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
-        <DialogContent closeLabel={tCommon('close')}>
+        <DialogContent keepOpenOnOutsideClick closeLabel={tCommon('close')}>
           <form onSubmit={submit} className="flex flex-col gap-4">
             <DialogHeader>
               <DialogTitle>{title}</DialogTitle>

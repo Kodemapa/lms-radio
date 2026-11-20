@@ -1003,7 +1003,20 @@
       "deidentified": "I confirm this file contains no patient-identifying information (name, ID, face, hospital number).",
       "deidentifiedRequired": "Please confirm the file is de-identified before uploading.",
       "uploadedToast": "Uploaded {name}.",
-      "formats": "Accepted formats: {formats} · up to {size}"
+      "formats": "Accepted formats: {formats} · up to {size}",
+      "wrongTypeList": "This file type isn't accepted here. Accepted formats: {formats}.",
+      "tooLargeMax": "This file is too large. The limit here is {size}.",
+      "errors": {
+        "rejected": "The server didn't accept this file. Check its format and size.",
+        "tooLarge": "The server refused the file because it's too large. Try a smaller file, or ask an administrator to raise the upload limit.",
+        "session": "You were signed out during the upload. Sign in again and retry.",
+        "forbidden": "Your account isn't allowed to upload files here.",
+        "rateLimited": "Too many uploads in a short time. Wait a minute and try again.",
+        "network": "The upload couldn't reach the server. Check your internet connection and try again.",
+        "storage": "The server received the file but couldn't save it to storage. Please try again; if it keeps happening, tell an administrator (storage settings).",
+        "missing": "The upload finished but the file didn't reach storage. Please upload it again.",
+        "server": "The server had a problem saving your file. Please try again in a moment."
+      }
     },
     "reviewTitle": "Course review",
     "reviewIntro": "Courses waiting for review, oldest first.",

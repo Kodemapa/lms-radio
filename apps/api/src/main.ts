@@ -38,6 +38,11 @@ async function bootstrap(): Promise<void> {
     SwaggerModule.setup('docs', app, document);
   }
 
+  // Node ends any request after 5 minutes by default, which cuts off a large video upload
+  // on a normal connection. Allow two hours; uploads are authorised before they start.
+  const server = app.getHttpServer() as { requestTimeout: number };
+  server.requestTimeout = 2 * 60 * 60 * 1000;
+
   await app.listen(config.get('PORT'));
 }
 

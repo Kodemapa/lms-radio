@@ -76,7 +76,7 @@ export function ReviewActions({
         </span>
       ) : null}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent closeLabel={tCommon('close')} aria-describedby={undefined}>
+        <DialogContent keepOpenOnOutsideClick closeLabel={tCommon('close')} aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{rejectLabel}</DialogTitle>
           </DialogHeader>

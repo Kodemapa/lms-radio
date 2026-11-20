@@ -72,6 +72,11 @@ export const AUTH_ERROR_CODES = {
   noAccount: 'NO_ACCOUNT',
   /** Change password: the current password is wrong. */
   wrongPassword: 'WRONG_PASSWORD',
+  /**
+   * Refresh: another request from this browser refreshed the session a moment ago.
+   * The session is fine; retry with the newer cookies. Never a reason to sign out.
+   */
+  refreshRace: 'REFRESH_RACE',
 } as const;
 
 // ---- Email + password accounts --------------------------------------------------------

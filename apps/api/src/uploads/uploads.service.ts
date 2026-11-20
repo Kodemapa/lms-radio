@@ -1,4 +1,5 @@
 import {
+  BadGatewayException,
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -96,8 +97,18 @@ export class UploadsService {
 
   async complete(user: AuthUser, assetId: string, dto: CompleteUploadDto): Promise<{ status: 'READY'; dicom?: DicomImageMeta }> {
     const asset = await this.ownedAsset(user, assetId);
+    // A chunked upload (sent through this API) is moved into storage now.
+    try {
+      await this.storage.finishSpooledUpload(asset.id, asset.storageKey, asset.mimeType);
+    } catch (error) {
+      // Say which side failed, so an administrator can fix the storage settings.
+      const reason = error instanceof Error ? error.name : 'unknown';
+      throw new BadGatewayException({ code: 'STORAGE_FAILED', message: `The file couldn't be saved to storage (${reason}).` });
+    }
     const size = await this.storage.size(asset.storageKey);
-    if (size === null) throw new ConflictException({ code: 'UPLOAD_MISSING' });
+    if (size === null) {
+      throw new ConflictException({ code: 'UPLOAD_MISSING', message: "The file didn't reach storage. Please upload it again." });
+    }
     // DICOM is de-identified server-side before anyone can see it (rule 6).
     const dicom = asset.kind === 'DICOM' ? await this.imaging.processUpload(asset) : undefined;
     await this.prisma.mediaAsset.update({
@@ -123,6 +134,19 @@ export class UploadsService {
     if (!asset || asset.status !== 'PENDING') throw new NotFoundException();
     const limit = UPLOAD_LIMITS[asset.kind as keyof typeof UPLOAD_LIMITS]?.maxBytes ?? 0;
     await this.storage.writeLocal(asset.storageKey, body, Math.min(limit, (asset.sizeBytes ?? limit) + 1024));
+  }
+
+  /**
+   * One chunk of a file sent through this API (the browser uploads to our own site, which
+   * forwards here). Only the uploader, only while the upload is pending, and never more
+   * than the size declared when the upload started. Returns the bytes received so far.
+   */
+  async receiveChunk(user: AuthUser, assetId: string, offset: number, body: Readable): Promise<{ received: number }> {
+    const asset = await this.ownedAsset(user, assetId);
+    if (asset.status !== 'PENDING') throw new ConflictException({ code: 'UPLOAD_NOT_PENDING', message: 'This upload has already finished.' });
+    const limit = UPLOAD_LIMITS[asset.kind as keyof typeof UPLOAD_LIMITS]?.maxBytes ?? 0;
+    const maxBytes = Math.min(limit, (asset.sizeBytes ?? limit) + 1024);
+    return { received: await this.storage.appendUploadChunk(asset.id, body, offset, maxBytes) };
   }
 
   async ownedAsset(user: AuthUser, assetId: string): Promise<MediaAsset> {

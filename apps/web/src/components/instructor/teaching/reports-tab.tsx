@@ -221,7 +221,7 @@ function AttemptDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto" closeLabel={tCommon('close')} aria-describedby={undefined}>
+      <DialogContent keepOpenOnOutsideClick className="max-h-[90vh] max-w-3xl overflow-y-auto" closeLabel={tCommon('close')} aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>{detail ? t('attemptTitle', { name: detail.learner.displayName }) : t('loading')}</DialogTitle>
         </DialogHeader>

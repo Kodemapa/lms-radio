@@ -1,11 +1,11 @@
 'use client';
 
-import { DicomImageMetaSchema, SLIDE_MIME_TYPES, UPLOAD_LIMITS, UploadTicketSchema, type DicomImageMeta, type UploadKind } from '@obgyn/types';
+import { DicomImageMetaSchema, SLIDE_MIME_TYPES, UPLOAD_LIMITS, type DicomImageMeta, type UploadKind } from '@obgyn/types';
 import { Progress, toast } from '@obgyn/ui';
 import { CheckCircle2, FileUp, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useId, useRef, useState, type DragEvent } from 'react';
-import { api, ApiClientError } from '@/lib/instructor-api';
+import { uploadErrorMessage, uploadFile } from '@/lib/upload-file';
 
 export interface UploadedFile {
   assetId: string;
@@ -66,17 +66,6 @@ function videoDuration(file: File): Promise<number | null> {
   });
 }
 
-function put(url: string, file: File, headers: Record<string, string>, onProgress: (p: number) => void) {
-  return new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url);
-    for (const [key, value] of Object.entries(headers)) xhr.setRequestHeader(key, value);
-    xhr.upload.onprogress = (event) => event.lengthComputable && onProgress((event.loaded / event.total) * 100);
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(String(xhr.status))));
-    xhr.onerror = () => reject(new Error('network'));
-    xhr.send(file);
-  });
-}
 
 /**
  * Direct-to-storage upload: ask the API for a signed PUT URL, upload with
@@ -123,37 +112,35 @@ export function FileUpload({
     // Some browsers report PowerPoint files with no type; fall back to the extension.
     const detected = file.type || EXTENSION_TYPES[file.name.split('.').pop()?.toLowerCase() ?? ''] || '';
     const mimeType = kind === 'DICOM' && detected !== 'image/png' && detected !== 'image/jpeg' ? 'application/dicom' : detected;
-    if (!accepted.includes(mimeType)) return setState({ phase: 'error', message: t('wrongType') });
+    if (!accepted.includes(mimeType)) return setState({ phase: 'error', message: t('wrongTypeList', { formats }) });
     const fileKind: UploadKind =
       kind === 'DICOM' ? 'DICOM' : mimeType === 'application/pdf' || isSlides(mimeType) ? 'PDF' : mimeType.startsWith('image/') ? 'IMAGE' : kind;
     const maxBytes = scope === 'learner' ? 20 * 1024 * 1024 : UPLOAD_LIMITS[fileKind].maxBytes;
-    if (file.size > maxBytes) return setState({ phase: 'error', message: t('tooLarge') });
+    if (file.size > maxBytes) return setState({ phase: 'error', message: t('tooLargeMax', { size: formatSize(maxBytes) }) });
     if (needsAttestation && !attested) return setState({ phase: 'error', message: t('deidentifiedRequired') });
 
+    setState({ phase: 'uploading', percent: 0 });
     try {
-      setState({ phase: 'uploading', percent: 0 });
-      const ticket = UploadTicketSchema.parse(
-        await api('POST', base, {
-          kind: fileKind,
-          mimeType,
-          sizeBytes: file.size,
-          fileName: file.name,
-          deidentified: needsAttestation ? attested : false,
-        }),
-      );
-      const [durationSec] = await Promise.all([
-        fileKind === 'VIDEO' ? videoDuration(file) : Promise.resolve(null),
-        put(ticket.uploadUrl, file, ticket.headers, (percent) => setState({ phase: 'uploading', percent })),
-      ]);
-      setState({ phase: 'finishing' });
-      const done = await api<{ dicom?: unknown }>('POST', `${base}/${ticket.assetId}/complete`, durationSec ? { durationSec } : {});
+      // Read the video's length first (from its header, in the browser) so lessons show durations.
+      const durationSec = fileKind === 'VIDEO' ? await videoDuration(file) : null;
+      const { assetId, done } = await uploadFile({
+        base,
+        file,
+        kind: fileKind,
+        mimeType,
+        deidentified: needsAttestation ? attested : false,
+        complete: durationSec ? { durationSec } : {},
+        onProgress: (percent) => setState({ phase: 'uploading', percent }),
+        onFinishing: () => setState({ phase: 'finishing' }),
+      });
       setState({ phase: 'done', fileName: file.name });
       toast.success(t('uploadedToast', { name: file.name }));
       const dicom = done?.dicom ? DicomImageMetaSchema.parse(done.dicom) : undefined;
-      onUploaded({ assetId: ticket.assetId, fileName: file.name, durationSec, dicom });
+      onUploaded({ assetId, fileName: file.name, durationSec, dicom });
     } catch (error) {
-      const message = error instanceof ApiClientError && error.status === 400 ? error.messageText : null;
-      setState({ phase: 'error', message: message ?? t('failed') });
+      const message = uploadErrorMessage(error, t);
+      setState({ phase: 'error', message });
+      toast.error(message);
     }
   }
 

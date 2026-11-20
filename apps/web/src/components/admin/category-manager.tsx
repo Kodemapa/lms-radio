@@ -213,7 +213,7 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
 
       <Dialog open={form !== null} onOpenChange={(open) => !open && !pending && setForm(null)}>
         {form ? (
-          <DialogContent closeLabel={tCommon('close')}>
+          <DialogContent keepOpenOnOutsideClick closeLabel={tCommon('close')}>
             <form onSubmit={save} className="flex flex-col gap-4" noValidate>
               <DialogHeader>
                 <DialogTitle>{form.id ? t('editTitle') : t('addTitle')}</DialogTitle>

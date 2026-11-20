@@ -87,7 +87,7 @@ export function InstructorCreateForm() {
         }}
       >
         {open ? (
-          <DialogContent closeLabel={tCommon('close')}>
+          <DialogContent keepOpenOnOutsideClick closeLabel={tCommon('close')}>
             <form onSubmit={submit} className="flex max-h-[80vh] flex-col gap-4 overflow-y-auto" noValidate>
               <DialogHeader>
                 <DialogTitle>{t('addInstructorTitle')}</DialogTitle>

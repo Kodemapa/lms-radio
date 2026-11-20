@@ -13,8 +13,18 @@ export function DialogContent({
   className,
   children,
   closeLabel = 'Close',
+  keepOpenOnOutsideClick = false,
+  onInteractOutside,
+  onEscapeKeyDown,
   ...props
-}: ComponentProps<typeof DialogPrimitive.Content> & { closeLabel?: string }) {
+}: ComponentProps<typeof DialogPrimitive.Content> & {
+  closeLabel?: string;
+  /**
+   * For dialogs with a form: a click outside or a stray Escape doesn't close the dialog
+   * (and lose what was typed). It closes only with its own Cancel / close buttons.
+   */
+  keepOpenOnOutsideClick?: boolean;
+}) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#2b2036]/45 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0" />
@@ -23,6 +33,14 @@ export function DialogContent({
           'fixed left-1/2 top-1/2 z-50 grid max-h-[90dvh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-3xl border border-border/60 bg-card p-6 shadow-lg sm:p-7',
           className,
         )}
+        onInteractOutside={(event) => {
+          if (keepOpenOnOutsideClick) event.preventDefault();
+          onInteractOutside?.(event);
+        }}
+        onEscapeKeyDown={(event) => {
+          if (keepOpenOnOutsideClick) event.preventDefault();
+          onEscapeKeyDown?.(event);
+        }}
         {...props}
       >
         {children}

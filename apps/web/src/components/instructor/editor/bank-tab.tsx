@@ -460,7 +460,7 @@ function TopicDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg" closeLabel={tCommon('close')} aria-describedby={undefined}>
+      <DialogContent keepOpenOnOutsideClick className="max-w-lg" closeLabel={tCommon('close')} aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>{topic ? t('renameTopic') : t('newTopic')}</DialogTitle>
         </DialogHeader>
@@ -563,7 +563,7 @@ function ImportDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-5xl" closeLabel={tCommon('close')} aria-describedby={undefined}>
+      <DialogContent keepOpenOnOutsideClick className="max-w-5xl" closeLabel={tCommon('close')} aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>{t('importTitle')}</DialogTitle>
         </DialogHeader>
@@ -753,7 +753,7 @@ function BankQuestionDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl" closeLabel={tCommon('close')} aria-describedby={undefined}>
+      <DialogContent keepOpenOnOutsideClick className="max-w-2xl" closeLabel={tCommon('close')} aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>{question ? t('bank.editTitle') : t('bank.addQuestion')}</DialogTitle>
         </DialogHeader>

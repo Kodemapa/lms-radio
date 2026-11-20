@@ -5,6 +5,7 @@ import { type AuthUser } from '../auth/auth-user';
 import { type DrmPackagerService } from '../drm/drm-packager.service';
 import { type PrismaService } from '../prisma/prisma.service';
 import { type StorageService } from '../storage/storage.service';
+import { Readable } from 'node:stream';
 import { UploadsService } from './uploads.service';
 
 const user: AuthUser = { userId: '6f1c2a3b-0000-4000-8000-0000000000aa', sessionId: 's', role: 'FACULTY' };
@@ -24,6 +25,8 @@ function setup() {
       expiresAt: new Date(),
     }),
     size: jest.fn().mockResolvedValue(1234),
+    finishSpooledUpload: jest.fn().mockResolvedValue(false),
+    appendUploadChunk: jest.fn().mockResolvedValue(10),
   };
   const packager = { autoPackage: true, enqueue: jest.fn().mockResolvedValue(undefined) };
   const service = new UploadsService(
@@ -33,7 +36,7 @@ function setup() {
     packager as unknown as DrmPackagerService,
     { processUpload: jest.fn() } as unknown as ImagingService,
   );
-  return { service, prisma, packager };
+  return { service, prisma, packager, storage };
 }
 
 const video = { kind: 'VIDEO' as const, mimeType: 'video/mp4', sizeBytes: 1000, fileName: 'a.mp4', deidentified: true };
@@ -136,5 +139,31 @@ describe('UploadsService.complete', () => {
     prisma.mediaAsset.findUnique.mockResolvedValue(asset('PDF'));
     await service.complete(user, 'a1', {});
     expect(packager.enqueue).not.toHaveBeenCalled();
+  });
+});
+
+describe('UploadsService.receiveChunk', () => {
+  const pending = { id: '6f1c2a3b-0000-4000-8000-0000000000d1', ownerId: user.userId, kind: 'PDF', status: 'PENDING', sizeBytes: 5000, storageKey: 'k', mimeType: 'application/pdf' };
+
+  it('appends to the uploader’s pending upload, capped at the declared size', async () => {
+    const { service, prisma, storage } = setup();
+    prisma.mediaAsset.findUnique.mockResolvedValue(pending);
+    await expect(service.receiveChunk(user, pending.id, 0, Readable.from([]))).resolves.toEqual({ received: 10 });
+    expect(storage.appendUploadChunk).toHaveBeenCalledWith(pending.id, expect.anything(), 0, 5000 + 1024);
+  });
+
+  it('refuses finished uploads and other people’s uploads', async () => {
+    const { service, prisma } = setup();
+    prisma.mediaAsset.findUnique.mockResolvedValue({ ...pending, status: 'READY' });
+    await expect(service.receiveChunk(user, pending.id, 0, Readable.from([]))).rejects.toMatchObject({ status: 409 });
+    prisma.mediaAsset.findUnique.mockResolvedValue({ ...pending, ownerId: 'someone-else' });
+    await expect(service.receiveChunk(user, pending.id, 0, Readable.from([]))).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('moves a chunked upload into storage when completing', async () => {
+    const { service, prisma, storage } = setup();
+    prisma.mediaAsset.findUnique.mockResolvedValue(pending);
+    await service.complete(user, pending.id, {});
+    expect(storage.finishSpooledUpload).toHaveBeenCalledWith(pending.id, 'k', 'application/pdf');
   });
 });

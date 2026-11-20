@@ -383,7 +383,7 @@ function ChapterDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent closeLabel={tCommon('close')} aria-describedby={undefined}>
+      <DialogContent keepOpenOnOutsideClick closeLabel={tCommon('close')} aria-describedby={undefined}>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>{edit.mode === 'add' ? t('addChapter') : t('editChapter')}</DialogTitle>
@@ -472,7 +472,7 @@ function LessonDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-xl" closeLabel={tCommon('close')} aria-describedby={undefined}>
+      <DialogContent keepOpenOnOutsideClick className="max-w-xl" closeLabel={tCommon('close')} aria-describedby={undefined}>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>{edit.mode === 'add' ? t('addLesson') : t('editLesson')}</DialogTitle>
