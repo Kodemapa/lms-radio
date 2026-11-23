@@ -134,7 +134,7 @@ model User {
   @@index([role, deletedAt, blockedAt])
 }
 
-/// A physical install of the app/browser. Users may bind at most MAX_DEVICES_PER_USER.
+/// A physical install of the app/browser. MAX_DEVICES_PER_USER (0 = no limit) caps active ones per non-admin user.
 model Device {
   id             String    @id @default(uuid()) @db.Uuid
   userId         String    @db.Uuid

@@ -134,8 +134,8 @@ describe('AuthService password accounts', () => {
   const ctx = { ip: '127.0.0.1', userAgent: 'jest' };
   const device = { deviceId: '6f1c2a3b-0000-4000-8000-000000000099' };
 
-  async function make(user: Record<string, unknown> | null) {
-    const config = fakeConfig();
+  async function make(user: Record<string, unknown> | null, configOverrides: Parameters<typeof fakeConfig>[0] = {}) {
+    const config = fakeConfig(configOverrides);
     const tokens = new TokenService(new JwtService({ secret: 'x'.repeat(32) }), config);
     const prisma = {
       user: {
@@ -227,7 +227,17 @@ describe('AuthService password accounts', () => {
     expect(prisma.device.create).toHaveBeenCalled();
   });
 
-  it('still applies the device limit to learners and instructors', async () => {
+  it('has no device limit for anyone when MAX_DEVICES_PER_USER is 0 (the default)', async () => {
+    for (const role of ['LEARNER', 'FACULTY'] as const) {
+      const { service, prisma } = await make(await account({ role }), { MAX_DEVICES_PER_USER: 0 });
+      prisma.device.count.mockResolvedValue(50);
+      const pair = await service.passwordLogin({ email: 'admin@example.com', password: 'Right1pass', ...device }, ctx);
+      expect(pair.accessToken).toEqual(expect.any(String));
+      expect(prisma.device.create).toHaveBeenCalled();
+    }
+  });
+
+  it('applies the device limit to learners and instructors when one is set', async () => {
     for (const role of ['LEARNER', 'FACULTY'] as const) {
       const { service, prisma } = await make(await account({ role }));
       prisma.device.count.mockResolvedValue(2);

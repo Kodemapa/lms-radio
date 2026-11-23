@@ -424,8 +424,9 @@ export class AuthService {
   }
 
   /**
-   * The device limit stops learners sharing one paid account. Admins run the
-   * platform from several machines, so it does not apply to them.
+   * Records the device the user signs in from. An optional limit (MAX_DEVICES_PER_USER,
+   * 0 = no limit, the default) can stop learners sharing one paid account; admins run
+   * the platform from several machines, so it never applies to them.
    */
   private async bindDevice(
     user: Pick<User, 'id' | 'role'>,
@@ -445,10 +446,11 @@ export class AuthService {
 
     // A removed device (or a new one) takes a free slot. Removing a device signs it out
     // and frees its slot; it is not a permanent ban: signing in again with valid
-    // credentials brings it back, as long as the account is under its device limit.
+    // credentials brings it back, as long as the account is under its device limit (if any).
     const max = this.config.get('MAX_DEVICES_PER_USER');
-    const active = user.role === 'ADMIN' ? 0 : await this.prisma.device.count({ where: { userId, revokedAt: null } });
-    if (active >= max) {
+    const limited = max > 0 && user.role !== 'ADMIN';
+    const active = limited ? await this.prisma.device.count({ where: { userId, revokedAt: null } }) : 0;
+    if (limited && active >= max) {
       throw new ForbiddenException({
         code: AUTH_ERROR_CODES.deviceLimit,
         message: `You can use at most ${max} devices. Remove one from your account settings first.`,

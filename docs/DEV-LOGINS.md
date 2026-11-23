@@ -70,7 +70,8 @@ change a test user's role through the standard workflow, have them apply via
 
 ## Device limit and running the app
 
-Each account allows 2 active devices by default. Remove a device from
+There is no device limit by default (`MAX_DEVICES_PER_USER=0`). If a limit is set,
+it applies to learners and instructors only; remove a device from
 **Account → Devices & security** to free a slot.
 
 Ensure PostgreSQL and local environment files are configured, then run from the

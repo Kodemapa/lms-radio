@@ -31,7 +31,8 @@ export const EnvSchema = z
     OTP_TTL_SECONDS: z.coerce.number().int().min(60).max(600).default(300),
     TWOFACTOR_API_KEY: z.string().trim().min(1).optional().or(z.literal('').transform(() => undefined)),
     TWOFACTOR_OTP_TEMPLATE: z.string().trim().min(1).max(100).default('OTP1'),
-    MAX_DEVICES_PER_USER: z.coerce.number().int().min(1).max(10).default(2),
+    /** Active devices per learner/instructor account; 0 = no limit (the default). Admins are never limited. */
+    MAX_DEVICES_PER_USER: z.coerce.number().int().min(0).max(100).default(0),
 
     /**
      * Outgoing email through this app's own ZeptoMail Mail Agent (SMTP). Leave
