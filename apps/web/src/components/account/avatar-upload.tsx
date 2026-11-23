@@ -7,16 +7,15 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
-import { api } from '@/lib/instructor-api';
+import { api, ApiClientError } from '@/lib/instructor-api';
+import { AVATAR_ACCEPT, AvatarImageError, prepareAvatar } from '@/lib/prepare-avatar';
 import { UploadError, uploadErrorMessage, uploadFile } from '@/lib/upload-file';
 import { AvatarContent } from './avatar';
 
-const TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-
-
 /**
- * Profile picture for learners and instructors: upload (JPG/PNG/WebP up to
- * 2 MB) or remove. The picture is public: it shows next to the user's name.
+ * Profile picture for learners and instructors: upload or remove. Any image
+ * the browser can open is accepted; large or non-JPG/PNG/WebP ones are resized
+ * and converted to JPEG (up to 2 MB) before upload. The picture is public: it shows next to the user's name.
  */
 export function AvatarUpload({ name, assetId }: { name: string; assetId: string | null }) {
   const t = useTranslations('Account.avatar');
@@ -28,20 +27,30 @@ export function AvatarUpload({ name, assetId }: { name: string; assetId: string 
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   const upload = async (file: File) => {
-    if (!TYPES.includes(file.type)) return toast.error(t('wrongType'));
-    if (file.size > AVATAR_MAX_BYTES) return toast.error(t('tooLarge'));
     setBusy(true);
     try {
-      const { assetId } = await uploadFile({ base: 'uploads', file, kind: 'IMAGE', mimeType: file.type, deidentified: false, purpose: 'AVATAR' });
+      const image = await prepareAvatar(file, AVATAR_MAX_BYTES);
+      const { assetId } = await uploadFile({ base: 'uploads', file: image, kind: 'IMAGE', mimeType: image.type, deidentified: false, purpose: 'AVATAR' });
       await api('PATCH', 'users/me', { avatarAssetId: assetId });
       setCurrent(assetId);
       toast.success(t('updated'));
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof UploadError ? uploadErrorMessage(error, tUpload) : t('failed'));
+      toast.error(failureMessage(error));
     } finally {
       setBusy(false);
     }
+  };
+
+  const failureMessage = (error: unknown): string => {
+    if (error instanceof AvatarImageError) return t(error.reason === 'tooLarge' ? 'tooLarge' : 'wrongType');
+    if (error instanceof UploadError) return uploadErrorMessage(error, tUpload);
+    // Saving the picture to the profile failed: say why when the server told us.
+    if (error instanceof ApiClientError) {
+      if (error.status === 401) return tUpload('errors.session');
+      return error.messageText ?? t('failed');
+    }
+    return t('failed');
   };
 
   return (
@@ -55,7 +64,7 @@ export function AvatarUpload({ name, assetId }: { name: string; assetId: string 
           <input
             ref={input}
             type="file"
-            accept={TYPES.join(',')}
+            accept={AVATAR_ACCEPT}
             className="sr-only"
             tabIndex={-1}
             aria-hidden

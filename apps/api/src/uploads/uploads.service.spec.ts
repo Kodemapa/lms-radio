@@ -91,6 +91,17 @@ describe('UploadsService.create (profile pictures)', () => {
       service.create(learner, { ...avatar, kind: 'PDF', mimeType: 'application/pdf', fileName: 'a.pdf' }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
+
+  it('accepts the non-standard JPEG names some systems send, stored as image/jpeg', async () => {
+    const { service, prisma } = setup();
+    for (const mimeType of ['image/jpg', 'image/pjpeg', 'IMAGE/JPEG']) {
+      await service.create(learner, { ...avatar, mimeType, fileName: 'me.jpg' });
+    }
+    for (const [call] of prisma.mediaAsset.create.mock.calls) {
+      expect(call.data).toMatchObject({ mimeType: 'image/jpeg' });
+      expect(call.data.storageKey).toMatch(/\.jpg$/);
+    }
+  });
 });
 
 describe('UploadsService.create', () => {

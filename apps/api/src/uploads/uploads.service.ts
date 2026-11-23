@@ -33,6 +33,13 @@ const EXTENSIONS: Record<string, string> = {
   'application/dicom': 'dcm',
 };
 
+/** Non-standard names some browsers/OSes send for JPEG and PNG. */
+const MIME_ALIASES: Record<string, string> = {
+  'image/jpg': 'image/jpeg',
+  'image/pjpeg': 'image/jpeg',
+  'image/x-png': 'image/png',
+};
+
 @Injectable()
 export class UploadsService {
   constructor(
@@ -43,7 +50,9 @@ export class UploadsService {
     private readonly imaging: ImagingService,
   ) {}
 
-  async create(user: AuthUser, dto: CreateUploadDto): Promise<UploadTicket> {
+  async create(user: AuthUser, input: CreateUploadDto): Promise<UploadTicket> {
+    const requested = input.mimeType.trim().toLowerCase();
+    const dto = { ...input, mimeType: MIME_ALIASES[requested] ?? requested };
     const isInstructor = STAFF_ROLES.includes(user.role);
     const isAvatar = dto.purpose === 'AVATAR';
     if (isAvatar && (dto.kind !== 'IMAGE' || dto.sizeBytes > AVATAR_MAX_BYTES)) {
@@ -54,7 +63,7 @@ export class UploadsService {
     }
     const limits = UPLOAD_LIMITS[dto.kind];
     if (!limits.mimeTypes.includes(dto.mimeType)) {
-      throw new BadRequestException(`Allowed types: ${limits.mimeTypes.join(', ')}`);
+      throw new BadRequestException(`This file type isn't allowed here. Allowed types: ${limits.mimeTypes.join(', ')}`);
     }
     if (dto.sizeBytes > limits.maxBytes) {
       throw new BadRequestException(`File is larger than ${Math.round(limits.maxBytes / 1024 / 1024)} MB`);
