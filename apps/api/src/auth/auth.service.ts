@@ -304,7 +304,7 @@ export class AuthService {
         message: 'This account has been blocked. Contact support.',
       });
     }
-    const device = await this.bindDevice(user.id, dto.deviceId, dto.deviceLabel);
+    const device = await this.bindDevice(user, dto.deviceId, dto.deviceLabel);
 
     const secret = this.tokens.newRefreshSecret();
     const expiresAt = this.tokens.refreshExpiry();
@@ -423,33 +423,41 @@ export class AuthService {
     });
   }
 
+  /**
+   * The device limit stops learners sharing one paid account. Admins run the
+   * platform from several machines, so it does not apply to them.
+   */
   private async bindDevice(
-    userId: string,
+    user: Pick<User, 'id' | 'role'>,
     clientDeviceId: string,
     label?: string,
   ): Promise<Device> {
+    const userId = user.id;
     const existing = await this.prisma.device.findUnique({
       where: { userId_clientDeviceId: { userId, clientDeviceId } },
     });
-    if (existing) {
-      if (existing.revokedAt) {
-        throw new ForbiddenException({
-          code: AUTH_ERROR_CODES.deviceRevoked,
-          message: 'This device has been removed from your account.',
-        });
-      }
+    if (existing && !existing.revokedAt) {
       return this.prisma.device.update({
         where: { id: existing.id },
         data: { lastSeenAt: new Date(), label: label ?? existing.label },
       });
     }
 
+    // A removed device (or a new one) takes a free slot. Removing a device signs it out
+    // and frees its slot; it is not a permanent ban: signing in again with valid
+    // credentials brings it back, as long as the account is under its device limit.
     const max = this.config.get('MAX_DEVICES_PER_USER');
-    const active = await this.prisma.device.count({ where: { userId, revokedAt: null } });
+    const active = user.role === 'ADMIN' ? 0 : await this.prisma.device.count({ where: { userId, revokedAt: null } });
     if (active >= max) {
       throw new ForbiddenException({
         code: AUTH_ERROR_CODES.deviceLimit,
         message: `You can use at most ${max} devices. Remove one from your account settings first.`,
+      });
+    }
+    if (existing) {
+      return this.prisma.device.update({
+        where: { id: existing.id },
+        data: { revokedAt: null, lastSeenAt: new Date(), label: label ?? existing.label },
       });
     }
     return this.prisma.device.create({ data: { userId, clientDeviceId, label: label ?? null } });
