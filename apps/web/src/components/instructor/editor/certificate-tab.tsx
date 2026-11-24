@@ -1,17 +1,31 @@
 'use client';
 
-import { CertificateTemplateSchema, type CertificateTemplate } from '@obgyn/types';
-import { Button, Input, Label, Textarea, toast } from '@obgyn/ui';
+import { CertificateTemplateSchema, type CertificateTemplate, type InstructorCourse } from '@obgyn/types';
+import { Button, Input, Label, Switch, Textarea, toast } from '@obgyn/ui';
 import { Plus, Trash2 } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/instructor-api';
+import { api, courseApi } from '@/lib/instructor-api';
 import { CertificateView } from '../../certificate/certificate-view';
 import { FileUpload } from './file-upload';
 import { useConfirmDelete } from '../confirm-dialog';
 
-/** Certificate designer with a live preview of exactly what learners receive. */
-export function CertificateTab({ courseId, courseTitle, enabled }: { courseId: string; courseTitle: string; enabled: boolean }) {
+/**
+ * Certificate on/off switch plus the designer, with a live preview of exactly what
+ * learners receive. The switch saves the same setting as the Pricing tab.
+ */
+export function CertificateTab({
+  course,
+  locked,
+  onCourseChange,
+}: {
+  course: InstructorCourse;
+  locked: boolean;
+  onCourseChange: (course: InstructorCourse) => void;
+}) {
+  const courseId = course.id;
+  const courseTitle = course.title;
+  const enabled = course.certificateEnabled;
   const t = useTranslations('Instructor.editor.certDesign');
   const tEditor = useTranslations('Instructor.editor');
   const tCert = useTranslations('Certificate');
@@ -21,6 +35,28 @@ export function CertificateTab({ courseId, courseTitle, enabled }: { courseId: s
   const [template, setTemplate] = useState<CertificateTemplate | null>(null);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [switching, setSwitching] = useState(false);
+
+  const setEnabled = async (next: boolean) => {
+    setSwitching(true);
+    try {
+      // Same endpoint as the Pricing tab; price settings are sent back unchanged.
+      onCourseChange(
+        await courseApi('PATCH', `courses/${courseId}/pricing`, {
+          isFree: course.isFree,
+          pricePaise: course.isFree ? 0 : course.pricePaise,
+          discountPricePaise: course.isFree ? null : course.discountPricePaise,
+          certificateEnabled: next,
+          certificateFeePaise: course.isFree && next ? course.certificateFeePaise : null,
+        }),
+      );
+      toast.success(next ? t('switchedOn') : t('switchedOff'));
+    } catch (e) {
+      toast.error((e as { messageText?: string }).messageText ?? tCommon('genericError'));
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   useEffect(() => {
     api('GET', `instructor/courses/${courseId}/certificate-template`)
@@ -69,7 +105,13 @@ export function CertificateTab({ courseId, courseTitle, enabled }: { courseId: s
     <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
       <div className="flex flex-col gap-5 surface p-5">
         <p className="text-sm text-muted-foreground">{t('intro')}</p>
-        {!enabled ? <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900 dark:bg-amber-900/30 dark:text-amber-100">{t('enableHint')}</p> : null}
+        <div className="flex items-start justify-between gap-4 rounded-xl border border-border p-3">
+          <div>
+            <Label htmlFor="cert-enabled">{t('enabledLabel')}</Label>
+            <p id="cert-enabled-hint" className="text-sm text-muted-foreground">{enabled ? t('enabledOnHint') : t('enabledOffHint')}</p>
+          </div>
+          <Switch id="cert-enabled" checked={enabled} disabled={locked || switching} onCheckedChange={(next) => void setEnabled(next)} aria-describedby="cert-enabled-hint" />
+        </div>
         {text('issuerName', t('issuerName'), 120)}
         {text('issuerTagline', t('issuerTagline'), 200)}
         <div className="flex flex-col gap-2">

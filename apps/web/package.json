@@ -15,19 +15,20 @@
     "@cornerstonejs/core": "5.13.2",
     "@cornerstonejs/dicom-image-loader": "5.13.2",
     "@cornerstonejs/tools": "5.13.2",
+    "@obgyn/dicom": "workspace:*",
     "@obgyn/types": "workspace:*",
     "@obgyn/ui": "workspace:*",
     "dcmjs": "0.52.2",
     "lucide-react": "0.577.0",
     "next": "15.5.29",
     "next-intl": "4.15.1",
+    "pdfjs-dist": "4.10.38",
     "react": "19.2.9",
     "react-dom": "19.2.9",
     "read-excel-file": "9.3.10",
     "server-only": "0.0.1",
     "shaka-player": "5.3.2",
-    "zod": "3.25.76",
-    "@obgyn/dicom": "workspace:*"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.7",

@@ -35,15 +35,21 @@ flock -w 600 9 || die "timed out waiting for another deployment"
 git fetch --prune origin "$DEPLOY_BRANCH"
 local_sha="$(git rev-parse HEAD)"
 remote_sha="$(git rev-parse "origin/$DEPLOY_BRANCH")"
+# The commit the running web build was made from. The checkout alone isn't enough:
+# a manual `git pull` (e.g. to update the API) moves HEAD without rebuilding the web.
+readonly BUILT_MARKER="$APP_DIR/.deployed-web-sha"
+built_sha="$(cat "$BUILT_MARKER" 2>/dev/null || true)"
 
-if [[ "$local_sha" == "$remote_sha" ]]; then
+if [[ "$local_sha" == "$remote_sha" && "$built_sha" == "$remote_sha" ]]; then
   printf 'Already up to date at %s\n' "$local_sha"
   exit 0
 fi
 
-git merge-base --is-ancestor HEAD "origin/$DEPLOY_BRANCH" ||
-  die "server checkout has diverged from origin/$DEPLOY_BRANCH; refusing to overwrite it"
-git merge --ff-only "origin/$DEPLOY_BRANCH"
+if [[ "$local_sha" != "$remote_sha" ]]; then
+  git merge-base --is-ancestor HEAD "origin/$DEPLOY_BRANCH" ||
+    die "server checkout has diverged from origin/$DEPLOY_BRANCH; refusing to overwrite it"
+  git merge --ff-only "origin/$DEPLOY_BRANCH"
+fi
 
 pnpm install --frozen-lockfile
 pnpm exec turbo run build --filter=@obgyn/web
@@ -52,6 +58,7 @@ pm2 restart gifs-web --update-env
 
 for attempt in {1..30}; do
   if curl --fail --silent --output /dev/null "http://127.0.0.1:$WEB_PORT/en"; then
+    git rev-parse HEAD > "$BUILT_MARKER"
     printf 'Deployment succeeded at %s; web responds on port %s\n' "$(git rev-parse HEAD)" "$WEB_PORT"
     exit 0
   fi

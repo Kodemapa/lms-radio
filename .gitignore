@@ -44,3 +44,6 @@ apps/api/.storage/
 
 # Media tools downloaded by tools/install-media-tools.sh
 tools/bin/
+
+# Server deploy marker (scripts/deploy-web.sh)
+.deployed-web-sha

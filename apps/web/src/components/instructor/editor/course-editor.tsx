@@ -155,11 +155,7 @@ export function CourseEditor({
           <EntranceTab courseId={course.id} locked={locked} />
         </TabsContent>
         <TabsContent value="certDesign">
-          <CertificateTab
-            courseId={course.id}
-            courseTitle={course.title}
-            enabled={course.certificateEnabled}
-          />
+          <CertificateTab course={course} locked={locked} onCourseChange={setCourse} />
         </TabsContent>
         <TabsContent value="pricing">
           <PricingTab course={course} locked={locked} onSaved={setCourse} />

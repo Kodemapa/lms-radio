@@ -439,10 +439,24 @@ export class AuthoringService {
   async updateLesson(user: AuthUser, lessonId: string, dto: LessonDto): Promise<InstructorCourse> {
     const lesson = await this.ownedLesson(user, lessonId);
     const durationSec = await this.lessonMedia(user, dto, lesson.courseId);
-    await this.prisma.lesson.update({
-      where: { id: lesson.id },
-      data: this.lessonData(dto, durationSec),
-    });
+    // Questions belong to the lesson's type: in-video questions have a time, quiz
+    // questions don't. A video's questions become the quiz's questions when it turns
+    // into a quiz; any other type change with questions would hide them from learners.
+    const kindChanged = dto.kind !== lesson.kind;
+    const questionCount = kindChanged ? await this.prisma.quizQuestion.count({ where: { lessonId } }) : 0;
+    const videoToQuiz = lesson.kind === 'VIDEO' && dto.kind === 'QUIZ';
+    if (questionCount > 0 && !videoToQuiz) {
+      throw new ConflictException({
+        code: 'LESSON_HAS_QUESTIONS',
+        message: "This lesson has questions. Delete them first, or keep the lesson's type.",
+      });
+    }
+    await this.prisma.$transaction([
+      this.prisma.lesson.update({ where: { id: lesson.id }, data: this.lessonData(dto, durationSec) }),
+      ...(questionCount > 0 && videoToQuiz
+        ? [this.prisma.quizQuestion.updateMany({ where: { lessonId }, data: { atSec: null } })]
+        : []),
+    ]);
     await this.log(user, 'lesson.updated', lesson.courseId);
     return this.getCourse(user, lesson.courseId);
   }

@@ -969,7 +969,11 @@
         "preview": "Live preview",
         "sampleName": "Dr Asha Rao",
         "removeImage": "Remove image",
-        "enableHint": "Certificates are switched on in the Pricing tab."
+        "enabledLabel": "Issue certificates for this course",
+        "enabledOnHint": "On: learners get this certificate after completing every lesson. You can edit the design below at any time.",
+        "enabledOffHint": "Off: no certificate is issued. Switch it on, then design it below.",
+        "switchedOn": "Certificates switched on.",
+        "switchedOff": "Certificates switched off."
       },
       "editCase": "Edit case",
       "roles": {
@@ -1764,7 +1768,21 @@
     "entranceHint": "Pass ({pass}%) to unlock the course",
     "toastCompleted": "Lesson marked as complete.",
     "toastNotCompleted": "Lesson marked as not complete.",
-    "toastSkipped": "Lesson skipped."
+    "toastSkipped": "Lesson skipped.",
+    "pdf": {
+      "loading": "Loading document…",
+      "previous": "Previous page",
+      "next": "Next page",
+      "page": "Page",
+      "of": "of {total}",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "documentLabel": "{title}, {total, plural, one {# page} other {# pages}}. Scroll or use the arrow keys to move between pages.",
+      "pageLabel": "Page {page} of {total}",
+      "moreBelow": "{remaining, plural, one {# more page below} other {# more pages below}}: scroll down or use Next page.",
+      "lastPage": "You've reached the last page.",
+      "loadFailed": "This document couldn't be loaded. Please refresh the page."
+    }
   },
   "Quiz": {
     "questionsCount": "{count, plural, one {# question} other {# questions}}",
