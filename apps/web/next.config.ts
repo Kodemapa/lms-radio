@@ -24,6 +24,11 @@ const nextConfig: NextConfig = {
     // Compile and ship only the shared UI components a page actually imports (the package
     // index re-exports all of them), which cuts dev compile time and page JavaScript.
     optimizePackageImports: ['@obgyn/ui'],
+    // Client-side page cache: a page visited in the last 30 s (My Learning, Wishlist,
+    // Profile, catalogue, course pages, dashboards) is shown again from the tab's memory
+    // without a server round trip. Per tab and in memory only; cleared on every save and
+    // account change by components/layout/router-cache-sync.tsx. Static pages: Next's default.
+    staleTimes: { dynamic: 30, static: 300 },
   },
   // Development only: serve dev files from /dev/_next/... instead of /_next/...
   // Dev file names are not hashed, and for a short time on 16 Nov 2026 they were sent with a
@@ -42,7 +47,19 @@ const nextConfig: NextConfig = {
     return config;
   },
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }];
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      // CDN / shared-cache safety for the BFF: sign-in, session refresh and every proxied
+      // per-user answer must never be stored by a CDN, even one whose default policy caches
+      // responses that carry no Cache-Control. Public images (/api/files) and the PDF.js
+      // worker set their own long, public caching and are left alone.
+      // (Pages need no rule: Next.js marks dynamic HTML `private, no-store` itself, and the
+      // hashed files under /_next/static `public, max-age=31536000, immutable`.)
+      {
+        source: '/api/:path((?!files/|pdf-worker).*)',
+        headers: [{ key: 'Cache-Control', value: 'private, no-store' }],
+      },
+    ];
   },
 };
 

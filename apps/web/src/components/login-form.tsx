@@ -7,16 +7,16 @@ import {
   UserProfileSchema,
   type OtpChannel,
 } from '@obgyn/types';
-import { Button, Input, Label, toast } from '@obgyn/ui';
+import { Button, Input, Label, toast, toastAfterReload } from '@obgyn/ui';
 import { Eye, EyeOff } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react';
 import { RequiredLabel } from '@/components/admin/required-label';
 import { GlobalLoader } from '@/components/layout/page-loader';
 import { Link } from '@/i18n/navigation';
 import { getDeviceId } from '@/lib/device';
-import { safeNextPath } from '@/lib/paths';
+import { postLoginPath } from '@/lib/paths';
+import { setSessionScope } from '@/lib/client-fetch';
 import { showNavigationLoader } from '@/components/layout/navigation-progress';
 
 /** 10 digits after +91, starting 6–9 (Indian mobile numbers). */
@@ -98,7 +98,6 @@ function LoginFormSteps({
 }) {
   const t = useTranslations('Login');
   const locale = useLocale();
-  const router = useRouter();
   const ids = {
     target: useId(),
     code: useId(),
@@ -177,7 +176,13 @@ function LoginFormSteps({
     // web server could not reach the API at all (BFF `upstreamUnavailable`). Only the first is
     // about code delivery — the second can happen on plain password sign-in.
     if (res.status === 503) {
-      return fail(body?.message === 'Service unavailable' ? t('errors.generic') : t('errors.deliveryUnavailable'));
+      return fail(body?.message === 'Service unavailable' ? t('errors.serviceUnavailable') : t('errors.deliveryUnavailable'));
+    }
+    // The site is restarting or its proxy timed out (nginx 502/504, often an HTML page).
+    if (res.status === 502 || res.status === 504) return fail(t('errors.serviceUnavailable'));
+    if (res.status >= 500) {
+      console.error(`Sign-in step failed with ${res.status} (trace ${res.headers.get('x-trace-id') ?? 'n/a'})`);
+      return fail(t('errors.generic'));
     }
     switch (body?.code) {
       case AUTH_ERROR_CODES.deviceLimit:
@@ -209,6 +214,17 @@ function LoginFormSteps({
     return fail(t('errors.generic'));
   }
 
+  /**
+   * Password sign-in, retried once if the site answered "temporarily unavailable" (it was
+   * restarting during a deploy). Not used for one-time codes: a retried code could be spent.
+   */
+  async function postLogin(body: unknown): Promise<Response> {
+    const first = await post('/api/auth/login', body);
+    if (![502, 503, 504].includes(first.status)) return first;
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    return post('/api/auth/login', body);
+  }
+
   async function post(url: string, body: unknown): Promise<Response> {
     return fetch(url, {
       method: 'POST',
@@ -226,8 +242,15 @@ function LoginFormSteps({
     setPending(true);
     try {
       await action();
-    } catch {
-      setError(t('errors.generic'));
+    } catch (error) {
+      // fetch() rejects with a TypeError when no answer came back at all: the device is
+      // offline, or the connection dropped. Anything else is a bug: keep it visible in the console.
+      if (error instanceof TypeError && !navigator.onLine) setError(t('errors.offline'));
+      else if (error instanceof TypeError) setError(t('errors.serviceUnavailable'));
+      else {
+        console.error('Sign-in failed', error);
+        setError(t('errors.generic'));
+      }
       setRedirecting(false);
     } finally {
       setPending(false);
@@ -239,25 +262,23 @@ function LoginFormSteps({
 
   async function continueAfterAuthentication(session: Response, kind: 'signedIn' | 'accountCreated' = 'signedIn') {
     setRedirecting(true);
-    // The app stays loaded through the redirect, so the toast shows on the next page.
-    toast.success(t(`toast.${kind}`));
-    showNavigationLoader();
-    if (next) {
-      router.replace(safeNextPath(next, `/${locale}/courses`));
-    } else {
-      // The sign-in response carries the role, so no extra profile request is needed.
-      const body = (await session.json().catch(() => null)) as { role?: unknown } | null;
-      let role = typeof body?.role === 'string' ? body.role : null;
-      if (!role) {
-        const res = await fetch('/api/proxy/users/me', { cache: 'no-store' });
-        const profile = res.ok ? UserProfileSchema.safeParse(await res.json()) : null;
-        role = profile?.success ? profile.data.role : 'LEARNER';
-      }
-      router.replace(
-        role === 'ADMIN' ? `/${locale}/admin` : role === 'FACULTY' ? `/${locale}/instructor` : `/${locale}/courses`,
-      );
+    const body = (await session.json().catch(() => null)) as { userId?: unknown; role?: unknown } | null;
+    let userId = typeof body?.userId === 'string' ? body.userId : null;
+    let role = typeof body?.role === 'string' ? body.role : null;
+    if (!userId || !role) {
+      const res = await fetch('/api/proxy/users/me', { cache: 'no-store' });
+      const profile = res.ok ? UserProfileSchema.safeParse(await res.json()) : null;
+      if (!profile?.success) throw new Error('Could not resolve the signed-in account');
+      userId = profile.data.id;
+      role = profile.data.role;
     }
-    router.refresh();
+    // Drop old account data locally and in other tabs before replacing the document.
+    setSessionScope(userId, role);
+    toastAfterReload('success', t(`toast.${kind}`));
+    showNavigationLoader();
+    // `next` is followed only if it suits this role: it may come from another account's
+    // session that ended on its dashboard (see postLoginPath).
+    window.location.replace(postLoginPath(next, role, locale));
   }
 
   // ---- Password sign-in (default) -------------------------------------------------------
@@ -278,7 +299,7 @@ function LoginFormSteps({
       return;
     setBusyLabel(t('signingIn'));
     await run(async () => {
-      const res = await post('/api/auth/login', { identifier, password, ...device() });
+      const res = await postLogin({ identifier, password, ...device() });
       if (!res.ok) return showFailure(res);
       await continueAfterAuthentication(res);
     });

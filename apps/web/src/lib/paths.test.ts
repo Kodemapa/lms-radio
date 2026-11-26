@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isProtectedPath, localeFromPath, safeNextPath } from './paths';
+import { isProtectedPath, localeFromPath, postLoginPath, roleHome, safeNextPath } from './paths';
 
 describe('isProtectedPath', () => {
   it.each([
@@ -30,4 +30,24 @@ describe('safeNextPath', () => {
     'rejects %p',
     (next) => expect(safeNextPath(next, '/en')).toBe('/en'),
   );
+});
+
+describe('role-based sign-in landing', () => {
+  it('sends an admin away from a prior instructor dashboard', () => {
+    expect(postLoginPath('/en/instructor', 'ADMIN', 'en')).toBe('/en/admin');
+  });
+
+  it('sends a faculty member away from a prior admin dashboard', () => {
+    expect(postLoginPath('/en/admin/users', 'FACULTY', 'en')).toBe('/en/instructor');
+  });
+
+  it('keeps destinations that are valid for the signed-in role', () => {
+    expect(postLoginPath('/hi/courses?sort=popular', 'LEARNER', 'hi')).toBe('/hi/courses?sort=popular');
+    expect(postLoginPath('/en/instructor/courses', 'FACULTY', 'en')).toBe('/en/instructor/courses');
+  });
+
+  it('uses the role landing page when there is no compatible next page', () => {
+    expect(roleHome('ADMIN', 'en')).toBe('/en/admin');
+    expect(postLoginPath(null, 'LEARNER', 'en')).toBe('/en/courses');
+  });
 });

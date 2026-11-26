@@ -15,7 +15,8 @@ export default async function CoursesPage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
   const query = await searchParams;
-  const [t, categories] = await Promise.all([getTranslations('Courses'), getCategories()]);
+  const trace = Object.values(query).some(Boolean);
+  const [t, categories] = await Promise.all([getTranslations('Courses'), getCategories(trace)]);
 
   return (
     <>
@@ -27,7 +28,7 @@ export default async function CoursesPage({ params, searchParams }: Props) {
       />
 
       <div className="container flex flex-col gap-8 pb-16 lg:pb-24">
-        <CourseCatalogue locale={locale} query={query} basePath="/courses" categories={categories} />
+        <CourseCatalogue locale={locale} query={query} basePath="/courses" categories={categories} trace={trace} />
       </div>
     </>
   );

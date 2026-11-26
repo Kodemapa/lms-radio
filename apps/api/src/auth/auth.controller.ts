@@ -1,5 +1,5 @@
-import { Body, Controller, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Header, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiNoContentResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { type Request } from 'express';
 import { requestContext } from '../common/request-context';
@@ -106,6 +106,23 @@ export class AuthController {
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   refresh(@Body() dto: RefreshDto, @Req() req: Request): Promise<TokenPairDto> {
     return this.auth.refresh(dto, requestContext(req));
+  }
+
+  /**
+   * Is my session still valid? 204 if so, 401 if it was signed out, revoked, expired or
+   * the account was blocked/deleted. JwtAuthGuard does the whole check (token signature +
+   * a database lookup of the session), and nothing else runs: no profile is loaded, so
+   * the web app's periodic session check costs one indexed lookup.
+   */
+  @Get('session')
+  @HttpCode(204)
+  @Header('Cache-Control', 'no-store')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Check that the current session is still valid (204 or 401)' })
+  @ApiNoContentResponse()
+  session(): void {
+    // The guard has already decided.
   }
 
   /** Revoke the current session. */

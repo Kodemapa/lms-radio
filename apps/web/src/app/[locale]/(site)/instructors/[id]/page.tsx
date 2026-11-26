@@ -18,7 +18,7 @@ export default async function InstructorPage({ params }: Props) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const [instructor, courses, t, tCommon, wishlist] = await Promise.all([
     getInstructor(id),
-    getCourses({ instructor: id, pageSize: 24 }),
+    getCourses({ instructor: id, pageSize: 24 }, true),
     getTranslations('Instructors'),
     getTranslations('Common'),
     getWishlistIds(),

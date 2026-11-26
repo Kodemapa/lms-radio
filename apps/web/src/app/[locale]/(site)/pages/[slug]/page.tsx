@@ -15,7 +15,9 @@ export default async function ContentPage({
 
   let page;
   try {
-    page = await apiGet(`/content/pages/${encodeURIComponent(slug)}?locale=${encodeURIComponent(locale)}`, ContentPageSchema);
+    page = await apiGet(`/content/pages/${encodeURIComponent(slug)}?locale=${encodeURIComponent(locale)}`, ContentPageSchema, {
+      trace: true,
+    });
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;

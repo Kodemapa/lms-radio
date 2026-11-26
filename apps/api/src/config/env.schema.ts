@@ -92,6 +92,34 @@ export const EnvSchema = z
     DRM_AUTO_PACKAGE: bool.default('true'),
     FFMPEG_PATH: z.string().default('ffmpeg'),
     SHAKA_PACKAGER_PATH: z.string().default('packager'),
+
+    /**
+     * Response cache (src/cache). With REDIS_URL set it is shared by every API instance;
+     * without it each process keeps its own in-memory cache (fine for one instance).
+     */
+    CACHE_ENABLED: bool.default('true'),
+    REDIS_URL: optionalText,
+    CACHE_KEY_PREFIX: z.string().default('elms:'),
+    CACHE_MEMORY_MAX_ENTRIES: z.coerce.number().int().min(100).max(1_000_000).default(5000),
+    /** Slowest acceptable Redis command; a slower one is treated as a cache miss. */
+    CACHE_REDIS_COMMAND_TIMEOUT_MS: z.coerce.number().int().min(50).max(10_000).default(500),
+
+    /** Structured logs (src/observability). `json` for log shippers; `pretty` for a terminal. */
+    LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'verbose']).default('info'),
+    LOG_FORMAT: z.enum(['json', 'pretty']).optional(),
+    /** Log every HTTP request (method, route, status, duration, user ID, trace ID). */
+    LOG_REQUESTS: bool.default('true'),
+    /**
+     * OpenTelemetry traces. Leave empty to turn tracing off. Read directly by
+     * src/observability/tracing.ts, which must start before Nest loads.
+     */
+    OTEL_EXPORTER_OTLP_ENDPOINT: optionalText,
+    /**
+     * Local tracing with no backend: one summary line per request in the API log (total
+     * time, DB query count and time, slowest steps). Off by default (adds overhead).
+     */
+    TRACE_CONSOLE: bool.default('false'),
+    OTEL_SERVICE_NAME: z.string().default('elms-api'),
   })
   .superRefine((env, ctx) => {
     if (env.SMTP_HOST) {

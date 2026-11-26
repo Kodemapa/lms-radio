@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { GlobalLoader } from './page-loader';
 
@@ -47,28 +47,79 @@ function isPageNavigation(anchor: HTMLAnchorElement, event: MouseEvent): boolean
   return url.pathname !== window.location.pathname || url.search !== window.location.search;
 }
 
+/** Fired (asynchronously) whenever the App Router writes the address bar. */
+const URL_COMMIT_EVENT = 'obgyn:url-commit';
+let historyPatched = false;
+
+/**
+ * The App Router updates the address bar (history.pushState / replaceState) when a
+ * navigation commits. Watching those calls tells us a navigation finished, including
+ * ones that only change the query string (filters, pagination), without subscribing to
+ * `useSearchParams()`. Each call is passed through unchanged.
+ */
+function watchHistoryWrites(): void {
+  if (historyPatched || typeof window === 'undefined') return;
+  historyPatched = true;
+  for (const method of ['pushState', 'replaceState'] as const) {
+    const original = window.history[method];
+    window.history[method] = function (this: History, ...args: Parameters<History['pushState']>) {
+      const result = original.apply(this, args);
+      // Not synchronously: the router writes history from inside a React commit.
+      setTimeout(() => window.dispatchEvent(new Event(URL_COMMIT_EVENT)), 0);
+      return result;
+    };
+  }
+}
+
+/** While a navigation is pending, re-render this often (see "nudge" below). */
+const NUDGE_EVERY_MS = 50;
+
 /**
  * Shows the global loader in the middle of the screen while a page loads. It starts on
  * internal link clicks, GET form submits (admin search, filters, rows per page) and
- * back/forward, and hides once the URL has changed.
+ * back/forward, and hides once the new page has been committed.
+ *
+ * Two measured fixes for slow page changes (production build, see docs/11-PERFORMANCE.md):
+ *  - No `useSearchParams()`: in the root layout (inside the Suspense boundary it requires),
+ *    that subscription held many navigations until this component re-rendered for another
+ *    reason. Address-bar writes are watched instead.
+ *  - "Nudge": on some routes (e.g. instructor dashboard → courses, admin users → review)
+ *    the App Router's transition stays pending after the page's data and code have
+ *    arrived (~110 ms) until any React update happens; then it commits at once. Without
+ *    an update it never commits (an upstream React/Next.js issue). Previously the update
+ *    came from this loader's own 200 ms "show" timer, so those pages took ~280 ms. A
+ *    cheap re-render of this component every 50 ms while a navigation is pending lets
+ *    them commit as soon as they are ready (~110–150 ms). Nothing visible changes.
  */
 export function NavigationLoader() {
   const t = useTranslations('Common');
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const renderedPath = useRef(pathname);
   const [visible, setVisible] = useState(false);
+  const [, setNudge] = useState(0);
   const showTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const giveUpTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const nudgeTimer = useRef<ReturnType<typeof setInterval>>(undefined);
 
   useEffect(() => {
+    const hide = () => {
+      clearTimeout(showTimer.current);
+      clearTimeout(giveUpTimer.current);
+      clearInterval(nudgeTimer.current);
+      setVisible(false);
+    };
     const start = () => {
       clearTimeout(showTimer.current);
       clearTimeout(giveUpTimer.current);
+      clearInterval(nudgeTimer.current);
       showTimer.current = setTimeout(() => setVisible(true), SHOW_AFTER_MS);
-      giveUpTimer.current = setTimeout(() => {
-        clearTimeout(showTimer.current);
-        setVisible(false);
-      }, GIVE_UP_AFTER_MS);
+      giveUpTimer.current = setTimeout(hide, GIVE_UP_AFTER_MS);
+      nudgeTimer.current = setInterval(() => setNudge((n) => n + 1), NUDGE_EVERY_MS);
+    };
+    // Back/forward: the address bar has already changed. Only a different page needs the
+    // loader; a query-only step (e.g. a previous filter) comes from the router cache.
+    const onPopState = () => {
+      if (window.location.pathname !== renderedPath.current) start();
     };
     const onClick = (event: MouseEvent) => {
       const anchor = (event.target as Element | null)?.closest?.('a[href]');
@@ -80,26 +131,33 @@ export function NavigationLoader() {
         start();
       }
     };
+    watchHistoryWrites();
     document.addEventListener('click', onClick, true);
     document.addEventListener('submit', onSubmit);
-    window.addEventListener('popstate', start);
+    window.addEventListener('popstate', onPopState);
     window.addEventListener(NAVIGATE_EVENT, start);
+    // The router wrote the address bar: the navigation committed.
+    window.addEventListener(URL_COMMIT_EVENT, hide);
     return () => {
       window.removeEventListener(NAVIGATE_EVENT, start);
+      window.removeEventListener(URL_COMMIT_EVENT, hide);
       document.removeEventListener('click', onClick, true);
       document.removeEventListener('submit', onSubmit);
-      window.removeEventListener('popstate', start);
+      window.removeEventListener('popstate', onPopState);
       clearTimeout(showTimer.current);
       clearTimeout(giveUpTimer.current);
+      clearInterval(nudgeTimer.current);
     };
   }, []);
 
-  // The URL changed: the new page is on screen (or its own loading screen is).
+  // A new page is on screen (or the route loading screen is).
   useEffect(() => {
+    renderedPath.current = pathname;
     clearTimeout(showTimer.current);
     clearTimeout(giveUpTimer.current);
+    clearInterval(nudgeTimer.current);
     setVisible(false);
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   return visible ? <GlobalLoader label={t('loading')} source="nav" /> : null;
 }

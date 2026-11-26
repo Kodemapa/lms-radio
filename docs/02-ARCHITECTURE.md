@@ -46,6 +46,17 @@ On the web, tokens never reach page JavaScript: the BFF sets them as httpOnly,
 `SameSite=Strict` cookies. Middleware refreshes them for signed-in site pages and
 protected admin, instructor, account, and learning pages.
 
+The sign-in BFF returns the API-issued user ID and role (not the tokens) so the browser can
+scope its in-memory private GET cache to that identity. Private reads bypass the cache until
+the signed-in scope is known; account or role changes clear cached answers and discard
+in-flight responses. Logout clears the cache, and a different account signing in from
+another tab forces a reload because authentication cookies are shared between tabs.
+Learner pages remain server-rendered; Next's short-lived in-tab route cache is refreshed
+after writes rather than replacing SSR with client-only data loading.
+Dynamic server renders continue the middleware's W3C trace ID into API calls, so the page
+response ID can be matched to API request and database-timing logs. Static public builds do
+not read request headers just to create a trace.
+
 ## Protected media (CLAUDE.md rule 2)
 
 ```
@@ -238,3 +249,7 @@ question is passed. Wrong answers never reveal the solution. Instructors add the
 | 2026-11-16 | `DEV_UNLOCK_LESSONS=true` turns off sequential lesson locks (`AccessService.lockedLessonIds` returns none). Off by default, set in local `.env`; refused at start-up in production and ignored there anyway. In-video question gates stay on                                               | Lets the team review later lessons without finishing earlier ones. An explicit switch, not `NODE_ENV`, so the unit/e2e tests (and anyone testing locks locally) keep the real behaviour                                             |
 | 2026-11-18 | Outgoing email through Zoho ZeptoMail over SMTP (nodemailer, port 465 implicit TLS), with this app's own Mail Agent. One `MailService`; sends never throw; with `SMTP_HOST` unset email is off and every send returns false. Emails carry no staff notes or clinical text and are English only for now | Requested and approved by the product owner (paid service, CLAUDE.md rule 10). Port 587 is blocked outbound on the production VPS. Keeping notes out of mailboxes limits personal and clinical data in email; Hindi templates can follow |
 | 2026-11-23 | No device limit by default: `MAX_DEVICES_PER_USER=0` means unlimited (any positive number re-enables a per-account cap for learners and instructors). Admins are never capped. Devices are still recorded, listed in Account → Devices & security, and removable (which signs that device out) | Requested by the product owner: users were locked out after signing in on a third device. Kept as a setting so sharing paid accounts can be capped later without a code change |
+| 2026-11-24 | API response cache (`apps/api/src/cache`): opt-in `@CachedPublic` / `@CachedForUser` on read endpoints; Redis when `REDIS_URL` is set, in-memory otherwise. User-scope keys contain the user ID; invalidation by version counters (own write → that user; admin/faculty write → everyone; notification → recipient); TTL 30–300 s bounds anything else. Never used on signed-URL, media, auth or export endpoints; browsers get `no-store` | Faster pages without one user ever seeing another's data. Version bumps avoid key scans; Redis was already in the stack (no new paid service) |
+| 2026-11-24 | Structured logs (`AppLogger`, JSON in production) with trace ID + user ID on every line, one access-log line per request, and OpenTelemetry traces (HTTP, Express, Nest, Prisma, ioredis) exported over OTLP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Query strings and media tokens are never logged; no names, emails or IPs in logs | Debug one request across logs and traces (`X-Trace-Id` header). Open-source backends only (Jaeger locally); DPDP: logs carry pseudonymous IDs only |
+| 2026-11-26 | Cache hardening for deployment: user-scope keys also contain the role; Redis commands time out after `CACHE_REDIS_COMMAND_TIMEOUT_MS` (500 ms) and count as a miss; a startup warning when several API processes (PM2 cluster) run without `REDIS_URL`. The web session check falls back to `/users/me` when the API has no `/auth/session` yet | A stalled Redis must not slow the site; per-process caches don't share invalidations; the web app deploys automatically while the API is updated by hand, so the web must work against the previous API |
+| 2026-11-24 | Global loader is an isometric cube-solving animation (pure SVG + CSS, `components/layout/page-loader.tsx`), centred, theme-coloured, static for reduced motion | Requested by the product owner; CSS-only so it animates before JavaScript loads |

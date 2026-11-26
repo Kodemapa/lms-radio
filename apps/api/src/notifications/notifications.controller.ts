@@ -5,6 +5,7 @@ import { type AuthUser } from '../auth/auth-user';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { NotificationsService } from './notifications.service';
+import { CachedForUser } from '../cache/cached.decorator';
 
 @ApiTags('notifications')
 @ApiBearerAuth()
@@ -14,12 +15,14 @@ export class NotificationsController {
   constructor(private readonly notifications: NotificationsService) {}
 
   @Get()
+  @CachedForUser(60)
   @ApiOperation({ summary: 'My latest notifications and the unread count' })
   list(@CurrentUser() user: AuthUser): Promise<NotificationList> {
     return this.notifications.list(user);
   }
 
   @Get('unread-count')
+  @CachedForUser(60)
   @ApiOperation({ summary: 'Unread count only (for the bell badge)' })
   async unread(@CurrentUser() user: AuthUser): Promise<{ unreadCount: number }> {
     return { unreadCount: await this.notifications.unreadCount(user) };

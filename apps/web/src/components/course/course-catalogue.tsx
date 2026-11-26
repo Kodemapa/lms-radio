@@ -34,6 +34,7 @@ export async function CourseCatalogue({
   basePath,
   categories,
   fixedCategory,
+  trace = false,
 }: {
   locale: string;
   query: CatalogueQuery;
@@ -42,13 +43,15 @@ export async function CourseCatalogue({
   categories: CategoryNode[];
   /** Category slug set by the page; its sub-categories are included by the API. */
   fixedCategory?: string;
+  /** Continue the request trace for dynamic category/search renders. */
+  trace?: boolean;
 }) {
   const page = Math.max(1, Number(query.page) || 1);
   const category = fixedCategory ?? query.category;
   const [t, tCommon, result, wishlist] = await Promise.all([
     getTranslations('Courses'),
     getTranslations('Common'),
-    getCourses({ ...query, category, page, pageSize: PAGE_SIZE }),
+    getCourses({ ...query, category, page, pageSize: PAGE_SIZE }, trace),
     getWishlistIds(),
   ]);
   const pages = result ? Math.max(1, Math.ceil(result.total / PAGE_SIZE)) : 1;

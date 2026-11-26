@@ -20,12 +20,13 @@ import {
   Settings,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
 import { useRouter } from '@/i18n/navigation';
 import { GlobalLoader } from './page-loader';
 import { useSessionWatch } from './session-watch';
+import { announceSessionEnded, setSessionScope } from '@/lib/client-fetch';
 import { AvatarContent } from '@/components/account/avatar';
 import { UserId } from '@/components/account/user-id';
 import { showNavigationLoader } from '@/components/layout/navigation-progress';
@@ -49,6 +50,8 @@ export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenu
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   // Signed in on every page that shows this menu: sign out here if the session ends elsewhere.
   useSessionWatch();
+  // Scope this tab's client caches to this account and role (see lib/client-fetch.ts).
+  useEffect(() => setSessionScope(user.id, user.role), [user.id, user.role]);
   const go = (href: '/account/learning' | '/account/wishlist' | '/account/profile' | '/admin' | '/instructor' | '/become-instructor') => {
     showNavigationLoader(href);
     router.push(href);
@@ -134,6 +137,8 @@ export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenu
           setSigningOut(true);
           toastAfterReload('success', tCommon('toast.signedOut'));
           await fetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
+          // Other open tabs go to sign-in now rather than at their next session check.
+          announceSessionEnded();
           // A full page load re-runs the theme script, so the signed-out site uses the admin default.
           window.location.assign('/');
         }}

@@ -4,9 +4,10 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Bricolage_Grotesque, Geist, Noto_Sans_Devanagari } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { Toaster } from '@obgyn/ui';
-import { Suspense, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { ChunkReloadScript } from '@/components/layout/chunk-reload';
 import { NavigationLoader } from '@/components/layout/navigation-progress';
+import { RouterCacheSync } from '@/components/layout/router-cache-sync';
 import { ThemeScript } from '@/components/theme/theme-script';
 import { routing } from '@/i18n/routing';
 import { getPublicSiteSettings, SITE_URL } from '@/lib/site-settings';
@@ -85,9 +86,10 @@ export default async function LocaleLayout({ children, params }: Props) {
         </a>
         <NextIntlClientProvider>
           {/* Inside the provider: the loader's "Loading…" label is translated. */}
-          <Suspense fallback={null}>
-            <NavigationLoader />
-          </Suspense>
+          {/* No Suspense wrapper: the loader no longer reads search params (see the component). */}
+          <NavigationLoader />
+          {/* Clears the client-side page cache after saves (see staleTimes in next.config.ts). */}
+          <RouterCacheSync />
           {children}
           {/* Action confirmations ("Saved", "Deleted") from any page. */}
           <Toaster closeLabel={t('close')} />

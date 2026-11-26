@@ -337,20 +337,63 @@
 body:has(.global-loader[data-source='route']) .global-loader[data-source='nav'] {
   display: none;
 }
-.page-loader-ring {
-  border: 3px solid var(--primary-light);
-  border-top-color: var(--primary);
-  border-right-color: var(--accent);
+/* Cube-solving animation: outlined isometric cubes in the brand plum, the last one
+   (which "solves" the block) topped in peach. Colours follow the light/dark theme. */
+.cube-loader-cube path {
+  stroke: var(--primary);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
 }
-.page-loader-dot {
-  box-shadow: 0 8px 20px -6px var(--primary);
+.cube-loader-top {
+  fill: var(--primary-light);
 }
+.cube-loader-top-last {
+  fill: var(--accent);
+}
+.cube-loader-left {
+  fill: var(--card);
+}
+.cube-loader-right {
+  fill: color-mix(in srgb, var(--primary-light) 55%, var(--card));
+}
+/* One 3.4 s loop: cubes drop in turn (0–58 %), the solved block pops, then fades out.
+   Every cube shares the loop with no per-cube delay, so all restart together.
+   Only `transform` and `opacity` of HTML wrappers animate, so the compositor runs the
+   whole loop without main-thread style/paint work (the page is loading underneath). */
 @media (prefers-reduced-motion: no-preference) {
-  .page-loader-ring {
-    animation: page-loader-spin 0.9s linear infinite;
+  .cube-loader-block {
+    animation: cube-loader-block 3.4s ease-in-out infinite;
+    will-change: transform, opacity;
   }
-  .page-loader-dot {
-    animation: page-loader-pulse 1.4s ease-in-out infinite;
+  .cube-loader-cube {
+    will-change: transform, opacity;
+    animation-duration: 3.4s;
+    animation-iteration-count: infinite;
+    animation-timing-function: cubic-bezier(0.34, 1.45, 0.64, 1);
+  }
+  .cube-loader-step-1 {
+    animation-name: cube-loader-drop-1;
+  }
+  .cube-loader-step-2 {
+    animation-name: cube-loader-drop-2;
+  }
+  .cube-loader-step-3 {
+    animation-name: cube-loader-drop-3;
+  }
+  .cube-loader-step-4 {
+    animation-name: cube-loader-drop-4;
+  }
+  .cube-loader-step-5 {
+    animation-name: cube-loader-drop-5;
+  }
+  .cube-loader-step-6 {
+    animation-name: cube-loader-drop-6;
+  }
+  .cube-loader-step-7 {
+    animation-name: cube-loader-drop-7;
+  }
+  .cube-loader-step-8 {
+    animation-name: cube-loader-drop-8;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -363,15 +406,120 @@ body:has(.global-loader[data-source='route']) .global-loader[data-source='nav'] 
     opacity: 0;
   }
 }
-@keyframes page-loader-spin {
-  to {
-    transform: rotate(360deg);
+@keyframes cube-loader-block {
+  0%,
+  60% {
+    opacity: 1;
+    transform: none;
+  }
+  65% {
+    transform: scale(1.07);
+  }
+  71%,
+  86% {
+    opacity: 1;
+    transform: none;
+  }
+  96%,
+  100% {
+    opacity: 0;
+    transform: scale(0.92);
   }
 }
-@keyframes page-loader-pulse {
-  50% {
-    transform: scale(0.8);
-    opacity: 0.75;
+/* Step n is hidden until (n-1)×7 % of the loop, then drops into place over 9 %. */
+@keyframes cube-loader-drop-1 {
+  0% {
+    opacity: 0;
+    transform: translateY(-31%);
+  }
+  9%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cube-loader-drop-2 {
+  0%,
+  7% {
+    opacity: 0;
+    transform: translateY(-31%);
+  }
+  16%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cube-loader-drop-3 {
+  0%,
+  14% {
+    opacity: 0;
+    transform: translateY(-31%);
+  }
+  23%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cube-loader-drop-4 {
+  0%,
+  21% {
+    opacity: 0;
+    transform: translateY(-31%);
+  }
+  30%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cube-loader-drop-5 {
+  0%,
+  28% {
+    opacity: 0;
+    transform: translateY(-31%);
+  }
+  37%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cube-loader-drop-6 {
+  0%,
+  35% {
+    opacity: 0;
+    transform: translateY(-31%);
+  }
+  44%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cube-loader-drop-7 {
+  0%,
+  42% {
+    opacity: 0;
+    transform: translateY(-31%);
+  }
+  51%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cube-loader-drop-8 {
+  0%,
+  49% {
+    opacity: 0;
+    transform: translateY(-31%);
+  }
+  58%,
+  100% {
+    opacity: 1;
+    transform: none;
   }
 }
 

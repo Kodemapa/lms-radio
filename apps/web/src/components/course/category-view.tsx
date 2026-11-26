@@ -10,7 +10,7 @@ import { CourseCatalogue, type CatalogueQuery } from './course-catalogue';
 
 /** Looks the category up for metadata; null when it doesn't exist (or isn't at this URL). */
 export async function categoryMeta(mainSlug: string, subSlug?: string) {
-  const match = findCategory(await getCategories(), mainSlug, subSlug);
+  const match = findCategory(await getCategories(true), mainSlug, subSlug);
   if (match.kind !== 'found') return null;
   const shown = match.sub ?? match.main;
   return { title: shown.name, description: shown.description ?? undefined };
@@ -32,7 +32,7 @@ export async function CategoryView({
   subSlug?: string;
   query: CatalogueQuery;
 }) {
-  const categories = await getCategories();
+  const categories = await getCategories(true);
   const match = findCategory(categories, mainSlug, subSlug);
   if (match.kind === 'moved') redirect({ href: match.path, locale });
   if (match.kind !== 'found') notFound();
@@ -115,6 +115,7 @@ export async function CategoryView({
           basePath={basePath}
           categories={categories}
           fixedCategory={shown.slug}
+          trace
         />
       </div>
     </>

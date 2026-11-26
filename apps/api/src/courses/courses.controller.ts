@@ -14,6 +14,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CoursesService } from './courses.service';
 import { CourseListQueryDto } from './dto';
+import { CachedForUser, CachedPublic } from '../cache/cached.decorator';
 
 @ApiTags('courses')
 @Controller()
@@ -22,16 +23,19 @@ export class CoursesController {
 
   /** Published courses with filters, search, sorting and pagination. */
   @Get('courses')
+  @CachedPublic(60)
   list(@Query() query: CourseListQueryDto): Promise<CourseListResponse> {
     return this.courses.listPublished(query);
   }
 
   @Get('courses/:slug')
+  @CachedPublic(60)
   detail(@Param('slug') slug: string): Promise<CourseDetail> {
     return this.courses.getPublished(slug);
   }
 
   @Get('courses/:slug/enrollment')
+  @CachedForUser(60)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   enrollment(@CurrentUser() user: AuthUser, @Param('slug') slug: string): Promise<{ enrolled: boolean }> {

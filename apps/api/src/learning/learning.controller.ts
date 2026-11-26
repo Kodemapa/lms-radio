@@ -43,6 +43,7 @@ import {
 import { EngagementService } from './engagement.service';
 import { EntranceService } from './entrance.service';
 import { LearningService } from './learning.service';
+import { CachedForUser } from '../cache/cached.decorator';
 
 const uuid = new ParseUUIDPipe();
 
@@ -90,6 +91,7 @@ export class LearningController {
 
   /** Course outline with my progress, locks and where to resume. */
   @Get('learn/courses/:slug')
+  @CachedForUser(30)
   outline(@CurrentUser() user: AuthUser, @Param('slug') slug: string): Promise<PlayerOutline> {
     return this.learning.outline(user, slug);
   }
@@ -146,16 +148,19 @@ export class LearningController {
   }
 
   @Get('users/me/learning')
+  @CachedForUser(60)
   myCourses(@CurrentUser() user: AuthUser): Promise<MyCourse[]> {
     return this.learning.myCourses(user);
   }
 
   @Get('users/me/wishlist')
+  @CachedForUser(60)
   wishlist(@CurrentUser() user: AuthUser): Promise<CourseSummary[]> {
     return this.engagement.wishlist(user);
   }
 
   @Get('users/me/wishlist/ids')
+  @CachedForUser(60)
   wishlistIds(@CurrentUser() user: AuthUser): Promise<string[]> {
     return this.engagement.wishlistIds(user);
   }

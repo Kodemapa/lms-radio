@@ -18,6 +18,7 @@ import { ArrowRight, Bell, CheckCheck, Loader2 } from 'lucide-react';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
+import { cachedJson } from '@/lib/client-cache';
 import { bffFetch } from '@/lib/client-fetch';
 import { showNavigationLoader } from './navigation-progress';
 
@@ -44,10 +45,13 @@ export function NotificationBell() {
   const tCommon = useTranslations('Common');
   const loaded = useRef(false);
 
+  // Client cache: the bell remounts on most page changes; a count fetched in the last 30 s
+  // (or already in flight) is reused instead of asking again. Marking as read is a write,
+  // which clears the cache, so the badge never shows a stale count after the user acts.
   const refreshCount = useCallback(async () => {
     try {
-      const res = await bffFetch('/api/proxy/notifications/unread-count');
-      if (res.ok) setUnread(((await res.json()) as { unreadCount: number }).unreadCount ?? 0);
+      const body = await cachedJson<{ unreadCount: number }>('/api/proxy/notifications/unread-count', { maxAgeMs: 30_000 });
+      setUnread(body.unreadCount ?? 0);
     } catch {
       // Offline or signed out: keep the last count.
     }
@@ -56,9 +60,7 @@ export function NotificationBell() {
   const load = useCallback(async () => {
     setState('loading');
     try {
-      const res = await bffFetch('/api/proxy/notifications');
-      if (!res.ok) throw new Error(String(res.status));
-      const list = NotificationListSchema.parse(await res.json());
+      const list = NotificationListSchema.parse(await cachedJson('/api/proxy/notifications', { maxAgeMs: 5_000 }));
       setItems(list.items);
       setUnread(list.unreadCount);
       loaded.current = true;

@@ -11,7 +11,7 @@ type Props = { params: Promise<{ locale: string; serial: string }> };
 
 async function load(serial: string) {
   if (!/^[A-Z0-9-]{6,32}$/i.test(serial)) return null;
-  return apiGet(`/certificates/${encodeURIComponent(serial)}`, CertificatePublicSchema).catch(() => null);
+  return apiGet(`/certificates/${encodeURIComponent(serial)}`, CertificatePublicSchema, { trace: true }).catch(() => null);
 }
 
 export async function generateMetadata({ params }: Props) {

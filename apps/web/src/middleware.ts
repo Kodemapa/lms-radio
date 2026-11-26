@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { routing } from './i18n/routing';
 import { clearAuthCookies, refreshTokens, setAuthCookies } from './lib/auth-cookies';
 import { isProtectedPath, localeFromPath } from './lib/paths';
+import { childTraceparent, traceIdOf } from './lib/trace';
 
 const intl = createIntlMiddleware(routing);
 
@@ -15,7 +16,43 @@ const RETRY_COOKIE = 'elms_refresh_retry';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 300;
 
+/**
+ * Every page request (full load or in-app navigation) gets one trace ID: the browser's own
+ * `traceparent` if it sent one, otherwise a new one. It is returned as `x-trace-id` and
+ * handed to server rendering as a `traceparent` request header, so all API calls made to
+ * render this page carry the same ID (see lib/trace.ts and lib/server-api.ts).
+ */
 export default async function middleware(req: NextRequest) {
+  const traceId = traceIdOf(req.headers);
+  const res = await route(req);
+  res.headers.set('x-trace-id', traceId);
+  if (!res.headers.has('location')) forwardRequestHeader(req, res, 'traceparent', childTraceparent(traceId));
+  return res;
+}
+
+/**
+ * Adds a request header for the page render, the way `NextResponse.next({ request: { headers } })`
+ * does, but on a response that next-intl already built (which may carry its own request
+ * header overrides; those are kept).
+ */
+function forwardRequestHeader(req: NextRequest, res: NextResponse, name: string, value: string): void {
+  const headers = new Headers(req.headers);
+  const overridden = res.headers.get('x-middleware-override-headers');
+  if (overridden) {
+    for (const key of overridden.split(',')) {
+      const carried = res.headers.get(`x-middleware-request-${key}`);
+      if (carried === null) headers.delete(key);
+      else headers.set(key, carried);
+    }
+  }
+  headers.set(name, value);
+  const carrier = NextResponse.next({ request: { headers } });
+  carrier.headers.forEach((v, key) => {
+    if (key === 'x-middleware-override-headers' || key.startsWith('x-middleware-request-')) res.headers.set(key, v);
+  });
+}
+
+async function route(req: NextRequest): Promise<NextResponse> {
   const { pathname, search } = req.nextUrl;
 
   if (!req.cookies.has(ACCESS_TOKEN_COOKIE)) {

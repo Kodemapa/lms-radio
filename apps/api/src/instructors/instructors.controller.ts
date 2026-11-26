@@ -3,6 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { type PublicInstructor } from '@obgyn/types';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { CachedPublic } from '../cache/cached.decorator';
 
 const SELECT = {
   id: true,
@@ -35,6 +36,7 @@ export class InstructorsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
+  @CachedPublic(300)
   async list(): Promise<PublicInstructor[]> {
     const users = await this.prisma.user.findMany({
       where: { courses: { some: { status: 'PUBLISHED' } } },
@@ -45,6 +47,7 @@ export class InstructorsController {
   }
 
   @Get(':id')
+  @CachedPublic(300)
   async detail(@Param('id', new ParseUUIDPipe()) id: string): Promise<PublicInstructor> {
     const user = await this.prisma.user.findFirst({
       where: { id, courses: { some: { status: 'PUBLISHED' } } },

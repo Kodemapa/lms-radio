@@ -1,7 +1,8 @@
 import { OtpVerifySchema, TokenPairSchema } from '@obgyn/types';
 import { NextResponse } from 'next/server';
+import { badRequest, forwardHeaders, passThrough, upstreamUnavailable, withDiagnostics } from '@/lib/bff';
+import { identityFromToken } from '@/lib/auth-session-route';
 import { setAuthCookies } from '@/lib/auth-cookies';
-import { badRequest, forwardHeaders, passThrough, upstreamUnavailable } from '@/lib/bff';
 import { API_URL } from '@/lib/env';
 
 export async function POST(req: Request) {
@@ -23,7 +24,10 @@ export async function POST(req: Request) {
   const tokens = TokenPairSchema.safeParse(await upstream.json());
   if (!tokens.success) return upstreamUnavailable();
 
-  const res = NextResponse.json({ ok: true });
+  const res = withDiagnostics(
+    NextResponse.json({ ok: true, ...identityFromToken(tokens.data.accessToken) }),
+    upstream,
+  );
   setAuthCookies(res, tokens.data, body.data.deviceId);
   return res;
 }

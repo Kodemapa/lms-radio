@@ -38,6 +38,38 @@ code to the API console and production fails closed. Email codes are sent throug
 ZeptoMail when email is configured (below); otherwise development logs them and
 production refuses email codes.
 
+## Response cache (`src/cache/`)
+
+Opt-in per endpoint: `@CachedPublic(ttl)` (same answer for everyone) or `@CachedForUser(ttl)`
+(keyed by the caller's user ID; needs `JwtAuthGuard`). Backed by Redis when `REDIS_URL` is
+set, otherwise an in-process map. Responses carry `X-Cache: HIT|MISS`.
+
+Keys: `cache:resp:user:<userId>:g<global>:u<userVersion>:<sha256(url)>` /
+`cache:resp:public:g<global>:<sha256(url)>`. Invalidation bumps a version, so old entries
+become unreachable at once:
+
+| Event | Effect |
+|---|---|
+| Any POST/PUT/PATCH/DELETE by a user | that user's entries |
+| ... by an ADMIN or FACULTY user | everyone's entries, public included |
+| `NotificationsService.notify` | each recipient's entries |
+| Anything else (e.g. another learner's review) | visible after the TTL (30–300 s) |
+
+Never put `@Cached*` on endpoints that return signed media URLs, tokens or exports.
+Call `CacheService.invalidateUsers()` / `invalidateAll()` from code that changes data
+outside a request (background jobs).
+
+## Logging and tracing (`src/observability/`)
+
+- `AppLogger` replaces Nest's logger: `LOG_FORMAT=json` (one object per line) or `pretty`.
+  Every line has `traceId` and, once signed in, `userId`.
+- One access-log line per request (`context: "HTTP"`): method, path without query string,
+  route, status, duration, cache result. Bodies, headers, IPs and media tokens are never logged.
+- Each response has `X-Trace-Id`; the web app sends a W3C `traceparent`, so its ID is reused.
+- With `OTEL_EXPORTER_OTLP_ENDPOINT` set, OpenTelemetry exports spans (HTTP, Express, Nest,
+  Prisma queries, Redis). Locally: `docker compose up -d jaeger`, set
+  `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`, open http://localhost:16686.
+
 ## Email (Zoho ZeptoMail over SMTP)
 
 All email goes through `MailService` (`src/mail/`): sign-in, password-reset and

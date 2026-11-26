@@ -29,6 +29,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { ContactService } from './contact.service';
 import { ContentService } from './content.service';
 import { MessageOverridesService } from './message-overrides.service';
+import { CachedPublic } from '../cache/cached.decorator';
 
 const uuid = new ParseUUIDPipe();
 
@@ -59,12 +60,14 @@ export class ContentController {
   ) {}
 
   @Get('pages')
+  @CachedPublic(300)
   @ApiOperation({ summary: 'Published page slugs and languages (for the sitemap)' })
   pageRefs(): Promise<PublicPageRef[]> {
     return this.content.publicPageRefs();
   }
 
   @Get('pages/:slug')
+  @CachedPublic(300)
   @ApiOperation({ summary: 'A published page (falls back to English)' })
   @ApiQuery({ name: 'locale', required: false, enum: ['en', 'hi'] })
   page(@Param('slug') slug: string, @Query('locale', new DefaultValuePipe('en')) locale: string): Promise<ContentPage> {
@@ -72,6 +75,7 @@ export class ContentController {
   }
 
   @Get('faqs')
+  @CachedPublic(300)
   @ApiOperation({ summary: 'Published FAQs (falls back to English)' })
   @ApiQuery({ name: 'locale', required: false, enum: ['en', 'hi'] })
   faqs(@Query('locale', new DefaultValuePipe('en')) locale: string): Promise<Faq[]> {
@@ -79,12 +83,14 @@ export class ContentController {
   }
 
   @Get('settings')
+  @CachedPublic(60)
   @ApiOperation({ summary: 'Public site settings (SEO defaults, contact details)' })
   settings(): Promise<SiteSettings> {
     return this.content.settings();
   }
 
   @Get('messages/:locale')
+  @CachedPublic(300)
   @ApiOperation({ summary: 'Admin overrides of UI text for one language, keyed by message path' })
   messageOverrides(@Param('locale') locale: string): Promise<Record<string, string>> {
     return this.messages.publicMap(locale);

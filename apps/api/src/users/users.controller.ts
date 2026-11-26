@@ -16,6 +16,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from './users.service';
+import { CachedForUser } from '../cache/cached.decorator';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -25,6 +26,7 @@ export class UsersController {
   constructor(private readonly users: UsersService) {}
 
   @Get()
+  @CachedForUser(60)
   me(@CurrentUser() user: AuthUser): Promise<UserProfile> {
     return this.users.getProfile(user.userId);
   }

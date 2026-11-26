@@ -6,6 +6,7 @@ import { ApplicationsModule } from './applications/applications.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthoringModule } from './authoring/authoring.module';
+import { CacheModule } from './cache/cache.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ContentModule } from './content/content.module';
 import { AppConfigModule } from './config/app-config.module';
@@ -18,6 +19,7 @@ import { LearningModule } from './learning/learning.module';
 import { MailModule } from './mail/mail.module';
 import { MediaModule } from './media/media.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ObservabilityModule } from './observability/observability.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ReportsModule } from './reports/reports.module';
 import { StorageModule } from './storage/storage.module';
@@ -29,7 +31,9 @@ import { UsersModule } from './users/users.module';
   imports: [
     AppConfigModule,
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
+    ObservabilityModule,
     PrismaModule,
+    CacheModule,
     AuditModule,
     MailModule,
     NotificationsModule,

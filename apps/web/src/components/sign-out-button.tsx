@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { announceSessionEnded } from '@/lib/client-fetch';
 
 export function SignOutButton({ label }: { label: string }) {
   const [pending, setPending] = useState(false);
@@ -13,6 +14,7 @@ export function SignOutButton({ label }: { label: string }) {
       onClick={async () => {
         setPending(true);
         await fetch('/api/auth/logout', { method: 'POST' });
+        announceSessionEnded();
         // Full reload: the signed-out page then uses the site's default theme.
         window.location.reload();
       }}

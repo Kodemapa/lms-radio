@@ -2,6 +2,7 @@ import { ACCESS_TOKEN_COOKIE } from '@obgyn/types';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { passThrough, upstreamUnavailable } from '@/lib/bff';
+import { childTraceparent, traceIdOf } from '@/lib/trace';
 import { API_URL } from '@/lib/env';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -34,6 +35,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       headers: {
         authorization: `Bearer ${token}`,
         'content-type': 'application/octet-stream',
+        traceparent: childTraceparent(traceIdOf(req.headers)),
         ...(forwardedFor ? { 'x-forwarded-for': forwardedFor } : {}),
       },
       body,

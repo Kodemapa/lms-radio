@@ -1,8 +1,9 @@
 import { ACCESS_TOKEN_COOKIE } from '@obgyn/types';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { forwardHeaders, passThrough, upstreamUnavailable } from '@/lib/bff';
+import { forwardHeaders, logBffCall, passThrough, upstreamUnavailable, withDiagnostics } from '@/lib/bff';
 import { API_URL } from '@/lib/env';
+import { traceIdOf } from '@/lib/trace';
 
 /**
  * Authenticated pass-through for browser calls. Only allow-listed API paths
@@ -14,7 +15,7 @@ const SLUG = '[a-z0-9-]+';
 const ADMIN_RECORD = `admin/(categories|application-fields|content/pages|content/faqs|content/contact)/${UUID}`;
 const ALLOWED: Record<string, RegExp> = {
   GET: new RegExp(
-    `^(notifications|notifications/unread-count|media/${UUID}/(url|playback)|users/me|users/me/devices|users/me/learning|users/me/wishlist(/ids)?|courses/${SLUG}/enrollment|courses/${SLUG}/reviews|courses/${SLUG}/entrance|learn/.+|instructor-applications/me|instructor/.+|admin/.+)$`,
+    `^(auth/session|notifications|notifications/unread-count|media/${UUID}/(url|playback)|users/me|users/me/devices|users/me/learning|users/me/wishlist(/ids)?|courses/${SLUG}/enrollment|courses/${SLUG}/reviews|courses/${SLUG}/entrance|learn/.+|instructor-applications/me|instructor/.+|admin/.+)$`,
     'i',
   ),
   POST: new RegExp(
@@ -39,23 +40,30 @@ type Ctx = { params: Promise<{ path: string[] }> };
 async function handle(req: Request, { params }: Ctx) {
   const segments = (await params).path;
   const path = segments.join('/');
+  // Answers made here (not by the API) still carry a trace ID, so every response does.
+  const local = (body: { message: string }, status: number) =>
+    withDiagnostics(NextResponse.json(body, { status }), null, traceIdOf(req.headers));
   if (!segments.every((segment) => SAFE_SEGMENT.test(segment)) || !ALLOWED[req.method]?.test(path)) {
-    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+    return local({ message: 'Not found' }, 404);
   }
   const token = (await cookies()).get(ACCESS_TOKEN_COOKIE)?.value;
-  if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (!token) return local({ message: 'Unauthorized' }, 401);
 
+  const started = performance.now();
+  const headers = forwardHeaders(req, { authorization: `Bearer ${token}` });
   try {
     const search = new URL(req.url).search;
     const upstream = await fetch(`${API_URL}/${path}${search}`, {
       method: req.method,
-      headers: forwardHeaders(req, { authorization: `Bearer ${token}` }),
+      headers,
       body: req.method === 'GET' ? undefined : await req.text(),
       cache: 'no-store',
     });
+    logBffCall(req.method, path, started, upstream);
     return passThrough(upstream);
   } catch {
-    return upstreamUnavailable();
+    logBffCall(req.method, path, started, null);
+    return withDiagnostics(upstreamUnavailable(), null, traceIdOf(headers));
   }
 }
 

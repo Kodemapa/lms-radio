@@ -1,6 +1,7 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { NOTIFICATION_LIST_LIMIT, type NotificationKind, type NotificationList } from '@obgyn/types';
 import { type AuthUser } from '../auth/auth-user';
+import { CacheService } from '../cache/cache.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface NewNotification {
@@ -20,7 +21,10 @@ export interface NewNotification {
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly cache?: CacheService,
+  ) {}
 
   async notify(...notes: NewNotification[]): Promise<void> {
     if (notes.length === 0) return;
@@ -28,6 +32,8 @@ export class NotificationsService {
       await this.prisma.notification.createMany({
         data: notes.map((n) => ({ userId: n.userId, kind: n.kind, data: n.data ?? {}, link: n.link ?? null })),
       });
+      // Recipients' cached bell and pages are now stale (someone else caused this change).
+      await this.cache?.invalidateUsers(notes.map((n) => n.userId));
     } catch (error) {
       this.logger.error(`Could not save ${notes.length} notification(s) of kind ${notes[0]!.kind}`, error as Error);
     }

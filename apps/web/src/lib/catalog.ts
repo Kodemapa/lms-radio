@@ -23,9 +23,9 @@ export const getMe = cache(async (): Promise<UserProfile | null> => {
   }
 });
 
-export const getCategories = cache(async (): Promise<CategoryNode[]> => {
+export const getCategories = cache(async (trace = false): Promise<CategoryNode[]> => {
   try {
-    return await apiGet('/categories', CategoryTreeSchema);
+    return await apiGet('/categories', CategoryTreeSchema, { trace });
   } catch {
     return [];
   }
@@ -44,13 +44,13 @@ export interface CourseQuery {
 }
 
 /** null means the API couldn't be reached. */
-export async function getCourses(query: CourseQuery = {}): Promise<CourseListResponse | null> {
+export async function getCourses(query: CourseQuery = {}, trace = false): Promise<CourseListResponse | null> {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (value !== undefined && value !== '') params.set(key, String(value));
   }
   try {
-    return await apiGet(`/courses?${params}`, CourseListResponseSchema);
+    return await apiGet(`/courses?${params}`, CourseListResponseSchema, { trace });
   } catch {
     return null;
   }
@@ -58,7 +58,7 @@ export async function getCourses(query: CourseQuery = {}): Promise<CourseListRes
 
 export const getCourse = cache(async (slug: string) => {
   try {
-    return await apiGet(`/courses/${encodeURIComponent(slug)}`, CourseDetailSchema);
+    return await apiGet(`/courses/${encodeURIComponent(slug)}`, CourseDetailSchema, { trace: true });
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
@@ -98,7 +98,7 @@ export async function getInstructors() {
 
 export async function getInstructor(id: string) {
   try {
-    return await apiGet(`/instructors/${encodeURIComponent(id)}`, PublicInstructorSchema);
+    return await apiGet(`/instructors/${encodeURIComponent(id)}`, PublicInstructorSchema, { trace: true });
   } catch {
     return null;
   }

@@ -63,8 +63,8 @@ export default async function CoursePage({ params }: Props) {
     getFormatter(),
     me ? getEnrollment(slug) : Promise.resolve(false),
     getWishlistIds(),
-    apiGet(`/courses/${encodeURIComponent(slug)}/reviews`, ReviewListSchema, { auth: !!me }).catch(() => null),
-    getCategories(),
+    apiGet(`/courses/${encodeURIComponent(slug)}/reviews`, ReviewListSchema, { auth: !!me, trace: true }).catch(() => null),
+    getCategories(true),
   ]);
   const tEntrance = await getTranslations('Entrance');
   const entrance =
