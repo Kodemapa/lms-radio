@@ -158,8 +158,6 @@ export const PlayerLessonDetailSchema = z.object({
   durationSec: z.number().int().nullable(),
   isPreview: z.boolean(),
   skippable: z.boolean(),
-  /** PDF: a stamped copy can be downloaded. */
-  allowDownload: z.boolean().default(false),
   course: z.object({ id: z.string().uuid(), slug: z.string(), title: z.string() }),
   media: z.object({ assetId: z.string().uuid(), mimeType: z.string() }).nullable(),
   progress: z.object({ positionSec: z.number().int(), completed: z.boolean(), skipped: z.boolean() }),

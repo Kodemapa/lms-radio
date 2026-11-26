@@ -230,9 +230,6 @@ export function CurriculumTab({
                                 </span>
                               ) : null}
                               {lesson.skippable ? <span>{t('skippable')}</span> : null}
-                              {lesson.kind === 'PDF' && lesson.allowDownload ? (
-                                <span>{t('downloadAllowed')}</span>
-                              ) : null}
                               {needsFile ? (
                                 lesson.media?.status === 'READY' ? (
                                   <span className="text-success">{t('fileReady')}</span>
@@ -536,8 +533,6 @@ interface LessonValues {
   isPreview: boolean;
   mediaAssetId: string | null;
   skippable: boolean;
-  /** PDF: learners may download a copy stamped with their name and ID. */
-  allowDownload: boolean;
   passPercent: number | null;
   instructions: string | null;
   points: number | null;
@@ -594,7 +589,6 @@ function LessonDialog({
     isPreview: existing?.isPreview ?? firstVideo,
     mediaAssetId: existing?.mediaAssetId ?? null,
     skippable: existing?.skippable ?? false,
-    allowDownload: existing?.allowDownload ?? false,
     passPercent: existing?.passPercent ?? 60,
     instructions: existing?.instructions ?? null,
     points: existing?.points ?? null,
@@ -931,22 +925,6 @@ function LessonDialog({
               onChange={(e) => set({ description: e.target.value })}
             />
           </div>
-          {values.kind === 'PDF' ? (
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <Label htmlFor="lesson-download">{t('allowDownload')}</Label>
-                <p id="lesson-download-hint" className="text-sm text-muted-foreground">
-                  {t('allowDownloadHint')}
-                </p>
-              </div>
-              <Switch
-                id="lesson-download"
-                checked={values.allowDownload}
-                onCheckedChange={(checked) => set({ allowDownload: checked })}
-                aria-describedby="lesson-download-hint"
-              />
-            </div>
-          ) : null}
           {gated ? (
             <div className="flex items-start justify-between gap-4">
               <div>

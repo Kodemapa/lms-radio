@@ -104,13 +104,7 @@ export function LessonView({ lesson }: { lesson: PlayerLessonDetail }) {
       />
     );
   } else if (lesson.kind === 'PDF' && lesson.media) {
-    body = (
-      <PdfLesson
-        assetId={lesson.media.assetId}
-        title={lesson.title}
-        downloadLessonId={lesson.allowDownload && lesson.enrolled ? lesson.id : null}
-      />
-    );
+    body = <PdfLesson assetId={lesson.media.assetId} title={lesson.title} />;
   } else if (lesson.kind === 'QUIZ' && lesson.quiz && lesson.exam) {
     body = <ExamLesson lesson={lesson} quiz={lesson.quiz} exam={lesson.exam} />;
   } else if (lesson.kind === 'QUIZ' && lesson.quiz) {

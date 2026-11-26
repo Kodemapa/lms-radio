@@ -70,8 +70,6 @@ export const LessonInputSchema = z.object({
   isPreview: z.boolean(),
   mediaAssetId: z.string().uuid().nullable(),
   skippable: z.boolean(),
-  /** PDF only: learners may download a copy stamped with their name and user ID. */
-  allowDownload: z.boolean().default(false),
   passPercent: z.number().int().min(0).max(100).nullable(),
   instructions: z.string().trim().max(10_000).nullable(),
   points: z.number().int().min(0).max(1000).nullable(),
@@ -93,7 +91,6 @@ export const InstructorLessonSchema = z.object({
   durationSec: z.number().int().nullable(),
   mediaAssetId: z.string().uuid().nullable(),
   skippable: z.boolean(),
-  allowDownload: z.boolean().default(false),
   passPercent: z.number().int().nullable(),
   instructions: z.string().nullable(),
   points: z.number().int().nullable(),

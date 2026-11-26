@@ -158,11 +158,6 @@ export class LessonDto {
   @IsBoolean()
   skippable: boolean;
 
-  /** PDF: learners may download a stamped copy. */
-  @IsOptional()
-  @IsBoolean()
-  allowDownload?: boolean;
-
   /** QUIZ: pass mark 0–100. */
   @ValidateIf((_, v) => v !== null)
   @IsInt()

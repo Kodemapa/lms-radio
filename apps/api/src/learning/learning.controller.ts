@@ -9,11 +9,10 @@ import {
   Post,
   Put,
   Req,
-  Res,
   UseGuards,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   type AccessTokenClaims,
   type CertificatePublic,
@@ -29,7 +28,7 @@ import {
   type QuizResult,
   type ReviewList,
 } from '@obgyn/types';
-import { type Request, type Response } from 'express';
+import { type Request } from 'express';
 import { type AuthUser } from '../auth/auth-user';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -95,20 +94,6 @@ export class LearningController {
   @CachedForUser(30)
   outline(@CurrentUser() user: AuthUser, @Param('slug') slug: string): Promise<PlayerOutline> {
     return this.learning.outline(user, slug);
-  }
-
-  @Get('learn/lessons/:id/download')
-  @ApiOperation({ summary: 'Download a PDF lesson (when allowed), stamped with my name and user ID' })
-  async download(@CurrentUser() user: AuthUser, @Param('id', uuid) id: string, @Res() res: Response): Promise<void> {
-    const { bytes, filename } = await this.learning.downloadPdf(user, id);
-    res
-      .status(200)
-      .set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Cache-Control': 'private, no-store',
-      })
-      .send(Buffer.from(bytes));
   }
 
   @Get('learn/lessons/:id')
