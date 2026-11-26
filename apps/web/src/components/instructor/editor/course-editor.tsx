@@ -4,7 +4,7 @@ import { canEditCourse, ownsCourse, type CategoryNode, type InstructorCourse } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@obgyn/ui';
 import { Lock, Pencil } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { StatusBadge } from '../status-badge';
 import { DetailsTab } from './details-tab';
@@ -83,6 +83,11 @@ export function CourseEditor({
         ? 'details'
         : 'students',
   );
+  // Keep the selected tab visible in the sideways-scrolling row on phones.
+  const tabList = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    tabList.current?.querySelector('[data-state="active"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [tab]);
   const locked = course.status === 'IN_REVIEW' || course.status === 'RETIRED';
 
   return (
@@ -110,9 +115,14 @@ export function CourseEditor({
       ) : null}
 
       <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
-        <TabsList className="flex-wrap">
+        {/* Phones: one row that scrolls sideways (the active tab is kept in view);
+            wider screens: the row wraps. */}
+        <TabsList
+          ref={tabList}
+          className="snap-x [mask-image:linear-gradient(90deg,#000_85%,transparent)] lg:flex-wrap lg:[mask-image:none]"
+        >
           {buildTabs.map((value, index) => (
-            <TabsTrigger key={value} value={value}>
+            <TabsTrigger key={value} value={value} className="shrink-0 snap-start">
               <span className="me-2 inline-flex size-6 items-center justify-center rounded-full border border-current text-xs">
                 {index + 1}
               </span>
@@ -120,10 +130,10 @@ export function CourseEditor({
             </TabsTrigger>
           ))}
           {/* Teaching tools stay together when the row wraps. */}
-          <span className="flex flex-wrap items-center">
+          <span className="flex shrink-0 items-center lg:flex-wrap">
             {buildTabs.length ? <span aria-hidden className="mx-1 h-6 w-px bg-border" /> : null}
             {teachTabs.map((value) => (
-              <TabsTrigger key={value} value={value}>
+              <TabsTrigger key={value} value={value} className="shrink-0 snap-start">
                 {t(`editor.tabs.${value}`)}
               </TabsTrigger>
             ))}

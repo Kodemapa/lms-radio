@@ -58,9 +58,12 @@ const ICONS = {
 export function SidebarNav({
   items,
   label,
+  verticalFrom = 'lg',
 }: {
   items: { href: string; label: string; icon: keyof typeof ICONS }[];
   label: string;
+  /** Screen size from which the links stack in a column (a scrolling row below it). */
+  verticalFrom?: 'md' | 'lg';
 }) {
   const pathname = usePathname();
   const isActive = (href: string) =>
@@ -71,7 +74,7 @@ export function SidebarNav({
         : pathname.startsWith(href);
 
   return (
-    <nav aria-label={label} className="flex gap-1 overflow-x-auto lg:flex-col">
+    <nav aria-label={label} className={`flex gap-1 overflow-x-auto ${verticalFrom === 'md' ? 'md:flex-col' : 'lg:flex-col'}`}>
       {items.map((item) => {
         const Icon = ICONS[item.icon];
         const active = isActive(item.href);

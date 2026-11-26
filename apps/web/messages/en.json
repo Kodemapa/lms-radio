@@ -1015,7 +1015,10 @@
         "autoWarnHint": "Switching tabs, another person, a phone or book, no face or a second screen count as a warning without you sending one (at most one a minute for each).",
         "maxWarnings": "Warnings that end the exam",
         "maxWarningsHint": "When a learner gets this many warnings, their exam ends and is submitted. 0 = no limit."
-      }
+      },
+      "allowDownload": "Allow download",
+      "allowDownloadHint": "Learners can download this PDF. Every copy is stamped on each page with the learner's name and user ID, and each download is recorded.",
+      "downloadAllowed": "Download allowed"
     },
     "upload": {
       "choose": "Choose file",
@@ -1804,7 +1807,15 @@
       "pageLabel": "Page {page} of {total}",
       "moreBelow": "{remaining, plural, one {# more page below} other {# more pages below}}: scroll down or use Next page.",
       "lastPage": "You've reached the last page.",
-      "loadFailed": "This document couldn't be loaded. Please refresh the page."
+      "loadFailed": "This document couldn't be loaded. Please refresh the page.",
+      "fitWidth": "Fit to width",
+      "fullscreen": "Full screen",
+      "exitFullscreen": "Exit full screen",
+      "zoomHint": "Double-click a page, pinch, or use Ctrl + scroll to zoom.",
+      "download": "Download PDF",
+      "preparing": "Preparing…",
+      "downloadFailed": "The PDF couldn't be downloaded. Please try again.",
+      "downloadNotice": "Your download is stamped with your name and user ID on every page. For your personal study only; don't share it."
     }
   },
   "Quiz": {

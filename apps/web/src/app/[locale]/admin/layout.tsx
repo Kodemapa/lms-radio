@@ -45,9 +45,9 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-dvh flex-col bg-section">
-      {/* Fixed 4rem header on desktop, so the sidebar below can be pinned exactly under it. */}
-      <header className="sticky top-0 z-20 border-b border-border bg-card lg:h-16">
-        <div className="flex items-center justify-between gap-4 px-4 py-3 lg:h-full lg:px-6 lg:py-0">
+      {/* Fixed 4rem header from tablet width, so the sidebar below can be pinned exactly under it. */}
+      <header className="sticky top-0 z-20 border-b border-border bg-card md:h-16">
+        <div className="flex items-center justify-between gap-4 px-4 py-3 md:h-full md:py-0 lg:px-6">
           <div className="flex min-w-0 items-center gap-4">
             <Brand name={tCommon('appName')} compactOnPhone />
             <span className="hidden rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-primary sm:inline">
@@ -75,24 +75,24 @@ export default async function AdminLayout({
           </div>
         </div>
       </header>
-      <div className="flex flex-1 flex-col lg:flex-row">
+      <div className="flex flex-1 flex-col md:flex-row">
         {/*
-          Desktop: the sidebar is fixed to the screen below the header, so it never moves while
+          Tablet and up: the sidebar is fixed to the screen below the header, so it never moves while
           the page scrolls, however long the page is. It scrolls on its own only if its links
           don't fit. Phones: it sits above the page content.
         */}
-        <aside className="border-b border-border bg-card p-3 lg:fixed lg:bottom-0 lg:left-0 lg:top-16 lg:z-10 lg:w-64 lg:overflow-y-auto lg:overscroll-contain lg:border-b-0 lg:border-r lg:p-4">
-          <SidebarNav items={items} label={t('sectionTitle')} />
+        <aside className="border-b border-border bg-card p-3 md:fixed md:bottom-0 md:left-0 md:top-16 md:z-10 md:w-60 md:overflow-y-auto md:overscroll-contain md:border-b-0 md:border-r md:p-4 lg:w-64">
+          <SidebarNav items={items} label={t('sectionTitle')} verticalFrom="md" />
           <Link
             href="/"
-            className="mt-6 hidden items-center gap-2 px-3 text-sm text-muted-foreground hover:text-primary lg:flex"
+            className="mt-6 hidden items-center gap-2 px-3 text-sm text-muted-foreground hover:text-primary md:flex"
           >
             <ArrowLeft aria-hidden className="size-4 rtl:rotate-180" />
             {t('backToSite')}
           </Link>
         </aside>
-        {/* lg:ml-64 leaves room for the fixed sidebar. */}
-        <main id="main" className="min-w-0 flex-1 p-4 md:p-6 lg:ml-64 lg:p-8">
+        {/* md:ml-60 / lg:ml-64 leave room for the fixed sidebar. */}
+        <main id="main" className="min-w-0 flex-1 p-4 md:ml-60 md:p-6 lg:ml-64 lg:p-8">
           {children}
         </main>
       </div>

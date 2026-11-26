@@ -1,12 +1,15 @@
 'use client';
 
 import { Button } from '@obgyn/ui';
-import { ChevronDown, ChevronUp, Loader2, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, Maximize, Minimize, MoveHorizontal, ZoomIn, ZoomOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const ZOOMS = [0.75, 1, 1.25, 1.5, 2] as const;
+const ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3] as const;
+type Zoom = (typeof ZOOMS)[number];
+/** Double-clicking a page zooms to this (and back to fit width). */
+const PAGE_ZOOM: Zoom = 2;
 
 async function loadPdfJs() {
   const pdfjs = await import('pdfjs-dist');
@@ -22,12 +25,14 @@ function PdfPage({
   width,
   label,
   register,
+  onDoubleClick,
 }: {
   doc: PDFDocumentProxy;
   pageNumber: number;
   width: number;
   label: string;
   register: (pageNumber: number, element: HTMLDivElement | null) => void;
+  onDoubleClick: () => void;
 }) {
   const holder = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -79,7 +84,8 @@ function PdfPage({
       data-page={pageNumber}
       role="img"
       aria-label={label}
-      className="mx-auto bg-white shadow-sm ring-1 ring-border"
+      onDoubleClick={onDoubleClick}
+      className="mx-auto shrink-0 cursor-zoom-in bg-white shadow-sm ring-1 ring-border"
       style={{ width, height: Math.round(width * ratio) }}
     >
       <canvas ref={canvas} className="block size-full" />
@@ -97,9 +103,15 @@ export function PdfPages({ url, title, onError }: { url: string; title: string; 
   const pages = useRef(new Map<number, HTMLDivElement>());
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [current, setCurrent] = useState(1);
-  const [zoom, setZoom] = useState<(typeof ZOOMS)[number]>(1);
+  const [zoom, setZoom] = useState<Zoom>(1);
+  const root = useRef<HTMLDivElement>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  // The page to keep in view while the zoom changes.
+  const anchorPage = useRef(1);
   const [containerWidth, setContainerWidth] = useState(0);
   const [pageInput, setPageInput] = useState('1');
+  const currentRef = useRef(1);
+  currentRef.current = current;
   const failed = useRef(onError);
   failed.current = onError;
 
@@ -133,6 +145,53 @@ export function PdfPages({ url, title, onError }: { url: string; title: string; 
     observer.observe(element);
     return () => observer.disconnect();
   }, [doc]);
+
+  // After a zoom change, bring the page that was being read back into view.
+  useEffect(() => {
+    const element = scroller.current;
+    const page = pages.current.get(anchorPage.current);
+    if (element && page) element.scrollTop = page.offsetTop - 12;
+  }, [zoom]);
+
+  const changeZoom = useCallback((next: Zoom, page?: number) => {
+    anchorPage.current = page ?? currentRef.current;
+    setZoom(next);
+  }, []);
+
+  // Trackpad pinch / Ctrl (⌘) + wheel zooms the document, not the whole web page.
+  useEffect(() => {
+    const element = scroller.current;
+    if (!element) return;
+    let last = 0;
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      const now = Date.now();
+      if (now - last < 120) return;
+      last = now;
+      setZoom((current) => {
+        const index = ZOOMS.indexOf(current) + (event.deltaY < 0 ? 1 : -1);
+        anchorPage.current = currentRef.current;
+        return ZOOMS[Math.min(Math.max(0, index), ZOOMS.length - 1)]!;
+      });
+    };
+    element.addEventListener('wheel', onWheel, { passive: false });
+    return () => element.removeEventListener('wheel', onWheel);
+  }, [doc]);
+
+  // Full screen keeps the watermark: the whole protected surface goes full screen.
+  useEffect(() => {
+    const update = () => setFullscreen(!!document.fullscreenElement && !!root.current && document.fullscreenElement.contains(root.current));
+    document.addEventListener('fullscreenchange', update);
+    return () => document.removeEventListener('fullscreenchange', update);
+  }, []);
+  const toggleFullscreen = () => {
+    const surface = root.current?.parentElement;
+    if (!surface) return;
+    anchorPage.current = currentRef.current;
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+    else void surface.requestFullscreen?.().catch(() => undefined);
+  };
 
   // The page whose top is nearest the top of the view is the current page.
   const onScroll = useCallback(() => {
@@ -178,7 +237,7 @@ export function PdfPages({ url, title, onError }: { url: string; title: string; 
   const zoomIndex = ZOOMS.indexOf(zoom);
 
   return (
-    <div className="flex size-full flex-col">
+    <div ref={root} className="flex size-full flex-col bg-white">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-card px-3 py-2">
         <div className="flex items-center gap-1">
           <Button type="button" size="sm" variant="outline" disabled={current <= 1} onClick={() => goTo(current - 1)} aria-label={t('previous')}>
@@ -209,12 +268,18 @@ export function PdfPages({ url, title, onError }: { url: string; title: string; 
           </Button>
         </div>
         <div className="flex items-center gap-1">
-          <Button type="button" size="sm" variant="ghost" disabled={zoomIndex <= 0} onClick={() => setZoom(ZOOMS[zoomIndex - 1]!)} aria-label={t('zoomOut')}>
+          <Button type="button" size="sm" variant="ghost" disabled={zoomIndex <= 0} onClick={() => changeZoom(ZOOMS[zoomIndex - 1]!)} aria-label={t('zoomOut')}>
             <ZoomOut aria-hidden className="size-4" />
           </Button>
-          <span className="w-12 text-center text-sm tabular-nums text-muted-foreground">{Math.round(zoom * 100)}%</span>
-          <Button type="button" size="sm" variant="ghost" disabled={zoomIndex >= ZOOMS.length - 1} onClick={() => setZoom(ZOOMS[zoomIndex + 1]!)} aria-label={t('zoomIn')}>
+          <span className="w-12 text-center text-sm tabular-nums text-muted-foreground" aria-live="polite">{Math.round(zoom * 100)}%</span>
+          <Button type="button" size="sm" variant="ghost" disabled={zoomIndex >= ZOOMS.length - 1} onClick={() => changeZoom(ZOOMS[zoomIndex + 1]!)} aria-label={t('zoomIn')}>
             <ZoomIn aria-hidden className="size-4" />
+          </Button>
+          <Button type="button" size="sm" variant="ghost" disabled={zoom === 1} onClick={() => changeZoom(1)} aria-label={t('fitWidth')} title={t('fitWidth')}>
+            <MoveHorizontal aria-hidden className="size-4" />
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={toggleFullscreen} aria-label={fullscreen ? t('exitFullscreen') : t('fullscreen')} title={fullscreen ? t('exitFullscreen') : t('fullscreen')}>
+            {fullscreen ? <Minimize aria-hidden className="size-4" /> : <Maximize aria-hidden className="size-4" />}
           </Button>
         </div>
       </div>
@@ -234,7 +299,9 @@ export function PdfPages({ url, title, onError }: { url: string; title: string; 
           }
         }}
       >
-        <div className="flex flex-col items-center gap-3">
+        {/* w-max + min-w-full: a zoomed page wider than the view can be scrolled to both edges
+            (centring it in a plain flex column would cut off its left side). */}
+        <div className="flex w-max min-w-full flex-col items-center gap-3">
           {Array.from({ length: total }, (_, index) => (
             <PdfPage
               key={index + 1}
@@ -243,15 +310,15 @@ export function PdfPages({ url, title, onError }: { url: string; title: string; 
               width={pageWidth}
               label={t('pageLabel', { page: index + 1, total })}
               register={register}
+              onDoubleClick={() => changeZoom(zoom === 1 ? PAGE_ZOOM : 1, index + 1)}
             />
           ))}
         </div>
       </div>
-      {total > 1 ? (
-        <p className="border-t border-border bg-card px-3 py-1.5 text-center text-xs text-muted-foreground">
-          {current < total ? t('moreBelow', { remaining: total - current }) : t('lastPage')}
-        </p>
-      ) : null}
+      <p className="border-t border-border bg-card px-3 py-1.5 text-center text-xs text-muted-foreground">
+        {total > 1 ? (current < total ? t('moreBelow', { remaining: total - current }) : t('lastPage')) : null}
+        <span className="hidden sm:inline">{total > 1 ? ' · ' : ''}{t('zoomHint')}</span>
+      </p>
     </div>
   );
 }

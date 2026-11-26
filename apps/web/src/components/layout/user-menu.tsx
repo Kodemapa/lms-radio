@@ -69,7 +69,7 @@ export function UserMenu({ user, labels }: { user: UserProfile; labels: UserMenu
           <span className="flex size-10 items-center justify-center overflow-hidden rounded-full bg-primary-light font-semibold text-primary">
             <AvatarContent name={user.displayName} assetId={user.avatarAssetId} />
           </span>
-          <span className="hidden max-w-[10rem] truncate font-medium lg:inline">
+          <span className="hidden max-w-[10rem] truncate font-medium 2xl:inline">
             {user.displayName}
           </span>
           <ChevronDown aria-hidden className="size-4" />

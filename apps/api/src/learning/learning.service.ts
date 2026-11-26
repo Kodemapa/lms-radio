@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import {
   progressPercent,
@@ -31,6 +32,9 @@ import { LIVE_LESSON } from '../common/soft-delete';
 import { PrismaService } from '../prisma/prisma.service';
 import { type AssignmentSubmitDto, type ProgressDto } from './dto';
 import { certificateSerial, DEFAULT_PASS_PERCENT, gradeQuiz } from './grading';
+import { StorageService } from '../storage/storage.service';
+import { APP_NAME } from '../mail/mail-message';
+import { latin1, stampPdf } from './pdf-stamp';
 
 /** Lesson kinds a learner can mark complete themselves. */
 const SELF_COMPLETE = new Set(['VIDEO', 'PDF', 'SIMULATOR', 'LIVE_CLASS']);
@@ -45,7 +49,45 @@ export class LearningService {
     private readonly audit: AuditService,
     private readonly imaging: ImagingService,
     private readonly exams: ExamsService,
+    private readonly storage: StorageService,
   ) {}
+
+  /**
+   * A PDF lesson the instructor allows to be downloaded: the original, stamped on every
+   * page with the learner's name and user ID (forensic watermark), and audit-logged.
+   */
+  async downloadPdf(user: AuthUser, lessonId: string): Promise<{ bytes: Uint8Array; filename: string }> {
+    const { lesson, enrolled, manager } = await this.access.getAccessibleLesson(user, lessonId);
+    if (!enrolled && !manager) throw new ForbiddenException({ code: 'NOT_ENROLLED' });
+    if (lesson.kind !== 'PDF' || !lesson.allowDownload || !lesson.mediaAssetId) {
+      throw new ForbiddenException({ code: 'DOWNLOAD_NOT_ALLOWED', message: 'This document cannot be downloaded' });
+    }
+    const [asset, me] = await Promise.all([
+      this.prisma.mediaAsset.findFirst({ where: { id: lesson.mediaAssetId, status: 'READY' } }),
+      this.prisma.user.findUnique({ where: { id: user.userId }, select: { displayName: true } }),
+    ]);
+    if (!asset || asset.mimeType !== 'application/pdf') throw new NotFoundException();
+    let bytes: Uint8Array;
+    try {
+      bytes = await stampPdf(await this.storage.readBuffer(asset.storageKey), {
+        name: me?.displayName ?? '',
+        userRef: user.userId.slice(0, 8),
+        date: new Date().toISOString().slice(0, 10),
+        site: APP_NAME,
+      });
+    } catch {
+      throw new UnprocessableEntityException({ code: 'PDF_UNREADABLE', message: 'This document could not be prepared for download' });
+    }
+    await this.audit.log({
+      actorId: user.userId,
+      action: 'lesson.pdf_downloaded',
+      resource: 'lesson',
+      resourceId: lesson.id,
+      metadata: { assetId: asset.id },
+    });
+    const base = latin1(lesson.title).replace(/[^A-Za-z0-9 ._-]/g, '').trim().slice(0, 80) || 'document';
+    return { bytes, filename: `${base}.pdf` };
+  }
 
   // ---- Outline ----------------------------------------------------------------
 
@@ -184,6 +226,7 @@ export class LearningService {
       durationSec: lesson.durationSec,
       isPreview: lesson.isPreview,
       skippable: lesson.skippable,
+      allowDownload: lesson.kind === 'PDF' && lesson.allowDownload,
       course: { id: lesson.course.id, slug: lesson.course.slug, title: lesson.course.title },
       media: media ? { assetId: media.id, mimeType: media.mimeType } : null,
       progress: {

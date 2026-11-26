@@ -35,6 +35,7 @@ function setup(passed: string[], previous: { positionSec: number; furthestSec: n
     { log: jest.fn() } as unknown as AuditService,
     {} as unknown as ImagingService,
     {} as unknown as ExamsService,
+    {} as never,
   );
   return { service, prisma };
 }
