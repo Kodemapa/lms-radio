@@ -1,6 +1,12 @@
 'use client';
 
-import { type ExamSettings, type InstructorChapter, type InstructorCourse, type InstructorLesson, LESSON_DOCUMENT_TYPES } from '@obgyn/types';
+import {
+  type ExamSettings,
+  type InstructorChapter,
+  type InstructorCourse,
+  type InstructorLesson,
+  LESSON_DOCUMENT_TYPES,
+} from '@obgyn/types';
 import {
   Button,
   Dialog,
@@ -15,7 +21,21 @@ import {
   Textarea,
   toast,
 } from '@obgyn/ui';
-import { ArrowDown, ArrowUp, ClipboardList, FileText, HelpCircle, Info, ListChecks, Pencil, PlayCircle, Plus, ScanLine, Trash2, Video } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  ClipboardList,
+  FileText,
+  HelpCircle,
+  Info,
+  ListChecks,
+  Pencil,
+  PlayCircle,
+  Plus,
+  ScanLine,
+  Trash2,
+  Video,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useState, type FormEvent } from 'react';
@@ -27,7 +47,10 @@ import { FileUpload } from './file-upload';
 import { QuestionsDialog } from './questions-dialog';
 
 // Cornerstone + dcmjs are megabytes; load them only when a DICOM case is opened.
-const ImagingCaseDialog = dynamic(() => import('./imaging-case-dialog').then((m) => m.ImagingCaseDialog), { ssr: false });
+const ImagingCaseDialog = dynamic(
+  () => import('./imaging-case-dialog').then((m) => m.ImagingCaseDialog),
+  { ssr: false },
+);
 
 type ChapterEdit = { mode: 'add' } | { mode: 'edit'; chapter: InstructorChapter };
 type LessonEdit = { mode: 'add'; chapterId: string } | { mode: 'edit'; lesson: InstructorLesson };
@@ -78,7 +101,11 @@ export function CurriculumTab({
         <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
         {t('youtubeNote')}
       </p>
-      {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
 
       {course.chapters.length === 0 ? (
         <p className="soft-wash rounded-3xl p-8 text-center text-muted-foreground">
@@ -92,7 +119,7 @@ export function CurriculumTab({
                 <span className="flex size-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                   {chapter.position}
                 </span>
-                <h3 className="flex-1 font-semibold">{chapter.title}</h3>
+                <h3 className="min-w-0 flex-1 font-semibold">{chapter.title}</h3>
                 {!locked ? (
                   <div className="flex items-center gap-1">
                     <IconButton
@@ -121,7 +148,10 @@ export function CurriculumTab({
                     >
                       <ArrowDown className="size-4" />
                     </IconButton>
-                    <IconButton label={t('editChapter')} onClick={() => setChapterEdit({ mode: 'edit', chapter })}>
+                    <IconButton
+                      label={t('editChapter')}
+                      onClick={() => setChapterEdit({ mode: 'edit', chapter })}
+                    >
                       <Pencil className="size-4" />
                     </IconButton>
                     <IconButton
@@ -131,7 +161,11 @@ export function CurriculumTab({
                         setConfirm({
                           title: t('deleteChapter'),
                           body: t('deleteChapterConfirm', { title: chapter.title }),
-                          run: () => run(() => courseApi('DELETE', `chapters/${chapter.id}`), t('toast.chapterDeleted')),
+                          run: () =>
+                            run(
+                              () => courseApi('DELETE', `chapters/${chapter.id}`),
+                              t('toast.chapterDeleted'),
+                            ),
                         })
                       }
                     >
@@ -147,106 +181,151 @@ export function CurriculumTab({
                 <ol className="divide-y divide-border">
                   {chapter.lessons.map((lesson, lessonIndex) => {
                     const Icon =
-                      lesson.kind === 'PDF' ? FileText : lesson.kind === 'QUIZ' ? HelpCircle : lesson.kind === 'ASSIGNMENT' ? ClipboardList : lesson.kind === 'IMAGING' ? ScanLine : PlayCircle;
+                      lesson.kind === 'PDF'
+                        ? FileText
+                        : lesson.kind === 'QUIZ'
+                          ? HelpCircle
+                          : lesson.kind === 'ASSIGNMENT'
+                            ? ClipboardList
+                            : lesson.kind === 'IMAGING'
+                              ? ScanLine
+                              : PlayCircle;
                     const needsFile = lesson.kind === 'VIDEO' || lesson.kind === 'PDF';
                     return (
-                      <li key={lesson.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                        <Icon aria-hidden className="size-5 shrink-0 text-primary" />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate font-medium">{lesson.title}</span>
-                          <span className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
-                            <span>{tCommon(`kind.${lesson.kind}`)}</span>
-                            {lesson.durationSec ? <span>{formatClock(lesson.durationSec)}</span> : null}
-                            {lesson.isPreview ? <span className="text-primary">{t('isPreview')}</span> : null}
-                            {lesson.kind === 'QUIZ' ? (
-                              <span className={lesson.questionCount ? '' : 'text-destructive'}>
-                                {t('questionCount', { count: lesson.questionCount })}
-                              </span>
-                            ) : null}
-                            {lesson.exam ? (
-                              <span className="font-medium text-primary">
-                                {lesson.exam.proctored ? t('exam.rowProctored', { minutes: lesson.exam.durationMin }) : t('exam.row', { minutes: lesson.exam.durationMin })}
-                              </span>
-                            ) : null}
-                            {lesson.skippable ? <span>{t('skippable')}</span> : null}
-                            {lesson.kind === 'PDF' && lesson.allowDownload ? <span>{t('downloadAllowed')}</span> : null}
-                            {needsFile ? (
-                              lesson.media?.status === 'READY' ? (
-                                <span className="text-success">{t('fileReady')}</span>
-                              ) : (
-                                <span className="text-destructive">{lesson.media ? t('filePending') : t('noFile')}</span>
-                              )
-                            ) : null}
+                      // Phones: title and details on the first line, buttons on their own line below.
+                      <li
+                        key={lesson.id}
+                        className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-3"
+                      >
+                        <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+                          <Icon
+                            aria-hidden
+                            className="mt-0.5 size-5 shrink-0 text-primary sm:mt-0"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span
+                              className="line-clamp-2 font-medium sm:line-clamp-1"
+                              title={lesson.title}
+                            >
+                              {lesson.title}
+                            </span>
+                            <span className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+                              <span>{tCommon(`kind.${lesson.kind}`)}</span>
+                              {lesson.durationSec ? (
+                                <span>{formatClock(lesson.durationSec)}</span>
+                              ) : null}
+                              {lesson.isPreview ? (
+                                <span className="text-primary">{t('isPreview')}</span>
+                              ) : null}
+                              {lesson.kind === 'QUIZ' ? (
+                                <span className={lesson.questionCount ? '' : 'text-destructive'}>
+                                  {t('questionCount', { count: lesson.questionCount })}
+                                </span>
+                              ) : null}
+                              {lesson.exam ? (
+                                <span className="font-medium text-primary">
+                                  {lesson.exam.proctored
+                                    ? t('exam.rowProctored', { minutes: lesson.exam.durationMin })
+                                    : t('exam.row', { minutes: lesson.exam.durationMin })}
+                                </span>
+                              ) : null}
+                              {lesson.skippable ? <span>{t('skippable')}</span> : null}
+                              {lesson.kind === 'PDF' && lesson.allowDownload ? (
+                                <span>{t('downloadAllowed')}</span>
+                              ) : null}
+                              {needsFile ? (
+                                lesson.media?.status === 'READY' ? (
+                                  <span className="text-success">{t('fileReady')}</span>
+                                ) : (
+                                  <span className="text-destructive">
+                                    {lesson.media ? t('filePending') : t('noFile')}
+                                  </span>
+                                )
+                              ) : null}
+                            </span>
                           </span>
-                        </span>
-                        {lesson.kind === 'IMAGING' ? (
-                          <Button variant="outline" size="sm" onClick={() => setCaseFor(lesson)}>
-                            <ScanLine aria-hidden className="size-4" />
-                            {t('editCase')}
-                          </Button>
-                        ) : null}
-                        {lesson.exam ? (
-                          <Button asChild size="sm">
-                            <Link href={`/instructor/exams/${lesson.id}`}>
-                              <Video aria-hidden className="size-4" />
-                              {t('exam.proctor')}
-                            </Link>
-                          </Button>
-                        ) : null}
-                        {lesson.kind === 'QUIZ' || lesson.kind === 'VIDEO' ? (
-                          <Button variant="outline" size="sm" onClick={() => setQuestionsFor(lesson)}>
-                            <ListChecks aria-hidden className="size-4" />
-                            {lesson.kind === 'VIDEO'
-                              ? t('videoQuestions', { count: lesson.questionCount })
-                              : t('manageQuestions', { count: lesson.questionCount })}
-                          </Button>
-                        ) : null}
-                        {!locked ? (
-                          <div className="flex items-center gap-1">
-                            <IconButton
-                              label={t('moveUp')}
-                              disabled={lessonIndex === 0}
-                              onClick={() =>
-                                run(() =>
-                                  courseApi('POST', `chapters/${chapter.id}/lessons/reorder`, {
-                                    ids: move(chapter.lessons, lessonIndex, -1).map((l) => l.id),
-                                  }),
-                                )
-                              }
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 ps-8 sm:shrink-0 sm:ps-0">
+                          {lesson.kind === 'IMAGING' ? (
+                            <Button variant="outline" size="sm" onClick={() => setCaseFor(lesson)}>
+                              <ScanLine aria-hidden className="size-4" />
+                              {t('editCase')}
+                            </Button>
+                          ) : null}
+                          {lesson.exam ? (
+                            <Button asChild size="sm">
+                              <Link href={`/instructor/exams/${lesson.id}`}>
+                                <Video aria-hidden className="size-4" />
+                                {t('exam.proctor')}
+                              </Link>
+                            </Button>
+                          ) : null}
+                          {lesson.kind === 'QUIZ' || lesson.kind === 'VIDEO' ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setQuestionsFor(lesson)}
                             >
-                              <ArrowUp className="size-4" />
-                            </IconButton>
-                            <IconButton
-                              label={t('moveDown')}
-                              disabled={lessonIndex === chapter.lessons.length - 1}
-                              onClick={() =>
-                                run(() =>
-                                  courseApi('POST', `chapters/${chapter.id}/lessons/reorder`, {
-                                    ids: move(chapter.lessons, lessonIndex, 1).map((l) => l.id),
-                                  }),
-                                )
-                              }
-                            >
-                              <ArrowDown className="size-4" />
-                            </IconButton>
-                            <IconButton label={t('editLesson')} onClick={() => setLessonEdit({ mode: 'edit', lesson })}>
-                              <Pencil className="size-4" />
-                            </IconButton>
-                            <IconButton
-                              label={t('deleteLesson')}
-                              danger
-                              onClick={() =>
-                                setConfirm({
-                                  title: t('deleteLesson'),
-                                  body: t('deleteLessonConfirm', { title: lesson.title }),
-                                  run: () => run(() => courseApi('DELETE', `lessons/${lesson.id}`), t('toast.lessonDeleted')),
-                                })
-                              }
-                            >
-                              <Trash2 className="size-4" />
-                            </IconButton>
-                          </div>
-                        ) : null}
+                              <ListChecks aria-hidden className="size-4" />
+                              {lesson.kind === 'VIDEO'
+                                ? t('videoQuestions', { count: lesson.questionCount })
+                                : t('manageQuestions', { count: lesson.questionCount })}
+                            </Button>
+                          ) : null}
+                          {!locked ? (
+                            <div className="ms-auto flex items-center gap-1 sm:ms-0">
+                              <IconButton
+                                label={t('moveUp')}
+                                disabled={lessonIndex === 0}
+                                onClick={() =>
+                                  run(() =>
+                                    courseApi('POST', `chapters/${chapter.id}/lessons/reorder`, {
+                                      ids: move(chapter.lessons, lessonIndex, -1).map((l) => l.id),
+                                    }),
+                                  )
+                                }
+                              >
+                                <ArrowUp className="size-4" />
+                              </IconButton>
+                              <IconButton
+                                label={t('moveDown')}
+                                disabled={lessonIndex === chapter.lessons.length - 1}
+                                onClick={() =>
+                                  run(() =>
+                                    courseApi('POST', `chapters/${chapter.id}/lessons/reorder`, {
+                                      ids: move(chapter.lessons, lessonIndex, 1).map((l) => l.id),
+                                    }),
+                                  )
+                                }
+                              >
+                                <ArrowDown className="size-4" />
+                              </IconButton>
+                              <IconButton
+                                label={t('editLesson')}
+                                onClick={() => setLessonEdit({ mode: 'edit', lesson })}
+                              >
+                                <Pencil className="size-4" />
+                              </IconButton>
+                              <IconButton
+                                label={t('deleteLesson')}
+                                danger
+                                onClick={() =>
+                                  setConfirm({
+                                    title: t('deleteLesson'),
+                                    body: t('deleteLessonConfirm', { title: lesson.title }),
+                                    run: () =>
+                                      run(
+                                        () => courseApi('DELETE', `lessons/${lesson.id}`),
+                                        t('toast.lessonDeleted'),
+                                      ),
+                                  })
+                                }
+                              >
+                                <Trash2 className="size-4" />
+                              </IconButton>
+                            </div>
+                          ) : null}
+                        </div>
                       </li>
                     );
                   })}
@@ -254,7 +333,11 @@ export function CurriculumTab({
               )}
               {!locked ? (
                 <div className="border-t border-border p-3">
-                  <Button variant="ghost" size="sm" onClick={() => setLessonEdit({ mode: 'add', chapterId: chapter.id })}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLessonEdit({ mode: 'add', chapterId: chapter.id })}
+                  >
                     <Plus aria-hidden className="size-4" />
                     {t('addLesson')}
                   </Button>
@@ -385,7 +468,9 @@ function ChapterDialog({
   const t = useTranslations('Instructor.editor');
   const tCommon = useTranslations('Common');
   const [title, setTitle] = useState(edit.mode === 'edit' ? edit.chapter.title : '');
-  const [description, setDescription] = useState(edit.mode === 'edit' ? (edit.chapter.description ?? '') : '');
+  const [description, setDescription] = useState(
+    edit.mode === 'edit' ? (edit.chapter.description ?? '') : '',
+  );
   const [pending, setPending] = useState(false);
 
   const submit = async (event: FormEvent) => {
@@ -398,22 +483,45 @@ function ChapterDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent keepOpenOnOutsideClick closeLabel={tCommon('close')} aria-describedby={undefined}>
+      <DialogContent
+        keepOpenOnOutsideClick
+        closeLabel={tCommon('close')}
+        aria-describedby={undefined}
+      >
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>{edit.mode === 'add' ? t('addChapter') : t('editChapter')}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="chapter-title" required>{t('chapterTitle')}</Label>
-            <Input id="chapter-title" value={title} maxLength={150} autoFocus required onChange={(e) => setTitle(e.target.value)} />
+            <Label htmlFor="chapter-title" required>
+              {t('chapterTitle')}
+            </Label>
+            <Input
+              id="chapter-title"
+              value={title}
+              maxLength={150}
+              autoFocus
+              required
+              onChange={(e) => setTitle(e.target.value)}
+            />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="chapter-description">{t('chapterDescription')}</Label>
-            <Textarea id="chapter-description" rows={3} maxLength={1000} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Textarea
+              id="chapter-description"
+              rows={3}
+              maxLength={1000}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>{tCommon('cancel')}</Button>
-            <Button type="submit" disabled={pending || !title.trim()}>{pending ? tCommon('saving') : tCommon('save')}</Button>
+            <Button type="button" variant="outline" onClick={onClose}>
+              {tCommon('cancel')}
+            </Button>
+            <Button type="submit" disabled={pending || !title.trim()}>
+              {pending ? tCommon('saving') : tCommon('save')}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -451,7 +559,15 @@ function fromLocalInput(value: string): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-const NEW_EXAM: ExamSettings = { opensAt: null, closesAt: null, durationMin: 30, proctored: true, aiMonitoring: true, autoWarn: false, maxWarnings: 3 };
+const NEW_EXAM: ExamSettings = {
+  opensAt: null,
+  closesAt: null,
+  durationMin: 30,
+  proctored: true,
+  aiMonitoring: true,
+  autoWarn: false,
+  maxWarnings: 3,
+};
 
 function LessonDialog({
   edit,
@@ -471,7 +587,10 @@ function LessonDialog({
   const [values, setValues] = useState<LessonValues>({
     title: existing?.title ?? '',
     description: existing?.description ?? null,
-    kind: (['VIDEO', 'PDF', 'QUIZ', 'ASSIGNMENT', 'IMAGING'] as const).find((k) => k === existing?.kind) ?? 'VIDEO',
+    kind:
+      (['VIDEO', 'PDF', 'QUIZ', 'ASSIGNMENT', 'IMAGING'] as const).find(
+        (k) => k === existing?.kind,
+      ) ?? 'VIDEO',
     isPreview: existing?.isPreview ?? firstVideo,
     mediaAssetId: existing?.mediaAssetId ?? null,
     skippable: existing?.skippable ?? false,
@@ -495,7 +614,11 @@ function LessonDialog({
     setPending(true);
     setError(null);
     try {
-      await onSave({ ...values, title: values.title.trim(), description: values.description?.trim() || null });
+      await onSave({
+        ...values,
+        title: values.title.trim(),
+        description: values.description?.trim() || null,
+      });
     } catch (e) {
       setError((e as { messageText?: string }).messageText ?? tCommon('genericError'));
     } finally {
@@ -504,25 +627,50 @@ function LessonDialog({
   };
 
   const toggleKind = (kind: 'IMAGE' | 'PDF', on: boolean) =>
-    set({ submissionKinds: on ? [...new Set([...values.submissionKinds, kind])] : values.submissionKinds.filter((k) => k !== kind) });
+    set({
+      submissionKinds: on
+        ? [...new Set([...values.submissionKinds, kind])]
+        : values.submissionKinds.filter((k) => k !== kind),
+    });
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent keepOpenOnOutsideClick className="max-w-xl" closeLabel={tCommon('close')} aria-describedby={undefined}>
+      <DialogContent
+        keepOpenOnOutsideClick
+        className="max-w-xl"
+        closeLabel={tCommon('close')}
+        aria-describedby={undefined}
+      >
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>{edit.mode === 'add' ? t('addLesson') : t('editLesson')}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="lesson-title" required>{t('lessonTitle')}</Label>
-            <Input id="lesson-title" value={values.title} maxLength={150} autoFocus required onChange={(e) => set({ title: e.target.value })} />
+            <Label htmlFor="lesson-title" required>
+              {t('lessonTitle')}
+            </Label>
+            <Input
+              id="lesson-title"
+              value={values.title}
+              maxLength={150}
+              autoFocus
+              required
+              onChange={(e) => set({ title: e.target.value })}
+            />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="lesson-kind" required>{t('lessonType')}</Label>
+            <Label htmlFor="lesson-kind" required>
+              {t('lessonType')}
+            </Label>
             <Select
-              id="lesson-kind" aria-required="true"
+              id="lesson-kind"
+              aria-required="true"
               value={values.kind}
-              disabled={edit.mode === 'edit' && (existing?.kind === 'QUIZ') && (existing?.questionCount ?? 0) > 0}
+              disabled={
+                edit.mode === 'edit' &&
+                existing?.kind === 'QUIZ' &&
+                (existing?.questionCount ?? 0) > 0
+              }
               onChange={(e) => {
                 set({ kind: e.target.value as LessonValues['kind'], mediaAssetId: null });
                 setFileName(null);
@@ -555,9 +703,25 @@ function LessonDialog({
           {values.kind === 'QUIZ' || values.kind === 'IMAGING' ? (
             <div className="flex flex-col gap-2">
               <Label htmlFor="lesson-pass">{t('passPercent')}</Label>
-              <Input id="lesson-pass" type="number" min={0} max={100} className="w-32" value={values.passPercent ?? ''}
-                onChange={(e) => set({ passPercent: e.target.value === '' ? null : Math.min(100, Math.max(0, Number(e.target.value))) })} />
-              {edit.mode === 'add' ? <p className="text-xs text-muted-foreground">{t('saveLessonFirst')}</p> : null}
+              <Input
+                id="lesson-pass"
+                type="number"
+                min={0}
+                max={100}
+                className="w-32"
+                value={values.passPercent ?? ''}
+                onChange={(e) =>
+                  set({
+                    passPercent:
+                      e.target.value === ''
+                        ? null
+                        : Math.min(100, Math.max(0, Number(e.target.value))),
+                  })
+                }
+              />
+              {edit.mode === 'add' ? (
+                <p className="text-xs text-muted-foreground">{t('saveLessonFirst')}</p>
+              ) : null}
             </div>
           ) : null}
 
@@ -566,58 +730,140 @@ function LessonDialog({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <Label htmlFor="lesson-exam">{t('exam.enable')}</Label>
-                  <p id="lesson-exam-hint" className="text-sm text-muted-foreground">{t('exam.enableHint')}</p>
+                  <p id="lesson-exam-hint" className="text-sm text-muted-foreground">
+                    {t('exam.enableHint')}
+                  </p>
                 </div>
-                <Switch id="lesson-exam" checked={!!values.exam} onCheckedChange={(on) => set({ exam: on ? (values.exam ?? NEW_EXAM) : null })} aria-describedby="lesson-exam-hint" />
+                <Switch
+                  id="lesson-exam"
+                  checked={!!values.exam}
+                  onCheckedChange={(on) => set({ exam: on ? (values.exam ?? NEW_EXAM) : null })}
+                  aria-describedby="lesson-exam-hint"
+                />
               </div>
               {values.exam ? (
                 <>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="exam-opens">{t('exam.opensAt')}</Label>
-                      <Input id="exam-opens" type="datetime-local" value={toLocalInput(values.exam.opensAt)}
-                        onChange={(e) => set({ exam: { ...values.exam!, opensAt: fromLocalInput(e.target.value) } })} />
+                      <Input
+                        id="exam-opens"
+                        type="datetime-local"
+                        value={toLocalInput(values.exam.opensAt)}
+                        onChange={(e) =>
+                          set({
+                            exam: { ...values.exam!, opensAt: fromLocalInput(e.target.value) },
+                          })
+                        }
+                      />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="exam-closes">{t('exam.closesAt')}</Label>
-                      <Input id="exam-closes" type="datetime-local" value={toLocalInput(values.exam.closesAt)}
-                        onChange={(e) => set({ exam: { ...values.exam!, closesAt: fromLocalInput(e.target.value) } })} />
+                      <Input
+                        id="exam-closes"
+                        type="datetime-local"
+                        value={toLocalInput(values.exam.closesAt)}
+                        onChange={(e) =>
+                          set({
+                            exam: { ...values.exam!, closesAt: fromLocalInput(e.target.value) },
+                          })
+                        }
+                      />
                     </div>
                   </div>
                   <p className="-mt-2 text-xs text-muted-foreground">{t('exam.windowHint')}</p>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="exam-duration" required>{t('exam.duration')}</Label>
-                    <Input id="exam-duration" type="number" min={1} max={600} className="w-32" value={values.exam.durationMin}
-                      onChange={(e) => set({ exam: { ...values.exam!, durationMin: Math.min(600, Math.max(1, Number(e.target.value) || 1)) } })} />
+                    <Label htmlFor="exam-duration" required>
+                      {t('exam.duration')}
+                    </Label>
+                    <Input
+                      id="exam-duration"
+                      type="number"
+                      min={1}
+                      max={600}
+                      className="w-32"
+                      value={values.exam.durationMin}
+                      onChange={(e) =>
+                        set({
+                          exam: {
+                            ...values.exam!,
+                            durationMin: Math.min(600, Math.max(1, Number(e.target.value) || 1)),
+                          },
+                        })
+                      }
+                    />
                   </div>
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <Label htmlFor="exam-proctored">{t('exam.proctored')}</Label>
-                      <p id="exam-proctored-hint" className="text-sm text-muted-foreground">{t('exam.proctoredHint')}</p>
+                      <p id="exam-proctored-hint" className="text-sm text-muted-foreground">
+                        {t('exam.proctoredHint')}
+                      </p>
                     </div>
-                    <Switch id="exam-proctored" checked={values.exam.proctored} onCheckedChange={(on) => set({ exam: { ...values.exam!, proctored: on } })} aria-describedby="exam-proctored-hint" />
+                    <Switch
+                      id="exam-proctored"
+                      checked={values.exam.proctored}
+                      onCheckedChange={(on) => set({ exam: { ...values.exam!, proctored: on } })}
+                      aria-describedby="exam-proctored-hint"
+                    />
                   </div>
                   {values.exam.proctored ? (
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <Label htmlFor="exam-ai">{t('exam.aiMonitoring')}</Label>
-                        <p id="exam-ai-hint" className="text-sm text-muted-foreground">{t('exam.aiMonitoringHint')}</p>
+                        <p id="exam-ai-hint" className="text-sm text-muted-foreground">
+                          {t('exam.aiMonitoringHint')}
+                        </p>
                       </div>
-                      <Switch id="exam-ai" checked={values.exam.aiMonitoring} onCheckedChange={(on) => set({ exam: { ...values.exam!, aiMonitoring: on } })} aria-describedby="exam-ai-hint" />
+                      <Switch
+                        id="exam-ai"
+                        checked={values.exam.aiMonitoring}
+                        onCheckedChange={(on) =>
+                          set({ exam: { ...values.exam!, aiMonitoring: on } })
+                        }
+                        aria-describedby="exam-ai-hint"
+                      />
                     </div>
                   ) : null}
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <Label htmlFor="exam-autowarn">{t('exam.autoWarn')}</Label>
-                      <p id="exam-autowarn-hint" className="text-sm text-muted-foreground">{t('exam.autoWarnHint')}</p>
+                      <p id="exam-autowarn-hint" className="text-sm text-muted-foreground">
+                        {t('exam.autoWarnHint')}
+                      </p>
                     </div>
-                    <Switch id="exam-autowarn" checked={values.exam.autoWarn} onCheckedChange={(on) => set({ exam: { ...values.exam!, autoWarn: on } })} aria-describedby="exam-autowarn-hint" />
+                    <Switch
+                      id="exam-autowarn"
+                      checked={values.exam.autoWarn}
+                      onCheckedChange={(on) => set({ exam: { ...values.exam!, autoWarn: on } })}
+                      aria-describedby="exam-autowarn-hint"
+                    />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="exam-max-warnings">{t('exam.maxWarnings')}</Label>
-                    <Input id="exam-max-warnings" type="number" min={0} max={10} className="w-32" value={values.exam.maxWarnings} aria-describedby="exam-max-warnings-hint"
-                      onChange={(e) => set({ exam: { ...values.exam!, maxWarnings: Math.min(10, Math.max(0, Math.floor(Number(e.target.value) || 0))) } })} />
-                    <p id="exam-max-warnings-hint" className="text-xs text-muted-foreground">{t('exam.maxWarningsHint')}</p>
+                    <Input
+                      id="exam-max-warnings"
+                      type="number"
+                      min={0}
+                      max={10}
+                      className="w-32"
+                      value={values.exam.maxWarnings}
+                      aria-describedby="exam-max-warnings-hint"
+                      onChange={(e) =>
+                        set({
+                          exam: {
+                            ...values.exam!,
+                            maxWarnings: Math.min(
+                              10,
+                              Math.max(0, Math.floor(Number(e.target.value) || 0)),
+                            ),
+                          },
+                        })
+                      }
+                    />
+                    <p id="exam-max-warnings-hint" className="text-xs text-muted-foreground">
+                      {t('exam.maxWarningsHint')}
+                    </p>
                   </div>
                 </>
               ) : null}
@@ -628,22 +874,46 @@ function LessonDialog({
             <>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="lesson-instructions">{t('instructions')}</Label>
-                <Textarea id="lesson-instructions" rows={5} maxLength={10000} value={values.instructions ?? ''} onChange={(e) => set({ instructions: e.target.value })} />
+                <Textarea
+                  id="lesson-instructions"
+                  rows={5}
+                  maxLength={10000}
+                  value={values.instructions ?? ''}
+                  onChange={(e) => set({ instructions: e.target.value })}
+                />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="lesson-points">{t('points')}</Label>
-                  <Input id="lesson-points" type="number" min={0} max={1000} value={values.points ?? ''}
-                    onChange={(e) => set({ points: e.target.value === '' ? null : Number(e.target.value) })} />
+                  <Input
+                    id="lesson-points"
+                    type="number"
+                    min={0}
+                    max={1000}
+                    value={values.points ?? ''}
+                    onChange={(e) =>
+                      set({ points: e.target.value === '' ? null : Number(e.target.value) })
+                    }
+                  />
                 </div>
                 <fieldset className="flex flex-col gap-2">
                   <legend className="mb-1 text-sm font-medium">{t('submissionKinds')}</legend>
                   <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" className="size-4 accent-[var(--primary)]" checked={values.submissionKinds.includes('PDF')} onChange={(e) => toggleKind('PDF', e.target.checked)} />
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-[var(--primary)]"
+                      checked={values.submissionKinds.includes('PDF')}
+                      onChange={(e) => toggleKind('PDF', e.target.checked)}
+                    />
                     {t('kindPdf')}
                   </label>
                   <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" className="size-4 accent-[var(--primary)]" checked={values.submissionKinds.includes('IMAGE')} onChange={(e) => toggleKind('IMAGE', e.target.checked)} />
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-[var(--primary)]"
+                      checked={values.submissionKinds.includes('IMAGE')}
+                      onChange={(e) => toggleKind('IMAGE', e.target.checked)}
+                    />
                     {t('kindImage')}
                   </label>
                 </fieldset>
@@ -653,36 +923,69 @@ function LessonDialog({
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="lesson-description">{t('lessonDescription')}</Label>
-            <Textarea id="lesson-description" rows={3} maxLength={2000} value={values.description ?? ''} onChange={(e) => set({ description: e.target.value })} />
+            <Textarea
+              id="lesson-description"
+              rows={3}
+              maxLength={2000}
+              value={values.description ?? ''}
+              onChange={(e) => set({ description: e.target.value })}
+            />
           </div>
           {values.kind === 'PDF' ? (
             <div className="flex items-start justify-between gap-4">
               <div>
                 <Label htmlFor="lesson-download">{t('allowDownload')}</Label>
-                <p id="lesson-download-hint" className="text-sm text-muted-foreground">{t('allowDownloadHint')}</p>
+                <p id="lesson-download-hint" className="text-sm text-muted-foreground">
+                  {t('allowDownloadHint')}
+                </p>
               </div>
-              <Switch id="lesson-download" checked={values.allowDownload} onCheckedChange={(checked) => set({ allowDownload: checked })} aria-describedby="lesson-download-hint" />
+              <Switch
+                id="lesson-download"
+                checked={values.allowDownload}
+                onCheckedChange={(checked) => set({ allowDownload: checked })}
+                aria-describedby="lesson-download-hint"
+              />
             </div>
           ) : null}
           {gated ? (
             <div className="flex items-start justify-between gap-4">
               <div>
                 <Label htmlFor="lesson-skippable">{t('skippable')}</Label>
-                <p id="lesson-skippable-hint" className="text-sm text-muted-foreground">{t('skippableHint')}</p>
+                <p id="lesson-skippable-hint" className="text-sm text-muted-foreground">
+                  {t('skippableHint')}
+                </p>
               </div>
-              <Switch id="lesson-skippable" checked={values.skippable} onCheckedChange={(checked) => set({ skippable: checked })} aria-describedby="lesson-skippable-hint" />
+              <Switch
+                id="lesson-skippable"
+                checked={values.skippable}
+                onCheckedChange={(checked) => set({ skippable: checked })}
+                aria-describedby="lesson-skippable-hint"
+              />
             </div>
           ) : null}
           <div className="flex items-start justify-between gap-4">
             <div>
               <Label htmlFor="lesson-preview">{t('isPreview')}</Label>
-              <p id="lesson-preview-hint" className="text-sm text-muted-foreground">{t('isPreviewHint')}</p>
+              <p id="lesson-preview-hint" className="text-sm text-muted-foreground">
+                {t('isPreviewHint')}
+              </p>
             </div>
-            <Switch id="lesson-preview" checked={values.isPreview} onCheckedChange={(checked) => set({ isPreview: checked })} aria-describedby="lesson-preview-hint" />
+            <Switch
+              id="lesson-preview"
+              checked={values.isPreview}
+              onCheckedChange={(checked) => set({ isPreview: checked })}
+              aria-describedby="lesson-preview-hint"
+            />
           </div>
-          {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+          {error ? (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>{tCommon('cancel')}</Button>
+            <Button type="button" variant="outline" onClick={onClose}>
+              {tCommon('cancel')}
+            </Button>
             <Button type="submit" disabled={pending || !values.title.trim()}>
               {pending ? tCommon('saving') : tCommon('save')}
             </Button>

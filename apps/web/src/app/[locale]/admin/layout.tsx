@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { type ReactNode } from 'react';
+import { AdminMobileNav } from '@/components/admin/admin-mobile-nav';
 import { SidebarNav } from '@/components/instructor/sidebar-nav';
 import { Brand } from '@/components/layout/brand';
 import { UserMenu } from '@/components/layout/user-menu';
@@ -48,7 +49,11 @@ export default async function AdminLayout({
       {/* Fixed 4rem header from tablet width, so the sidebar below can be pinned exactly under it. */}
       <header className="sticky top-0 z-20 border-b border-border bg-card md:h-16">
         <div className="flex items-center justify-between gap-4 px-4 py-3 md:h-full md:py-0 lg:px-6">
-          <div className="flex min-w-0 items-center gap-4">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+            <AdminMobileNav
+              items={items}
+              labels={{ menu: tCommon('menu'), close: tCommon('close'), title: t('sectionTitle'), backToSite: t('backToSite') }}
+            />
             <Brand name={tCommon('appName')} compactOnPhone />
             <span className="hidden rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-primary sm:inline">
               {t('sectionTitle')}
@@ -79,9 +84,9 @@ export default async function AdminLayout({
         {/*
           Tablet and up: the sidebar is fixed to the screen below the header, so it never moves while
           the page scrolls, however long the page is. It scrolls on its own only if its links
-          don't fit. Phones: it sits above the page content.
+          don't fit. Phones: it is a slide-in menu (AdminMobileNav) opened from the header.
         */}
-        <aside className="border-b border-border bg-card p-3 md:fixed md:bottom-0 md:left-0 md:top-16 md:z-10 md:w-60 md:overflow-y-auto md:overscroll-contain md:border-b-0 md:border-r md:p-4 lg:w-64">
+        <aside className="hidden border-b border-border bg-card p-3 md:block md:fixed md:bottom-0 md:left-0 md:top-16 md:z-10 md:w-60 md:overflow-y-auto md:overscroll-contain md:border-b-0 md:border-r md:p-4 lg:w-64">
           <SidebarNav items={items} label={t('sectionTitle')} verticalFrom="md" />
           <Link
             href="/"
