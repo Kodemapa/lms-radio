@@ -14,6 +14,7 @@ export function fakeConfig(overrides: Partial<Env> = {}): AppConfigService {
     OTP_TTL_SECONDS: 300,
     TWOFACTOR_OTP_TEMPLATE: 'OTP1',
     MAX_DEVICES_PER_USER: 2,
+    PROCTOR_ICE_SERVERS: [{ urls: 'stun:stun.example.org:3478' }],
     MEDIA_SIGNING_SECRET: 'c'.repeat(32),
     MEDIA_URL_TTL_SECONDS: 300,
     PUBLIC_API_URL: 'http://localhost:4000',

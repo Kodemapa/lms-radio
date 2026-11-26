@@ -238,6 +238,9 @@ importers:
       '@cornerstonejs/tools':
         specifier: 5.13.2
         version: 5.13.2(@cornerstonejs/core@5.13.2(@cornerstonejs/metadata@5.13.2)(@cornerstonejs/utils@5.13.2)(autoprefixer@10.6.2(postcss@8.5.33))(wslink@2.5.0))(@kitware/vtk.js@36.4.1(autoprefixer@10.6.2(postcss@8.5.33))(wslink@2.5.0))(@types/d3-array@3.2.1)(@types/d3-interpolate@3.0.4)(d3-array@3.2.4)(d3-interpolate@3.0.1)(gl-matrix@3.4.3)
+      '@mediapipe/tasks-vision':
+        specifier: 1.2.2
+        version: 1.2.2
       '@obgyn/dicom':
         specifier: workspace:*
         version: link:../../packages/dicom
@@ -2068,6 +2071,9 @@ packages:
   '@malept/flatpak-bundler@0.4.0':
     resolution: {integrity: sha512-9QOtNffcOF/c1seMCDnjckb3R9WHcG34tky+FHpNKKCW0wc/scYLwMtO+ptyGUfMW0/b/n4qRiALlaFHc9Oj7Q==}
     engines: {node: '>= 10.0.0'}
+
+  '@mediapipe/tasks-vision@1.2.2':
+    resolution: {integrity: sha512-Z7BikxnTvlKgc3d/Nw+LV6B0xyAACxYeAHHUu/xUhm1SV7jlExa9M37beiF/wZFoy0H+cs1PlIT2Z4km02UEHQ==}
 
   '@microsoft/tsdoc@0.17.1':
     resolution: {integrity: sha512-VHyYyyoH63jFoO3shpw9Zfijk5v/9p/VrClW35z0/q6ooK7sSmxpzOkS4iZPxs3vO4XtBW4H38HRAKkAMIK7DA==}
@@ -11063,6 +11069,8 @@ snapshots:
       tmp-promise: 3.0.3
     transitivePeerDependencies:
       - supports-color
+
+  '@mediapipe/tasks-vision@1.2.2': {}
 
   '@microsoft/tsdoc@0.17.1': {}
 

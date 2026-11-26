@@ -1,6 +1,6 @@
 'use client';
 
-import { type InstructorChapter, type InstructorCourse, type InstructorLesson, LESSON_DOCUMENT_TYPES } from '@obgyn/types';
+import { type ExamSettings, type InstructorChapter, type InstructorCourse, type InstructorLesson, LESSON_DOCUMENT_TYPES } from '@obgyn/types';
 import {
   Button,
   Dialog,
@@ -15,11 +15,12 @@ import {
   Textarea,
   toast,
 } from '@obgyn/ui';
-import { ArrowDown, ArrowUp, ClipboardList, FileText, HelpCircle, Info, ListChecks, Pencil, PlayCircle, Plus, ScanLine, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ClipboardList, FileText, HelpCircle, Info, ListChecks, Pencil, PlayCircle, Plus, ScanLine, Trash2, Video } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useState, type FormEvent } from 'react';
 import { formatClock } from '@/lib/format';
+import { Link } from '@/i18n/navigation';
 import { courseApi } from '@/lib/instructor-api';
 import { ConfirmDialog } from '../confirm-dialog';
 import { FileUpload } from './file-upload';
@@ -162,6 +163,11 @@ export function CurriculumTab({
                                 {t('questionCount', { count: lesson.questionCount })}
                               </span>
                             ) : null}
+                            {lesson.exam ? (
+                              <span className="font-medium text-primary">
+                                {lesson.exam.proctored ? t('exam.rowProctored', { minutes: lesson.exam.durationMin }) : t('exam.row', { minutes: lesson.exam.durationMin })}
+                              </span>
+                            ) : null}
                             {lesson.skippable ? <span>{t('skippable')}</span> : null}
                             {needsFile ? (
                               lesson.media?.status === 'READY' ? (
@@ -176,6 +182,14 @@ export function CurriculumTab({
                           <Button variant="outline" size="sm" onClick={() => setCaseFor(lesson)}>
                             <ScanLine aria-hidden className="size-4" />
                             {t('editCase')}
+                          </Button>
+                        ) : null}
+                        {lesson.exam ? (
+                          <Button asChild size="sm">
+                            <Link href={`/instructor/exams/${lesson.id}`}>
+                              <Video aria-hidden className="size-4" />
+                              {t('exam.proctor')}
+                            </Link>
                           </Button>
                         ) : null}
                         {lesson.kind === 'QUIZ' || lesson.kind === 'VIDEO' ? (
@@ -417,7 +431,24 @@ interface LessonValues {
   instructions: string | null;
   points: number | null;
   submissionKinds: ('IMAGE' | 'PDF')[];
+  /** QUIZ: timed / proctored exam; null = practice quiz. */
+  exam: ExamSettings | null;
 }
+
+/** ISO date-time ↔ the value of an <input type="datetime-local"> (the browser's time zone). */
+function toLocalInput(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function fromLocalInput(value: string): string | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+const NEW_EXAM: ExamSettings = { opensAt: null, closesAt: null, durationMin: 30, proctored: true, aiMonitoring: true, autoWarn: false, maxWarnings: 3 };
 
 function LessonDialog({
   edit,
@@ -445,6 +476,7 @@ function LessonDialog({
     instructions: existing?.instructions ?? null,
     points: existing?.points ?? null,
     submissionKinds: existing?.submissionKinds ?? ['PDF'],
+    exam: existing?.exam ?? null,
   });
   const [fileName, setFileName] = useState(existing?.media?.originalName ?? null);
   const [pending, setPending] = useState(false);
@@ -523,6 +555,69 @@ function LessonDialog({
                 onChange={(e) => set({ passPercent: e.target.value === '' ? null : Math.min(100, Math.max(0, Number(e.target.value))) })} />
               {edit.mode === 'add' ? <p className="text-xs text-muted-foreground">{t('saveLessonFirst')}</p> : null}
             </div>
+          ) : null}
+
+          {values.kind === 'QUIZ' ? (
+            <fieldset className="flex flex-col gap-4 rounded-xl border border-border p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <Label htmlFor="lesson-exam">{t('exam.enable')}</Label>
+                  <p id="lesson-exam-hint" className="text-sm text-muted-foreground">{t('exam.enableHint')}</p>
+                </div>
+                <Switch id="lesson-exam" checked={!!values.exam} onCheckedChange={(on) => set({ exam: on ? (values.exam ?? NEW_EXAM) : null })} aria-describedby="lesson-exam-hint" />
+              </div>
+              {values.exam ? (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="exam-opens">{t('exam.opensAt')}</Label>
+                      <Input id="exam-opens" type="datetime-local" value={toLocalInput(values.exam.opensAt)}
+                        onChange={(e) => set({ exam: { ...values.exam!, opensAt: fromLocalInput(e.target.value) } })} />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="exam-closes">{t('exam.closesAt')}</Label>
+                      <Input id="exam-closes" type="datetime-local" value={toLocalInput(values.exam.closesAt)}
+                        onChange={(e) => set({ exam: { ...values.exam!, closesAt: fromLocalInput(e.target.value) } })} />
+                    </div>
+                  </div>
+                  <p className="-mt-2 text-xs text-muted-foreground">{t('exam.windowHint')}</p>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="exam-duration" required>{t('exam.duration')}</Label>
+                    <Input id="exam-duration" type="number" min={1} max={600} className="w-32" value={values.exam.durationMin}
+                      onChange={(e) => set({ exam: { ...values.exam!, durationMin: Math.min(600, Math.max(1, Number(e.target.value) || 1)) } })} />
+                  </div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <Label htmlFor="exam-proctored">{t('exam.proctored')}</Label>
+                      <p id="exam-proctored-hint" className="text-sm text-muted-foreground">{t('exam.proctoredHint')}</p>
+                    </div>
+                    <Switch id="exam-proctored" checked={values.exam.proctored} onCheckedChange={(on) => set({ exam: { ...values.exam!, proctored: on } })} aria-describedby="exam-proctored-hint" />
+                  </div>
+                  {values.exam.proctored ? (
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <Label htmlFor="exam-ai">{t('exam.aiMonitoring')}</Label>
+                        <p id="exam-ai-hint" className="text-sm text-muted-foreground">{t('exam.aiMonitoringHint')}</p>
+                      </div>
+                      <Switch id="exam-ai" checked={values.exam.aiMonitoring} onCheckedChange={(on) => set({ exam: { ...values.exam!, aiMonitoring: on } })} aria-describedby="exam-ai-hint" />
+                    </div>
+                  ) : null}
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <Label htmlFor="exam-autowarn">{t('exam.autoWarn')}</Label>
+                      <p id="exam-autowarn-hint" className="text-sm text-muted-foreground">{t('exam.autoWarnHint')}</p>
+                    </div>
+                    <Switch id="exam-autowarn" checked={values.exam.autoWarn} onCheckedChange={(on) => set({ exam: { ...values.exam!, autoWarn: on } })} aria-describedby="exam-autowarn-hint" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="exam-max-warnings">{t('exam.maxWarnings')}</Label>
+                    <Input id="exam-max-warnings" type="number" min={0} max={10} className="w-32" value={values.exam.maxWarnings} aria-describedby="exam-max-warnings-hint"
+                      onChange={(e) => set({ exam: { ...values.exam!, maxWarnings: Math.min(10, Math.max(0, Math.floor(Number(e.target.value) || 0))) } })} />
+                    <p id="exam-max-warnings-hint" className="text-xs text-muted-foreground">{t('exam.maxWarningsHint')}</p>
+                  </div>
+                </>
+              ) : null}
+            </fieldset>
           ) : null}
 
           {values.kind === 'ASSIGNMENT' ? (

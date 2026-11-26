@@ -42,13 +42,13 @@ export default async function InstructorLayout({
     <div className="page-glow flex min-h-dvh flex-col bg-background">
       <header className="site-header">
         <div className="flex h-[68px] items-center justify-between gap-4 px-4 lg:px-6">
-          <div className="flex items-center gap-4">
-            <Brand name={tCommon('appName')} />
+          <div className="flex min-w-0 items-center gap-4">
+            <Brand name={tCommon('appName')} compactOnPhone />
             <span className="hidden rounded-full bg-accent-light px-3 py-1 text-xs font-semibold text-accent-deep sm:inline">
               {tCommon('instructorDashboard')}
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
             <NotificationBell />
             <ThemeToggle />
             <LocaleSwitcher label={tCommon('language')} />

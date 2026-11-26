@@ -17,3 +17,4 @@ export * from './admin-users.js';
 export * from './admin.js';
 export * from './admin-mail.js';
 export * from './notifications.js';
+export * from './exam.js';

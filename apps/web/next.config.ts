@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
   // Overridable so a production build can run beside `next dev` (e.g. bundle analysis).
   distDir: process.env.NEXT_DIST_DIR || '.next',
   poweredByHeader: false,
+  // Development only: let `next dev` serve phones testing through an HTTPS tunnel
+  // (VS Code port forwarding, Cloudflare quick tunnel, ngrok) or the local network.
+  allowedDevOrigins: ['*.devtunnels.ms', '*.trycloudflare.com', '*.ngrok-free.app', '192.168.*.*'],
   experimental: {
     // Lower webpack memory use. The dev server restarts itself near its memory limit,
     // which breaks open pages (ChunkLoadError); this makes those restarts rarer.
@@ -52,12 +55,19 @@ const nextConfig: NextConfig = {
       // CDN / shared-cache safety for the BFF: sign-in, session refresh and every proxied
       // per-user answer must never be stored by a CDN, even one whose default policy caches
       // responses that carry no Cache-Control. Public images (/api/files) and the PDF.js
-      // worker set their own long, public caching and are left alone.
+      // worker and the proctoring AI runtime (/api/proctor-ai) set their own long, public caching.
       // (Pages need no rule: Next.js marks dynamic HTML `private, no-store` itself, and the
       // hashed files under /_next/static `public, max-age=31536000, immutable`.)
       {
-        source: '/api/:path((?!files/|pdf-worker).*)',
+        source: '/api/:path((?!files/|pdf-worker|proctor-ai/).*)',
         headers: [{ key: 'Cache-Control', value: 'private, no-store' }],
+      },
+      // Proctored exams run in the lesson player and stream the learner's camera to
+      // proctors, so the player (only) may use our own origin's camera. When two rules
+      // match, Next uses the later value for the same header.
+      {
+        source: '/:locale/learn/:path*',
+        headers: [{ key: 'Permissions-Policy', value: 'camera=(self), microphone=(self), geolocation=(), display-capture=()' }],
       },
     ];
   },

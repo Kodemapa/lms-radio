@@ -1,3 +1,4 @@
+import { PlayerExamSchema } from './exam.js';
 import { z } from 'zod';
 import { CertificateTemplateSchema } from './assessment.js';
 import { CourseSummarySchema, LessonKindSchema } from './course.js';
@@ -185,6 +186,8 @@ export const PlayerLessonDetailSchema = z.object({
     .nullable(),
   /** IMAGING: a DICOM case to measure and report on. */
   imaging: ImagingCasePublicSchema.nullable(),
+  /** QUIZ exams: timing, my sitting and the live-camera setup. Questions stay empty until it starts. */
+  exam: PlayerExamSchema.nullable().default(null),
 });
 export type PlayerLessonDetail = z.infer<typeof PlayerLessonDetailSchema>;
 

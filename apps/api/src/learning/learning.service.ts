@@ -25,6 +25,7 @@ import { AuditService } from '../audit/audit.service';
 import { type AuthUser } from '../auth/auth-user';
 import { AccessService } from '../courses/access.service';
 import { COURSE_SUMMARY_INCLUDE, toCourseSummary } from '../courses/course-mapper';
+import { ExamsService } from '../exams/exams.service';
 import { ImagingService } from '../imaging/imaging.service';
 import { LIVE_LESSON } from '../common/soft-delete';
 import { PrismaService } from '../prisma/prisma.service';
@@ -43,6 +44,7 @@ export class LearningService {
     private readonly access: AccessService,
     private readonly audit: AuditService,
     private readonly imaging: ImagingService,
+    private readonly exams: ExamsService,
   ) {}
 
   // ---- Outline ----------------------------------------------------------------
@@ -166,6 +168,11 @@ export class LearningService {
     ]);
     const index = ordered.indexOf(lesson.id);
     const passPercent = lesson.passPercent ?? DEFAULT_PASS_PERCENT;
+    const isExam = ExamsService.isExam(lesson);
+    // Exam questions stay hidden until the learner's sitting starts (and after it ends).
+    const [exam, showQuestions] = isExam
+      ? await Promise.all([this.exams.playerExam(user, lesson), this.exams.questionsVisible(user, lesson, manager)])
+      : [null, true];
     const checkpoints = lesson.kind === 'VIDEO' ? await this.checkpointsFor(user, lessonId, questions) : [];
 
     return {
@@ -195,13 +202,13 @@ export class LearningService {
           ? {
               passPercent,
               // Correct answers are never sent before an attempt.
-              questions: questions.map((q) => ({
+              questions: (showQuestions ? questions : []).map((q) => ({
                 id: q.id,
                 text: q.text,
                 allowMultiple: q.allowMultiple,
                 options: q.options.map((o) => ({ id: o.id, text: o.text })),
               })),
-              lastResult: attempt ? this.toResult(attempt, questions, passPercent) : null,
+              lastResult: attempt ? this.examSafe(this.toResult(attempt, questions, passPercent), isExam) : null,
             }
           : null,
       assignment:
@@ -214,6 +221,7 @@ export class LearningService {
             }
           : null,
       imaging: lesson.kind === 'IMAGING' ? await this.imaging.publicCase(user, lesson) : null,
+      exam,
     };
   }
 
@@ -345,6 +353,9 @@ export class LearningService {
     const { lesson, enrolled, manager } = await this.access.getAccessibleLesson(user, lessonId);
     if (lesson.kind !== 'QUIZ') throw new BadRequestException('Not a quiz');
     if (!enrolled && !manager) throw new ForbiddenException({ code: 'NOT_ENROLLED' });
+    const isExam = ExamsService.isExam(lesson);
+    // Exams: one sitting, within its time (staff previewing are held to the same rules).
+    const examSession = isExam ? await this.exams.assertCanSubmit(user, lesson) : null;
     const questions = await this.prisma.quizQuestion.findMany({
       where: { lessonId, atSec: null },
       orderBy: { position: 'asc' },
@@ -366,8 +377,17 @@ export class LearningService {
         passed: graded.passed,
       },
     });
+    if (examSession) await this.exams.markSubmitted(examSession, attempt.id);
     if (graded.passed) await this.markComplete(user.userId, lesson.id, lesson.courseId, false);
-    return { attemptId: attempt.id, passPercent, createdAt: attempt.createdAt.toISOString(), ...graded };
+    return this.examSafe({ attemptId: attempt.id, passPercent, createdAt: attempt.createdAt.toISOString(), ...graded }, isExam);
+  }
+
+  /**
+   * Exam results show the score only: the correct answers and explanations would help
+   * learners still sitting it. Practice quizzes show the full review.
+   */
+  private examSafe(result: QuizResult, isExam: boolean): QuizResult {
+    return isExam ? { ...result, questions: [] } : result;
   }
 
   // ---- Assignment ---------------------------------------------------------------

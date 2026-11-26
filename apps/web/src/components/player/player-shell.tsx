@@ -4,11 +4,12 @@ import { type PlayerOutline } from '@obgyn/types';
 import { Dialog, DialogTitle, DialogTrigger, Progress, SheetContent } from '@obgyn/ui';
 import { ArrowLeft, ListTree } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from '@/i18n/navigation';
 import { WishlistButton } from '../course/wishlist-button';
 import { CertificateCard } from './certificate-card';
 import { CurriculumNav } from './curriculum-nav';
+import { ExamSidebarProvider } from './exam-sidebar';
 
 /**
  * Course player: the same light header as the rest of the site (logo, notifications,
@@ -30,6 +31,10 @@ export function PlayerShell({
   const t = useTranslations('Player');
   const tCommon = useTranslations('Common');
   const [open, setOpen] = useState(false);
+  // A running exam shows its question grid in the right column instead of the course content.
+  const [examSlot, setExamSlot] = useState<HTMLDivElement | null>(null);
+  const [examActive, setExamActive] = useState(false);
+  const examSidebar = useMemo(() => ({ target: examSlot, setActive: setExamActive }), [examSlot]);
   const { progress, course } = outline;
   const complete = progress.total > 0 && progress.completed === progress.total;
 
@@ -90,10 +95,15 @@ export function PlayerShell({
       </header>
       {/* Each column scrolls on its own: browsing chapters never moves the video. */}
       <div className="flex min-h-0 flex-1">
-        <main id="main" className="min-w-0 flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">{children}</main>
+        <main id="main" className="min-w-0 flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          <ExamSidebarProvider value={examSidebar}>{children}</ExamSidebarProvider>
+        </main>
         <aside className="surface my-3 me-3 hidden w-80 shrink-0 flex-col overflow-hidden lg:flex xl:w-96">
-          <h2 className="shrink-0 border-b border-border/70 px-5 py-4 font-semibold">{t('curriculum')}</h2>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">{sidebar()}</div>
+          {examActive ? null : <h2 className="shrink-0 border-b border-border/70 px-5 py-4 font-semibold">{t('curriculum')}</h2>}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+            <div ref={setExamSlot} />
+            {examActive ? null : sidebar()}
+          </div>
         </aside>
       </div>
     </div>

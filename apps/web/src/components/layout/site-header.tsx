@@ -42,8 +42,14 @@ export async function SiteHeader() {
             signedIn={!!me}
             labels={{ menu: t('menu'), close: t('close'), signIn: t('signIn'), register: t('register') }}
             search={<SearchForm {...searchProps} className="my-2" />}
+            settings={
+              <>
+                <ThemeToggle />
+                <LocaleSwitcher label={t('language')} />
+              </>
+            }
           />
-          <Brand name={t('appName')} />
+          <Brand name={t('appName')} compactOnPhone />
           <nav aria-label={t('mainNav')} className="hidden items-center gap-1 xl:flex">
             {links.map((link) => (
               <NavLink key={link.href} href={link.href}>
@@ -53,7 +59,7 @@ export async function SiteHeader() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 md:gap-3">
           {/* Full search where there's room; an icon to the catalogue when the nav needs the space. */}
           <SearchForm
             {...searchProps}
@@ -69,8 +75,11 @@ export async function SiteHeader() {
           </Link>
           {me ? <NotificationBell /> : null}
           {/* Everyone can pick light, dark or device; the choice is remembered in this browser. */}
-          <ThemeToggle />
-          <LocaleSwitcher label={t('language')} />
+          {/* On phones these two are in the menu drawer: the bar has no room for them. */}
+          <div className="hidden items-center gap-2 sm:flex md:gap-3">
+            <ThemeToggle />
+            <LocaleSwitcher label={t('language')} />
+          </div>
           {me ? (
             <UserMenu
               user={me}

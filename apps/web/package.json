@@ -15,6 +15,7 @@
     "@cornerstonejs/core": "5.13.2",
     "@cornerstonejs/dicom-image-loader": "5.13.2",
     "@cornerstonejs/tools": "5.13.2",
+    "@mediapipe/tasks-vision": "1.2.2",
     "@obgyn/dicom": "workspace:*",
     "@obgyn/types": "workspace:*",
     "@obgyn/ui": "workspace:*",

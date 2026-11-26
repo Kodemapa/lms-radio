@@ -1,3 +1,4 @@
+import { ExamSettingsSchema } from './exam.js';
 import { z } from 'zod';
 import {
   CourseLevelSchema,
@@ -73,6 +74,8 @@ export const LessonInputSchema = z.object({
   instructions: z.string().trim().max(10_000).nullable(),
   points: z.number().int().min(0).max(1000).nullable(),
   submissionKinds: z.array(z.enum(['IMAGE', 'PDF'])).max(2),
+  /** QUIZ only: make it a timed (optionally proctored) exam; null = practice quiz. */
+  exam: ExamSettingsSchema.nullable().default(null),
 });
 export type LessonInput = z.infer<typeof LessonInputSchema>;
 
@@ -93,6 +96,7 @@ export const InstructorLessonSchema = z.object({
   points: z.number().int().nullable(),
   submissionKinds: z.array(z.enum(['IMAGE', 'PDF'])),
   questionCount: z.number().int(),
+  exam: ExamSettingsSchema.nullable(),
   media: z
     .object({
       status: z.enum(['PENDING', 'READY']),

@@ -996,7 +996,26 @@
         "lessonSaved": "Lesson saved.",
         "lessonDeleted": "Lesson moved to trash."
       },
-      "pdfLessonHint": "Learners read lesson documents in the protected viewer, which shows PDF only. For PowerPoint slides, choose File → Save As → PDF first."
+      "pdfLessonHint": "Learners read lesson documents in the protected viewer, which shows PDF only. For PowerPoint slides, choose File → Save As → PDF first.",
+      "exam": {
+        "enable": "Timed exam",
+        "enableHint": "One attempt, a time limit and full screen. Questions stay hidden until the learner starts.",
+        "opensAt": "Opens (optional)",
+        "closesAt": "Closes (optional)",
+        "windowHint": "Learners can start between these times. A started exam always gets its full time.",
+        "duration": "Time allowed (minutes)",
+        "proctored": "Live camera proctoring",
+        "proctoredHint": "The learner's camera streams live to you for the whole exam. Nothing is recorded.",
+        "row": "Exam · {minutes} min",
+        "rowProctored": "Proctored exam · {minutes} min",
+        "proctor": "Proctor",
+        "aiMonitoring": "AI checks",
+        "aiMonitoringHint": "In the learner's browser: alerts you if their face isn't visible, someone else is seen, a phone or book is in view, voices are heard or a second screen is connected. A small photo is kept as evidence for each alert.",
+        "autoWarn": "Automatic warnings",
+        "autoWarnHint": "Switching tabs, another person, a phone or book, no face or a second screen count as a warning without you sending one (at most one a minute for each).",
+        "maxWarnings": "Warnings that end the exam",
+        "maxWarningsHint": "When a learner gets this many warnings, their exam ends and is submitted. 0 = no limit."
+      }
     },
     "upload": {
       "choose": "Choose file",
@@ -2543,5 +2562,433 @@
     "allCourses": "All courses",
     "allIn": "All {name}",
     "subcategories": "Sub-categories of {name}"
+  },
+  "Exam": {
+    "duration": "{minutes} minutes",
+    "questions": "{count, plural, one {# question} other {# questions}}",
+    "passMark": "Pass mark {percent}%",
+    "opens": "Opens {at}",
+    "closes": "Closes {at}",
+    "rulesTitle": "Before you start",
+    "ruleOneAttempt": "You can sit this exam once. It can't be paused or retaken.",
+    "ruleTimer": "You have {minutes} minutes from the moment you start. Your answers are submitted automatically when the time runs out.",
+    "ruleFullscreen": "The exam runs in full screen. Leaving full screen or switching tabs is reported to the proctor.",
+    "ruleCamera": "Your camera stays on for the whole exam and a proctor watches it live.",
+    "ruleNoRecording": "The video is shown live only and is not recorded. Alerts (such as switching tabs) are saved with your attempt.",
+    "consent": "I agree to keep my camera on and be watched live by a proctor during this exam.",
+    "resumeHint": "Your exam is still running and the timer has not stopped. Resume now to continue.",
+    "notOpenYet": "This exam has not opened yet.",
+    "closed": "This exam has closed.",
+    "alreadyDone": "You have already taken this exam.",
+    "enrolFirst": "Enroll in the course to take this exam.",
+    "cameraDenied": "Camera access is needed for this exam. Allow the camera in your browser's address bar, then try again.",
+    "startFailed": "The exam couldn't be started. Please try again.",
+    "start": "Start exam",
+    "resume": "Resume exam",
+    "starting": "Starting…",
+    "submit": "Submit exam",
+    "submitConfirmTitle": "Submit your exam?",
+    "submitConfirmBody": "You can't change your answers after submitting.",
+    "submitConfirmUnanswered": "{count, plural, one {# question is} other {# questions are}} unanswered. You can't change your answers after submitting.",
+    "timeLeftLabel": "Time left",
+    "cameraOn": "Camera on",
+    "liveWatching": "Live: proctor watching",
+    "cameraOff": "Camera off",
+    "selfView": "Your camera",
+    "warningsTitle": "Message from the proctor",
+    "cameraOffAlert": "Your camera is off. Turn it back on: the proctor has been alerted.",
+    "fullscreenRequired": "The exam is paused on your screen until you return to full screen. The timer keeps running.",
+    "returnFullscreen": "Return to full screen",
+    "timeUp": "Time is up. Submitting your answers…",
+    "endingByProctor": "The proctor has ended your exam. Submitting your answers…",
+    "submitted": "Exam submitted",
+    "expired": "The time ran out before the exam was submitted",
+    "endedByProctor": "Your exam was ended by the proctor",
+    "reason": "Reason: {reason}",
+    "passed": "Passed with {score}%",
+    "notPassed": "{score}% (pass mark {pass}%)",
+    "oneAttempt": "This exam can only be taken once.",
+    "warningTitle": "Warning from the proctor",
+    "warningTimerRunning": "Your exam is hidden until you continue. The timer is still running: {time} left.",
+    "warningMore": "{count, plural, one {# more warning after this.} other {# more warnings after this.}}",
+    "warningContinue": "I understand, continue exam",
+    "ruleAi": "AI checks run on this device during the exam: if your face isn't visible, someone else is seen, a phone or book is in view, voices are heard or a second screen is connected, the proctor is alerted and a small photo from your camera is kept as evidence.",
+    "ruleMaxWarnings": "{count, plural, one {One warning ends the exam} other {# warnings end the exam}}: your answers so far are then submitted automatically.",
+    "consentAi": "I agree to keep my camera and microphone on, to be watched live by a proctor, and to AI checks on this device that may save a small photo when something is flagged.",
+    "noticeToast": "Message from the proctor: {message}",
+    "noticesTitle": "Messages from the proctor",
+    "aiOn": "AI checks on",
+    "warningsCount": "Warnings {count}/{max}",
+    "warningNumbered": "Warning {number} of {max}",
+    "warningAuto": "This warning was given automatically. Your proctor will review it before it affects your result.",
+    "warningLastChance": "One more warning and your exam is submitted automatically.",
+    "dispute": "Dispute this warning",
+    "disputeLabel": "Tell the proctor what happened",
+    "disputeCancel": "Back",
+    "disputeSend": "Send and continue exam",
+    "aiAlert": {
+      "NO_FACE": "Your face isn't visible. Move back in front of the camera.",
+      "MULTIPLE_FACES": "Another person was seen on your camera. This was reported to the proctor.",
+      "LOOKING_AWAY": "Please keep looking at the screen.",
+      "PROHIBITED_OBJECT": "A phone or book was seen on your camera. Put it away.",
+      "VOICE_DETECTED": "Voices were heard. This is noted for the proctor.",
+      "SECOND_SCREEN": "A second screen is connected. Disconnect it."
+    },
+    "autoWarning": {
+      "TAB_HIDDEN": "You left the exam tab. Stay on this tab until you submit.",
+      "NO_FACE": "Your face was not visible. Stay in front of the camera.",
+      "MULTIPLE_FACES": "Another person was seen on your camera. You must be alone during the exam.",
+      "PROHIBITED_OBJECT": "A phone or book was seen on your camera. Put it away.",
+      "SECOND_SCREEN": "A second screen was found. Disconnect it."
+    },
+    "object": {
+      "phone": "Mobile phone",
+      "book": "Book"
+    },
+    "integrity": {
+      "title": "Integrity report",
+      "score": "Integrity score",
+      "risk": {
+        "LOW": "Low risk",
+        "MEDIUM": "Medium risk",
+        "HIGH": "High risk"
+      },
+      "warnings": "Warnings",
+      "alerts": "Alerts",
+      "review": "Proctor review",
+      "reviewStatus": {
+        "PENDING": "Not reviewed yet",
+        "CLEARED": "Cleared",
+        "FLAGGED": "Flagged"
+      },
+      "reviewedBy": "Reviewed by {name} · {at}",
+      "pendingHint": "A proctor reviews every alert before it affects your result. The score is a guide, not a verdict.",
+      "timeline": "What happened",
+      "viewSnapshot": "Photo"
+    },
+    "check": {
+      "title": "System check",
+      "subtitle": "Make sure everything works before you start. Nothing is saved during this check.",
+      "summary": "{passed} of {total} passed",
+      "run": "Check my camera and setup",
+      "recheck": "Check again",
+      "checking": "Checking…",
+      "preview": "Your camera",
+      "previewHint": "Your camera appears here once you start the check.",
+      "sayHello": "Say “hello”",
+      "ok": "Passed",
+      "failed": "Needs fixing",
+      "notChecked": "Not checked yet",
+      "camera": "Camera",
+      "cameraOk": "Working",
+      "cameraDenied": "Allow camera access in your browser, then check again.",
+      "face": "Face in frame",
+      "faceOk": "One face, clearly visible",
+      "faceTurned": "Face visible — look straight at the screen",
+      "noFace": "No face found. Sit in front of the camera with good light.",
+      "manyFaces": "{count} people seen. You must be alone.",
+      "aiLoading": "Starting the face check…",
+      "aiFailed": "The face check couldn't start on this device. Click “Check again”. If it still fails, use the latest Chrome or Edge, or ask your proctor.",
+      "mic": "Microphone",
+      "micOk": "Working",
+      "micDenied": "Allow microphone access in your browser, then check again.",
+      "screen": "Displays",
+      "screenOk": "One display",
+      "secondScreen": "A second screen is connected. Disconnect it, then check again.",
+      "browser": "Browser",
+      "browserOk": "Supported",
+      "browserBad": "This browser can't run the exam. Use a recent Chrome, Edge or Firefox on a computer.",
+      "network": "Connection",
+      "networkOk": "Good ({ms} ms)",
+      "networkFail": "Can't reach the server. Check your internet.",
+      "loadingModels": "Loading the face check (first time can take a minute)…",
+      "noWebgl": "Your browser has graphics (WebGL) turned off, which the face check needs. Quit the browser completely (on Mac: ⌘Q; on Windows: close every window), open it again and click “Check again”. If it still fails, turn on Settings → System → “Use graphics acceleration when available” and restart the browser."
+    },
+    "nav": {
+      "of": "of {total}",
+      "single": "Single choice",
+      "multiple": "Multiple choice · select all that apply",
+      "markReview": "Mark for review",
+      "marked": "Marked for review",
+      "previous": "Previous",
+      "next": "Save & next",
+      "clear": "Clear response",
+      "saved": "Saved",
+      "gridTitle": "Questions",
+      "stateAnswered": "Answered",
+      "stateNotAnswered": "Not answered",
+      "stateCurrent": "Current",
+      "stateReview": "For review",
+      "tileLabel": "Question {number}: {state}"
+    },
+    "permission": {
+      "title": {
+        "both": "Turn on your camera and microphone",
+        "camera": "Turn on your camera",
+        "mic": "Turn on your microphone"
+      },
+      "why": {
+        "both": "This exam is proctored: your camera and microphone must stay on for the whole exam. Your browser has blocked them or they were switched off.",
+        "camera": "This exam is proctored: your camera must stay on for the whole exam. Your browser has blocked it or it was switched off.",
+        "mic": "The AI checks need your microphone. Your browser has blocked it or it was switched off."
+      },
+      "stepsTitle": {
+        "android": "On Android (Chrome):",
+        "ios": "On iPhone / iPad (Safari):",
+        "desktop": "On a computer:"
+      },
+      "steps": {
+        "android": {
+          "1": "Tap the icon to the left of the web address (the lock or settings icon).",
+          "2": "Tap Permissions (or Site settings), then set Camera and Microphone to Allow.",
+          "3": "Come back here and tap the button below."
+        },
+        "ios": {
+          "1": "Tap “aA” (or the page settings icon) at the left of the address bar, then Website Settings.",
+          "2": "Set Camera and Microphone to Allow. If they're missing: open the Settings app → Safari → Camera / Microphone → Allow.",
+          "3": "Come back here and tap the button below."
+        },
+        "desktop": {
+          "1": "Click the camera icon or the settings icon at the left or right end of the address bar.",
+          "2": "Choose Always allow for the camera and microphone (or set them to Allow in site settings).",
+          "3": "Click the button below. If it still doesn't work, reload the page."
+        }
+      },
+      "otherApp": "Close other apps that may be using the camera (video calls, camera app).",
+      "stillBlocked": "Still blocked. Follow the steps above, then try again.",
+      "trying": "Turning on…",
+      "turnOn": {
+        "both": "Turn on camera and microphone",
+        "camera": "Turn on camera",
+        "mic": "Turn on microphone"
+      }
+    }
+  },
+  "Proctor": {
+    "title": "Proctoring: {exam}",
+    "meta": "{minutes}-minute exam",
+    "opens": "opens {at}",
+    "closes": "closes {at}",
+    "stat": {
+      "running": "Writing now",
+      "finished": "Finished",
+      "notStarted": "Not started",
+      "alerts": "Alerts",
+      "attention": "Need a look"
+    },
+    "notProctored": "This exam isn't proctored, so there is no camera. You still see each learner's state and alerts. Turn on \"Live camera proctoring\" in the lesson settings to watch cameras.",
+    "liveTitle": "Writing now",
+    "noneRunning": "Nobody is writing this exam right now. Learners appear here as soon as they start.",
+    "finishedTitle": "Finished",
+    "learner": "Learner",
+    "status": "Status",
+    "score": "Score",
+    "alerts": "Alerts",
+    "sessionStatus": {
+      "IN_PROGRESS": "Writing",
+      "SUBMITTED": "Submitted",
+      "TERMINATED": "Ended by proctor",
+      "EXPIRED": "Time ran out"
+    },
+    "feedTitle": "Activity",
+    "feedEmpty": "Nothing yet.",
+    "event": {
+      "STARTED": "started the exam",
+      "RESUMED": "reopened the exam",
+      "CAMERA_ON": "camera on",
+      "CAMERA_OFF": "camera off",
+      "TAB_HIDDEN": "switched to another tab or app",
+      "TAB_VISIBLE": "came back to the exam",
+      "WINDOW_BLUR": "clicked outside the exam window",
+      "FULLSCREEN_EXIT": "left full screen",
+      "FULLSCREEN_ENTER": "back in full screen",
+      "COPY_PASTE": "tried to copy or paste",
+      "CONNECTION_LOST": "lost connection",
+      "WARNING": "was warned",
+      "TERMINATED": "exam ended by a proctor",
+      "SUBMITTED": "submitted",
+      "EXPIRED": "time ran out",
+      "WARNING_ACKNOWLEDGED": "read the warning and continued",
+      "WARNING_DISPUTED": "disputed a warning",
+      "NOTICE": "was sent a message",
+      "NO_FACE": "face not visible",
+      "MULTIPLE_FACES": "another person seen",
+      "LOOKING_AWAY": "looking away from the screen",
+      "PROHIBITED_OBJECT": "phone or book seen",
+      "VOICE_DETECTED": "voices heard",
+      "SECOND_SCREEN": "second screen connected",
+      "REVIEWED": "exam reviewed"
+    },
+    "cameraOf": "Camera of {name}",
+    "connecting": "Connecting to camera…",
+    "noVideo": "No camera",
+    "live": "LIVE",
+    "notLive": "Not live",
+    "enlarge": "Enlarge",
+    "shrink": "Make smaller",
+    "chip": {
+      "ok": "All good",
+      "offline": "Offline",
+      "cameraOff": "Camera off",
+      "notFullscreen": "Not full screen",
+      "otherTab": "Other tab",
+      "warningUnread": "Warning not read yet"
+    },
+    "alertCount": "{count, plural, one {# alert} other {# alerts}}",
+    "warn": "Warn",
+    "end": "End exam",
+    "warnTitle": "Warn {name}",
+    "warnMessage": "Message shown to the learner",
+    "preset": {
+      "lookAtScreen": "Please keep your eyes on the screen.",
+      "stayInFrame": "Please stay in front of your camera.",
+      "fullscreen": "Please return to full screen.",
+      "noOtherPeople": "No one else may be in the room during the exam."
+    },
+    "sendWarning": "Send warning",
+    "warned": "Warning sent to {name}.",
+    "endTitle": "End {name}'s exam?",
+    "endBody": "Their answers so far are submitted and they can't continue. This can't be undone.",
+    "endReason": "Reason (saved and shown to the learner)",
+    "ended": "{name}'s exam has been ended.",
+    "forbidden": "You don't have permission to proctor this exam.",
+    "notFound": "This exam wasn't found.",
+    "filter": {
+      "label": "Show",
+      "all": "All",
+      "attention": "Need a look",
+      "offline": "Offline"
+    },
+    "aiOn": "AI checks on",
+    "limitInfo": "{count, plural, one {# warning ends the exam} other {# warnings end the exam}}",
+    "messageAll": "Message all",
+    "noneMatch": "No one matches this filter.",
+    "integrity": "Integrity",
+    "review": "Review",
+    "reviewNow": "Review",
+    "warningsOf": "Warnings {count}/{max}",
+    "warningsCount": "{count, plural, one {# warning} other {# warnings}}",
+    "answered": "{count}/{total} answered",
+    "message": "Message",
+    "messageTitle": "Message {name}",
+    "messageAllTitle": "Message everyone writing now",
+    "messageHint": "Shown as a note on their screen. It doesn't interrupt the exam or count as a warning.",
+    "messageLabel": "Message",
+    "sendMessage": "Send message",
+    "messageSent": "Message sent to {name}.",
+    "messageSentAll": "{count, plural, =0 {No one is writing now.} one {Message sent to # learner.} other {Message sent to # learners.}}",
+    "reviewTitle": "Review {name}'s exam",
+    "endedBecause": "Exam ended: {reason}",
+    "decision": "Your decision",
+    "decisionOption": {
+      "CLEARED": "Cleared",
+      "FLAGGED": "Flagged for misconduct"
+    },
+    "decisionHint": {
+      "CLEARED": "The alerts had an innocent explanation (or there were none).",
+      "FLAGGED": "You found misconduct. Say what in the note; the learner sees it."
+    },
+    "reviewNote": "Note (shown to the learner)",
+    "saveReview": "Save review",
+    "reviewSaved": "Review saved.",
+    "reviewNoteRequired": "Add a note saying what was wrong.",
+    "snapshotTitle": "Evidence photo",
+    "snapshotHint": "Taken by the learner's browser when the alert was raised. Only proctors of this exam can see it.",
+    "snapshotAlt": "Camera photo at the time of the alert"
+  },
+  "MyExams": {
+    "hello": "Hello, {name}.",
+    "greeting": {
+      "morning": "Good morning, {name}.",
+      "afternoon": "Good afternoon, {name}.",
+      "evening": "Good evening, {name}."
+    },
+    "liveNow": "{count, plural, one {One test is live now.} other {# tests are live now.}}",
+    "nextUp": "Your next test is coming up.",
+    "allDone": "You're all caught up.",
+    "subtitleCloses": "Your proctored exams, device checks and integrity reports in one place. Check your setup before the window closes at {time}.",
+    "subtitle": "Your proctored exams, device checks and integrity reports in one place.",
+    "start": "Start {title}",
+    "resume": "Resume {title}",
+    "open": "Open {title}",
+    "startShort": "Start test",
+    "resumeShort": "Resume test",
+    "readRules": "Read the rules",
+    "stat": {
+      "live": "Live now",
+      "upcoming": "Upcoming",
+      "average": "Average score"
+    },
+    "card": {
+      "proctored": "Proctored exam",
+      "timed": "Timed exam",
+      "checkFirst": "A quick camera check before you start",
+      "minutes": "{minutes} minutes once you start",
+      "closesIn": "Window closes in",
+      "timeLeft": "Time left",
+      "webcam": "Webcam needed"
+    },
+    "tag": {
+      "ai": "AI proctored",
+      "liveProctor": "Live proctor",
+      "timed": "Timed",
+      "webcam": "Webcam + mic"
+    },
+    "status": {
+      "live": "Live now",
+      "inProgress": "In progress"
+    },
+    "field": {
+      "opens": "Window opens",
+      "closes": "Window closes",
+      "duration": "Duration",
+      "questions": "Questions",
+      "anyTime": "Any time",
+      "noDeadline": "No deadline",
+      "minutes": "{minutes} mins"
+    },
+    "how": {
+      "eyebrow": "How a proctored test works",
+      "title": "Check in, focus, and get a fair report.",
+      "subtitle": "Every flag is reviewed by a person before it affects your result.",
+      "device": {
+        "title": "Check your device",
+        "body": "Camera, microphone, screen and internet, in about a minute."
+      },
+      "test": {
+        "title": "Take the test",
+        "body": "Answers save as you go. Alerts tell you if something's off."
+      },
+      "alerts": {
+        "title": "Warnings are reviewed",
+        "body": "If you get a warning you can explain it; a proctor reviews every alert."
+      },
+      "report": {
+        "title": "Get your report",
+        "body": "Score and an integrity summary after review."
+      }
+    },
+    "rest": {
+      "eyebrow": "Coming up & recent",
+      "title": "Everything else on your list"
+    },
+    "review": {
+      "cleared": "Integrity cleared",
+      "flagged": "Flagged by the proctor",
+      "pending": "Awaiting proctor review"
+    },
+    "questions": "{count, plural, one {# question} other {# questions}}",
+    "missed": "This exam closed before you started it.",
+    "viewResult": "View result",
+    "opensSoon": "Opens soon",
+    "closedLabel": "Closed",
+    "openExam": "Open {title}",
+    "rules": {
+      "title": "Proctoring rules",
+      "fullscreen": "Stay in full screen, on the exam tab.",
+      "face": "Keep your face in frame; no one else in the room.",
+      "noPhones": "No phones, notes or second screens.",
+      "warnings": "{count, plural, one {One warning ends the exam.} other {# warnings end the exam.}}"
+    }
   }
 }

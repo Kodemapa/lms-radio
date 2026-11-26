@@ -14,6 +14,7 @@ export function DialogContent({
   children,
   closeLabel = 'Close',
   keepOpenOnOutsideClick = false,
+  hideClose = false,
   onInteractOutside,
   onEscapeKeyDown,
   ...props
@@ -24,6 +25,8 @@ export function DialogContent({
    * (and lose what was typed). It closes only with its own Cancel / close buttons.
    */
   keepOpenOnOutsideClick?: boolean;
+  /** No ✕ button: for dialogs that stay until something is fixed (they have their own action). */
+  hideClose?: boolean;
 }) {
   return (
     <DialogPrimitive.Portal>
@@ -44,10 +47,12 @@ export function DialogContent({
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring">
-          <X aria-hidden className="size-5" />
-          <span className="sr-only">{closeLabel}</span>
-        </DialogPrimitive.Close>
+        {hideClose ? null : (
+          <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring">
+            <X aria-hidden className="size-5" />
+            <span className="sr-only">{closeLabel}</span>
+          </DialogPrimitive.Close>
+        )}
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
   );
@@ -58,15 +63,33 @@ export function DialogHeader({ className, ...props }: ComponentProps<'div'>) {
 }
 
 export function DialogFooter({ className, ...props }: ComponentProps<'div'>) {
-  return <div className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)} {...props} />;
+  return (
+    <div
+      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
+      {...props}
+    />
+  );
 }
 
 export function DialogTitle({ className, ...props }: ComponentProps<typeof DialogPrimitive.Title>) {
-  return <DialogPrimitive.Title className={cn('text-xl font-semibold tracking-tight', className)} {...props} />;
+  return (
+    <DialogPrimitive.Title
+      className={cn('text-xl font-semibold tracking-tight', className)}
+      {...props}
+    />
+  );
 }
 
-export function DialogDescription({ className, ...props }: ComponentProps<typeof DialogPrimitive.Description>) {
-  return <DialogPrimitive.Description className={cn('text-sm text-muted-foreground', className)} {...props} />;
+export function DialogDescription({
+  className,
+  ...props
+}: ComponentProps<typeof DialogPrimitive.Description>) {
+  return (
+    <DialogPrimitive.Description
+      className={cn('text-sm text-muted-foreground', className)}
+      {...props}
+    />
+  );
 }
 
 /** Slide-in panel (mobile navigation). */
@@ -76,7 +99,10 @@ export function SheetContent({
   side = 'left',
   closeLabel = 'Close',
   ...props
-}: ComponentProps<typeof DialogPrimitive.Content> & { side?: 'left' | 'right'; closeLabel?: string }) {
+}: ComponentProps<typeof DialogPrimitive.Content> & {
+  side?: 'left' | 'right';
+  closeLabel?: string;
+}) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#2b2036]/45 backdrop-blur-sm" />

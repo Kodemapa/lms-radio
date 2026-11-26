@@ -48,14 +48,14 @@ export default async function AdminLayout({
       {/* Fixed 4rem header on desktop, so the sidebar below can be pinned exactly under it. */}
       <header className="sticky top-0 z-20 border-b border-border bg-card lg:h-16">
         <div className="flex items-center justify-between gap-4 px-4 py-3 lg:h-full lg:px-6 lg:py-0">
-          <div className="flex items-center gap-4">
-            <Brand name={tCommon('appName')} />
+          <div className="flex min-w-0 items-center gap-4">
+            <Brand name={tCommon('appName')} compactOnPhone />
             <span className="hidden rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-primary sm:inline">
               {t('sectionTitle')}
             </span>
           </div>
           {/* Tighter on phones so the four header buttons fit a 390 px screen. */}
-          <div className="flex items-center gap-1 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-3">
             <NotificationBell />
             <ThemeToggle />
             <LocaleSwitcher label={tCommon('language')} />

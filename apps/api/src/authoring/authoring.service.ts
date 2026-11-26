@@ -7,6 +7,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  ExamSettingsSchema,
   submissionProblems,
   TRASH_RETENTION_DAYS,
   type InstructorCourse,
@@ -145,6 +146,17 @@ function toInstructorCourse(course: AuthoringCourse, myRole: CourseRole): Instru
         points: lesson.points,
         submissionKinds: lesson.submissionKinds.filter((k): k is 'IMAGE' | 'PDF' => k === 'IMAGE' || k === 'PDF'),
         questionCount: lesson._count.questions,
+        exam: lesson.kind === 'QUIZ' && lesson.examMode
+          ? {
+              opensAt: lesson.examOpensAt?.toISOString() ?? null,
+              closesAt: lesson.examClosesAt?.toISOString() ?? null,
+              durationMin: lesson.examDurationMin ?? 60,
+              proctored: lesson.examProctored,
+              aiMonitoring: lesson.examAiMonitoring,
+              autoWarn: lesson.examAutoWarn,
+              maxWarnings: lesson.examMaxWarnings,
+            }
+          : null,
         media: lesson.mediaAsset
           ? {
               status: lesson.mediaAsset.status,
@@ -167,6 +179,23 @@ const cleanList = (items: string[]) =>
  * (published edits go live immediately and are audited); IN_REVIEW is locked
  * until the instructor withdraws it or an admin decides.
  */
+/** Exam columns from a lesson input: only quizzes can be exams; anything else clears them. */
+export function examData(dto: Pick<LessonDto, 'kind' | 'exam'>) {
+  const parsed = dto.kind === 'QUIZ' && dto.exam != null ? ExamSettingsSchema.safeParse(dto.exam) : null;
+  if (parsed && !parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? 'Invalid exam settings');
+  const exam = parsed?.data ?? null;
+  return {
+    examMode: !!exam,
+    examOpensAt: exam?.opensAt ? new Date(exam.opensAt) : null,
+    examClosesAt: exam?.closesAt ? new Date(exam.closesAt) : null,
+    examDurationMin: exam?.durationMin ?? null,
+    examProctored: exam?.proctored ?? false,
+    examAiMonitoring: (exam?.proctored ?? false) && (exam?.aiMonitoring ?? false),
+    examAutoWarn: exam?.autoWarn ?? false,
+    examMaxWarnings: exam?.maxWarnings ?? 0,
+  };
+}
+
 @Injectable()
 export class AuthoringService {
   constructor(
@@ -618,6 +647,7 @@ export class AuthoringService {
       instructions: dto.kind === 'ASSIGNMENT' ? dto.instructions?.trim() || null : null,
       points: dto.kind === 'ASSIGNMENT' ? dto.points : null,
       submissionKinds: dto.kind === 'ASSIGNMENT' ? [...new Set(dto.submissionKinds)] : [],
+      ...examData(dto),
     };
   }
 

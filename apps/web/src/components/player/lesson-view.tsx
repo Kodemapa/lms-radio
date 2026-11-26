@@ -11,6 +11,7 @@ import { Link } from '@/i18n/navigation';
 import { api } from '@/lib/instructor-api';
 import { AssignmentLesson } from './assignment-lesson';
 import { PdfLesson } from './pdf-lesson';
+import { ExamLesson } from './exam-lesson';
 import { QuizLesson } from './quiz-lesson';
 import { LessonResources, ResourcePanelProvider } from './resources';
 import { VideoLesson } from './video-lesson';
@@ -104,6 +105,8 @@ export function LessonView({ lesson }: { lesson: PlayerLessonDetail }) {
     );
   } else if (lesson.kind === 'PDF' && lesson.media) {
     body = <PdfLesson assetId={lesson.media.assetId} title={lesson.title} />;
+  } else if (lesson.kind === 'QUIZ' && lesson.quiz && lesson.exam) {
+    body = <ExamLesson lesson={lesson} quiz={lesson.quiz} exam={lesson.exam} />;
   } else if (lesson.kind === 'QUIZ' && lesson.quiz) {
     body = <QuizLesson lessonId={lesson.id} quiz={lesson.quiz} enrolled={lesson.enrolled} />;
   } else if (lesson.kind === 'IMAGING' && lesson.imaging) {

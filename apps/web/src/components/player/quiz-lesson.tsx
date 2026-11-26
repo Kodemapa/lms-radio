@@ -5,19 +5,64 @@ import { Button, toast } from '@obgyn/ui';
 import { CheckCircle2, RotateCcw, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ConfirmDialog } from '@/components/instructor/confirm-dialog';
 import { api } from '@/lib/instructor-api';
+import { ExamQuestions } from './exam-questions';
 
 type Quiz = NonNullable<PlayerLessonDetail['quiz']>;
 
-export function QuizLesson({ lessonId, quiz, enrolled }: { lessonId: string; quiz: Quiz; enrolled: boolean }) {
+/** Exam mode: answers survive a reload, one submission, and the parent can submit (time up, ended). */
+export interface QuizExamMode {
+  /** Where answers are kept in this browser while the exam runs. */
+  storageKey: string;
+  /** Gives the parent a way to submit (auto-submit at 0:00 or when a proctor ends the exam). */
+  registerSubmit: (submit: () => Promise<void>) => void;
+  onSubmitted: (result: QuizResult) => void;
+  /** Questions are locked, e.g. while the learner is out of full screen. */
+  locked?: boolean;
+  /** How many questions have an answer (shown to proctors). */
+  onProgress?: (answered: number) => void;
+}
+
+function loadAnswers(key: string | undefined): Record<string, string[]> {
+  if (!key) return {};
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function QuizLesson({ lessonId, quiz, enrolled, exam }: { lessonId: string; quiz: Quiz; enrolled: boolean; exam?: QuizExamMode }) {
   const t = useTranslations('Quiz');
+  const tExam = useTranslations('Exam');
   const tCommon = useTranslations('Common');
   const router = useRouter();
-  const [answers, setAnswers] = useState<Record<string, string[]>>({});
-  const [result, setResult] = useState<QuizResult | null>(quiz.lastResult);
+  const [answers, setAnswers] = useState<Record<string, string[]>>(() => (typeof window === 'undefined' ? {} : loadAnswers(exam?.storageKey)));
+  const [result, setResult] = useState<QuizResult | null>(exam ? null : quiz.lastResult);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const answersRef = useRef(answers);
+  answersRef.current = answers;
+  const submitting = useRef(false);
+  // Set to the latest submit below; lets the exam page submit (time up, ended by proctor).
+  const submitRef = useRef<() => Promise<void>>(async () => undefined);
+  useEffect(() => {
+    exam?.registerSubmit(() => submitRef.current());
+  }, [exam]);
+
+  useEffect(() => {
+    if (!exam) return;
+    exam.onProgress?.(Object.values(answers).filter((ids) => ids.length > 0).length);
+    try {
+      window.localStorage.setItem(exam.storageKey, JSON.stringify(answers));
+    } catch {
+      // private mode: answers still live in memory
+    }
+  }, [answers, exam]);
 
   if (quiz.questions.length === 0) return <p className="text-muted-foreground">{t('empty')}</p>;
 
@@ -36,18 +81,61 @@ export function QuizLesson({ lessonId, quiz, enrolled }: { lessonId: string; qui
   const byQuestion = new Map(result?.questions.map((q) => [q.questionId, q]));
 
   const submit = async () => {
+    if (submitting.current) return;
+    submitting.current = true;
     setPending(true);
     setError(false);
     try {
-      setResult(QuizResultSchema.parse(await api('POST', `learn/lessons/${lessonId}/quiz`, { answers })));
-      toast.success(t('toastSubmitted'));
-      router.refresh();
+      const graded = QuizResultSchema.parse(await api('POST', `learn/lessons/${lessonId}/quiz`, { answers: answersRef.current }));
+      if (exam) {
+        try {
+          window.localStorage.removeItem(exam.storageKey);
+          window.localStorage.removeItem(`${exam.storageKey}:nav`);
+        } catch {
+          // ignore
+        }
+        exam.onSubmitted(graded);
+      } else {
+        setResult(graded);
+        toast.success(t('toastSubmitted'));
+        router.refresh();
+      }
     } catch {
       setError(true);
+      submitting.current = false;
     } finally {
       setPending(false);
     }
   };
+  submitRef.current = submit;
+
+  if (exam) {
+    return (
+      <>
+        <ExamQuestions
+          questions={quiz.questions}
+          answers={answers}
+          onToggle={toggle}
+          onClear={(questionId) => setAnswers((current) => ({ ...current, [questionId]: [] }))}
+          navKey={`${exam.storageKey}:nav`}
+          disabled={!enrolled || !!exam.locked || pending}
+          onSubmit={() => setConfirming(true)}
+          submitLabel={pending ? t('submitting') : tExam('submit')}
+          submitDisabled={pending || !!exam.locked || !enrolled}
+          footer={error ? <p role="alert" className="mt-3 text-sm text-destructive">{tCommon('genericError')}</p> : null}
+        />
+        <ConfirmDialog
+          open={confirming}
+          onOpenChange={setConfirming}
+          title={tExam('submitConfirmTitle')}
+          body={unanswered > 0 ? tExam('submitConfirmUnanswered', { count: unanswered }) : tExam('submitConfirmBody')}
+          confirmLabel={tExam('submit')}
+          confirmVariant="default"
+          onConfirm={submit}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -83,7 +171,7 @@ export function QuizLesson({ lessonId, quiz, enrolled }: { lessonId: string; qui
           const name = `q-${question.id}`;
           return (
             <li key={question.id} className="surface p-5">
-              <fieldset disabled={!!result || !enrolled}>
+              <fieldset disabled={!!result || !enrolled || pending}>
                 <legend className="mb-1 font-semibold">
                   {index + 1}. {question.text}
                 </legend>
@@ -138,7 +226,7 @@ export function QuizLesson({ lessonId, quiz, enrolled }: { lessonId: string; qui
         <p className="text-sm text-muted-foreground">{t('previewOnly')}</p>
       ) : !result ? (
         <div className="flex flex-wrap items-center gap-4">
-          <Button size="lg" disabled={pending} onClick={submit}>
+          <Button size="lg" disabled={pending} onClick={() => void submit()}>
             {pending ? t('submitting') : t('submit')}
           </Button>
           {unanswered > 0 ? <span className="text-sm text-muted-foreground">{t('unanswered', { count: unanswered })}</span> : null}

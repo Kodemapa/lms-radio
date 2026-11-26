@@ -1,4 +1,4 @@
-import { MAX_SIGNED_URL_TTL_SECONDS } from '@obgyn/types';
+import { IceServerSchema, MAX_SIGNED_URL_TTL_SECONDS } from '@obgyn/types';
 import { z } from 'zod';
 
 const bool = z.enum(['true', 'false']).transform((value) => value === 'true');
@@ -32,6 +32,22 @@ export const EnvSchema = z
     TWOFACTOR_API_KEY: z.string().trim().min(1).optional().or(z.literal('').transform(() => undefined)),
     TWOFACTOR_OTP_TEMPLATE: z.string().trim().min(1).max(100).default('OTP1'),
     /** Active devices per learner/instructor account; 0 = no limit (the default). Admins are never limited. */
+    /**
+     * STUN/TURN servers for live exam proctoring, as a JSON array of RTCIceServer.
+     * STUN alone connects most networks; add a TURN server (e.g. self-hosted coturn)
+     * for strict college/office firewalls.
+     */
+    PROCTOR_ICE_SERVERS: z
+      .string()
+      .default('[{"urls":"stun:stun.l.google.com:19302"}]')
+      .transform((value, ctx) => {
+        try {
+          return z.array(IceServerSchema).min(1).parse(JSON.parse(value));
+        } catch {
+          ctx.addIssue({ code: 'custom', message: 'must be a JSON array of {"urls": ...} ICE servers' });
+          return z.NEVER;
+        }
+      }),
     MAX_DEVICES_PER_USER: z.coerce.number().int().min(0).max(100).default(0),
 
     /**

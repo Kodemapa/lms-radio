@@ -1,23 +1,35 @@
-import { MyCourseSchema } from '@obgyn/types';
+import { MyCourseSchema, MyExamsSchema, type MyExams } from '@obgyn/types';
 import { Progress } from '@obgyn/ui';
 import { Award, BarChart3, CheckCircle2 } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { z } from 'zod';
 import { CourseThumbnail } from '@/components/course/course-thumbnail';
+import { ExamsDashboard } from '@/components/learning/exams-dashboard';
 import { Link } from '@/i18n/navigation';
+import { getMe } from '@/lib/catalog';
 import { apiGet } from '@/lib/server-api';
 
 export default async function MyLearningPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const [t, tPlayer, courses] = await Promise.all([
+  const [t, tPlayer, courses, exams, me] = await Promise.all([
     getTranslations('Account'),
     getTranslations('Player'),
     apiGet('/users/me/learning', z.array(MyCourseSchema), { auth: true }),
+    // The exams panel is extra: if it can't load, the page still shows the courses.
+    apiGet('/learn/exams', MyExamsSchema, { auth: true }).catch((): MyExams | null => null),
+    getMe(),
   ]);
+  // "Dr Meera Iyer" → "Meera".
+  const firstName = (me?.displayName ?? '').split(/\s+/).find((part) => part && !/^dr\.?$/i.test(part)) ?? '';
 
   return (
     <div className="flex flex-col gap-6">
+      {exams && exams.exams.length > 0 ? (
+        <div className="mb-6">
+          <ExamsDashboard data={exams} firstName={firstName} />
+        </div>
+      ) : null}
       <h1 className="text-2xl font-bold md:text-3xl">{t('learningTitle')}</h1>
       {courses.length === 0 ? (
         <div className="flex flex-col items-center gap-4 soft-wash rounded-3xl p-10 text-center">

@@ -62,3 +62,23 @@ If the build or health check fails, inspect the GitHub Actions log and server PM
 ```bash
 pm2 logs gifs-web --lines 100
 ```
+
+## Proctored exams (live camera)
+
+Learners' cameras stream straight to the proctor's browser (WebRTC); nothing passes through or is stored on the server.
+
+- `PROCTOR_ICE_SERVERS` in `apps/api/.env` (JSON array). The default public STUN server connects most home and mobile networks.
+- For colleges or offices with strict firewalls, run a TURN relay (open-source **coturn**, free) on the server and add it, e.g.
+  `PROCTOR_ICE_SERVERS=[{"urls":"stun:stun.l.google.com:19302"},{"urls":"turn:gifs.kodemapa.in:3478","username":"proctor","credential":"<secret>"}]`
+  and open UDP/TCP 3478 (plus coturn's relay port range) in the firewall.
+- The site must be served over HTTPS (browsers only allow the camera on secure pages).
+- Run `pnpm --filter @obgyn/api db:deploy` to create the exam tables.
+
+### AI checks, warning limits and integrity review
+
+- **AI checks** (per exam: "AI checks") run in the learner's browser with Google MediaPipe (Apache-2.0, free): face count, head turned away, phone/book in view, voices (microphone level, analysed locally) and a second screen. Ideas adapted from the open-source `@timadey/proctor` engine (MIT).
+- Nothing is downloaded from a CDN during an exam: the runtime comes from the installed `@mediapipe/tasks-vision` package via `/api/proctor-ai/*` (so `pnpm install` must have run on the server), and the two models are in `apps/web/public/proctor-ai/` (≈ 8 MB, committed).
+- When an AI alert fires, a small JPEG (320 px, under 64 KB) from the camera is stored as evidence at `proctor/<sessionId>/<eventId>.jpg` in the normal storage (S3/MinIO or local). Only proctors of that exam can see it, through the API. No video or audio is ever stored.
+- "Automatic warnings" turn serious alerts (tab switch, no face, another person, phone/book, second screen) into warnings, at most one a minute per kind. "Warnings that end the exam" ends and submits the sitting at the limit.
+- After the exam, proctors review each sitting (Cleared / Flagged + note) from the Finished table; learners see the integrity score, warnings and the review on their exam page.
+- Run `pnpm --filter @obgyn/api db:deploy` after updating (migration `20261124140000_proctoring_ai_review`).

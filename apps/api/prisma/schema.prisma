@@ -131,6 +131,8 @@ model User {
   blockedUsers          User[]                  @relation("UserBlocks")
   handledContacts       ContactMessage[]        @relation("ContactHandledBy")
 
+  examSessions ExamSession[]
+
   @@index([role, deletedAt, blockedAt])
 }
 
@@ -308,32 +310,48 @@ model Chapter {
 }
 
 model Lesson {
-  id              String      @id @default(uuid()) @db.Uuid
+  id               String      @id @default(uuid()) @db.Uuid
   /// Denormalised from the chapter so access checks need one lookup.
-  courseId        String      @db.Uuid
-  chapterId       String      @db.Uuid
-  position        Int
-  title           String
-  description     String?
-  kind            LessonKind
+  courseId         String      @db.Uuid
+  chapterId        String      @db.Uuid
+  position         Int
+  title            String
+  description      String?
+  kind             LessonKind
   /// Free preview: any signed-in user may open it without enrolling.
-  isPreview       Boolean     @default(false)
-  durationSec     Int?
-  mediaAssetId    String?     @db.Uuid
+  isPreview        Boolean     @default(false)
+  durationSec      Int?
+  mediaAssetId     String?     @db.Uuid
   /// QUIZ and ASSIGNMENT: learners may skip it and still complete the course.
-  skippable       Boolean     @default(false)
+  skippable        Boolean     @default(false)
   /// QUIZ: minimum score (0–100) to pass.
-  passPercent     Int?
+  passPercent      Int?
   /// ASSIGNMENT: what the learner must do.
-  instructions    String?
+  instructions     String?
   /// ASSIGNMENT: points awarded on approval.
-  points          Int?
+  points           Int?
   /// ASSIGNMENT: file kinds learners may attach (IMAGE, PDF).
-  submissionKinds MediaKind[] @default([])
+  submissionKinds  MediaKind[] @default([])
   /// Links for learners, e.g. online calculators: [{ id, title, url, note, embed }] (ResourceLinkSchema).
-  resources       Json        @default("[]")
+  resources        Json        @default("[]")
+  /// QUIZ: a timed exam (one attempt, questions hidden until it starts). See ExamSession.
+  examMode         Boolean     @default(false)
+  /// Exam: when learners may start it (null = any time).
+  examOpensAt      DateTime?
+  /// Exam: after this no new attempts start; running ones still end at their own deadline.
+  examClosesAt     DateTime?
+  /// Exam: time allowed once started, in minutes.
+  examDurationMin  Int?
+  /// Exam: live camera proctoring (the learner's camera streams to proctors; not recorded).
+  examProctored    Boolean     @default(false)
+  /// Exam (proctored): face / phone / voice / second-screen checks run in the learner's browser.
+  examAiMonitoring Boolean     @default(false)
+  /// Exam: serious alerts (tab switch, another person, phone, …) count as warnings automatically.
+  examAutoWarn     Boolean     @default(false)
+  /// Exam: reaching this many warnings ends the exam (answers so far submitted). 0 = no limit.
+  examMaxWarnings  Int         @default(0)
   /// Soft delete (curriculum trash). Learner progress and attempts are kept.
-  deletedAt       DateTime?
+  deletedAt        DateTime?
 
   course          Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
   chapter         Chapter                @relation(fields: [chapterId], references: [id], onDelete: Cascade)
@@ -345,9 +363,116 @@ model Lesson {
   imagingCase     ImagingCase?
   imagingImages   ImagingImage[]
   imagingAttempts ImagingAttempt[]
+  examSessions    ExamSession[]
 
   @@index([chapterId, position])
   @@index([courseId])
+}
+
+enum ExamSessionStatus {
+  IN_PROGRESS
+  SUBMITTED
+  /// Ended by a proctor; the answers given so far are submitted.
+  TERMINATED
+  /// The time ran out without a submission.
+  EXPIRED
+}
+
+enum ExamReviewStatus {
+  PENDING
+  /// The proctor looked at the alerts and found no misconduct.
+  CLEARED
+  /// The proctor found misconduct; the note says what.
+  FLAGGED
+}
+
+/// One learner's single sitting of an exam lesson (one per learner per exam).
+model ExamSession {
+  id               String            @id @default(uuid()) @db.Uuid
+  lessonId         String            @db.Uuid
+  userId           String            @db.Uuid
+  status           ExamSessionStatus @default(IN_PROGRESS)
+  startedAt        DateTime          @default(now())
+  /// Fixed when the exam starts: start + duration (capped by nothing; reloading doesn't extend it).
+  endsAt           DateTime
+  submittedAt      DateTime?
+  /// Why a proctor ended it.
+  terminatedReason String?
+  /// Live status from the learner's browser (heartbeat).
+  lastSeenAt       DateTime?
+  cameraOn         Boolean           @default(false)
+  fullscreen       Boolean           @default(false)
+  tabVisible       Boolean           @default(true)
+  /// Changes each time the exam page is (re)opened, so proctors reconnect the video.
+  streamEpoch      String?
+  quizAttemptId    String?           @db.Uuid
+  /// Questions answered so far (reported by the exam page, for proctors).
+  answeredCount    Int               @default(0)
+  /// Integrity review by a proctor after (or during) the exam.
+  reviewStatus     ExamReviewStatus  @default(PENDING)
+  reviewNote       String?
+  reviewedById     String?           @db.Uuid
+  reviewedAt       DateTime?
+
+  lesson Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events ProctorEvent[]
+
+  @@unique([userId, lessonId])
+  @@index([lessonId, status])
+}
+
+enum ProctorEventKind {
+  STARTED
+  RESUMED
+  CAMERA_ON
+  CAMERA_OFF
+  TAB_HIDDEN
+  TAB_VISIBLE
+  WINDOW_BLUR
+  FULLSCREEN_EXIT
+  FULLSCREEN_ENTER
+  COPY_PASTE
+  CONNECTION_LOST
+  WARNING
+  /// The learner read a warning ({ warningId }) and continued.
+  WARNING_ACKNOWLEDGED
+  /// The learner disputes a warning ({ warningId, note }).
+  WARNING_DISPUTED
+  /// A non-blocking message from a proctor ({ message }).
+  NOTICE
+  /// Browser AI checks (the image stays on the learner's device; a small snapshot may be kept as evidence).
+  NO_FACE
+  MULTIPLE_FACES
+  LOOKING_AWAY
+  /// { object: "cell phone" | "book" }
+  PROHIBITED_OBJECT
+  VOICE_DETECTED
+  SECOND_SCREEN
+  /// A proctor reviewed the sitting ({ status, note }).
+  REVIEWED
+  TERMINATED
+  SUBMITTED
+  EXPIRED
+}
+
+/// What happened during an exam: learner-side alerts and proctor actions. The video
+/// itself is never stored.
+model ProctorEvent {
+  id          String           @id @default(uuid()) @db.Uuid
+  sessionId   String           @db.Uuid
+  kind        ProctorEventKind
+  /// e.g. { message } for WARNING, { reason } for TERMINATED.
+  data        Json             @default("{}")
+  /// Staff member for WARNING / TERMINATED.
+  actorId     String?          @db.Uuid
+  /// Evidence image for AI alerts (storage key; served to proctors only).
+  snapshotKey String?
+  createdAt   DateTime         @default(now())
+
+  session ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
 }
 
 /// Uploaded files. `storageKey` is never sent to clients. Videos, PDFs and

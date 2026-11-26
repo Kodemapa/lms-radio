@@ -182,6 +182,10 @@ export class LessonDto {
   @ArrayMaxSize(2)
   @IsIn(['IMAGE', 'PDF'], { each: true })
   submissionKinds: ('IMAGE' | 'PDF')[];
+
+  /** QUIZ: timed / proctored exam settings (ExamSettingsSchema, checked in the service); null = practice quiz. */
+  @IsOptional()
+  exam?: unknown;
 }
 
 export class QuestionOptionDto {

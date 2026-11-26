@@ -1,3 +1,4 @@
+import { type ExamsService } from '../exams/exams.service';
 import { type ImagingService } from '../imaging/imaging.service';
 import { ConflictException } from '@nestjs/common';
 import { type AuditService } from '../audit/audit.service';
@@ -33,6 +34,7 @@ function setup(passed: string[], previous: { positionSec: number; furthestSec: n
     access as unknown as AccessService,
     { log: jest.fn() } as unknown as AuditService,
     {} as unknown as ImagingService,
+    {} as unknown as ExamsService,
   );
   return { service, prisma };
 }

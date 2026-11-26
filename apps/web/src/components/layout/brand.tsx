@@ -1,7 +1,16 @@
 import { Link } from '@/i18n/navigation';
 
 /** Logo mark + name. Replace the mark with the final brand asset when ready. */
-export function Brand({ name, inverted = false }: { name: string; inverted?: boolean }) {
+export function Brand({
+  name,
+  inverted = false,
+  compactOnPhone = false,
+}: {
+  name: string;
+  inverted?: boolean;
+  /** Logo mark only on small phones (the header needs the room for its buttons). */
+  compactOnPhone?: boolean;
+}) {
   return (
     <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label={name}>
       <svg viewBox="0 0 40 40" aria-hidden className="size-10 shrink-0 md:size-11">
@@ -11,7 +20,7 @@ export function Brand({ name, inverted = false }: { name: string; inverted?: boo
           fill="white"
         />
       </svg>
-      <span className={`text-lg font-bold leading-tight md:text-xl ${inverted ? 'text-white' : ''}`}>
+      <span className={`text-lg font-bold leading-tight md:text-xl ${inverted ? 'text-white' : ''} ${compactOnPhone ? 'hidden sm:inline' : ''}`}>
         {name}
       </span>
     </Link>
