@@ -4,7 +4,6 @@ import { type ReactNode } from 'react';
 import { SidebarNav } from '@/components/instructor/sidebar-nav';
 import { Brand } from '@/components/layout/brand';
 import { UserMenu } from '@/components/layout/user-menu';
-import { LocaleSwitcher } from '@/components/locale-switcher';
 import { NotificationBell } from '@/components/layout/notification-bell';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Link } from '@/i18n/navigation';
@@ -43,7 +42,7 @@ export default async function InstructorLayout({
       <header className="site-header">
         <div className="flex h-[68px] items-center justify-between gap-4 px-4 lg:px-6">
           <div className="flex min-w-0 items-center gap-4">
-            <Brand name={tCommon('appName')} compactOnPhone />
+            <Brand name={tCommon('appName')} />
             <span className="hidden rounded-full bg-accent-light px-3 py-1 text-xs font-semibold text-accent-deep sm:inline">
               {tCommon('instructorDashboard')}
             </span>
@@ -51,7 +50,6 @@ export default async function InstructorLayout({
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
             <NotificationBell />
             <ThemeToggle />
-            <LocaleSwitcher label={tCommon('language')} />
             <UserMenu
               user={me}
               labels={{

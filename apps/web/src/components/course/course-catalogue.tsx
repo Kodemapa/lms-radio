@@ -17,7 +17,6 @@ export type CatalogueQuery = {
 };
 
 const PAGE_SIZE = 12;
-const LANGUAGES = ['en', 'hi'] as const;
 
 function flatten(categories: CategoryNode[], depth = 0): { node: CategoryNode; depth: number }[] {
   return categories.flatMap((node) => [{ node, depth }, ...flatten(node.children, depth + 1)]);
@@ -51,16 +50,18 @@ export async function CourseCatalogue({
   const [t, tCommon, result, wishlist] = await Promise.all([
     getTranslations('Courses'),
     getTranslations('Common'),
-    getCourses({ ...query, category, page, pageSize: PAGE_SIZE }, trace),
+    // No language filter any more (English only): an old ?language= link is ignored.
+    getCourses({ ...query, language: undefined, category, page, pageSize: PAGE_SIZE }, trace),
     getWishlistIds(),
   ]);
   const pages = result ? Math.max(1, Math.ceil(result.total / PAGE_SIZE)) : 1;
-  const hasFilters = !!((fixedCategory ? null : query.category) || query.level || query.price || query.language || query.q);
+  const hasFilters = !!((fixedCategory ? null : query.category) || query.level || query.price || query.q);
 
   const pageHref = (target: number) => {
     const next = new URLSearchParams(
       Object.entries(query).filter(
-        (entry): entry is [string, string] => !!entry[1] && !(fixedCategory && entry[0] === 'category'),
+        (entry): entry is [string, string] =>
+          !!entry[1] && entry[0] !== 'language' && !(fixedCategory && entry[0] === 'category'),
       ),
     );
     next.set('page', String(target));
@@ -75,7 +76,6 @@ export async function CourseCatalogue({
         query={query.q}
         searchLabel={tCommon('searchLabel')}
         placeholder={tCommon('searchPlaceholder')}
-        submitLabel={tCommon('search')}
         filters={[
           ...(fixedCategory
             ? []
@@ -104,12 +104,6 @@ export async function CourseCatalogue({
               { value: 'free', label: t('free') },
               { value: 'paid', label: t('paid') },
             ],
-          },
-          {
-            name: 'language',
-            label: t('language'),
-            value: query.language ?? '',
-            options: LANGUAGES.map((code) => ({ value: code, label: tCommon(`languages.${code}`) })),
           },
         ]}
         sort={{

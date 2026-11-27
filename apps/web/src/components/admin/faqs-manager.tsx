@@ -1,7 +1,7 @@
 'use client';
 
-import { ContentLocale, FaqInputSchema, type Faq, type FaqInput } from '@obgyn/types';
-import { Button, Input, Select, Textarea, toast } from '@obgyn/ui';
+import { FaqInputSchema, type Faq, type FaqInput } from '@obgyn/types';
+import { Button, Input, Textarea, toast } from '@obgyn/ui';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
@@ -21,7 +21,8 @@ export function FaqsManager({ initial }: { initial: Faq[] }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const refresh = async () => setFaqs(await api<Faq[]>('GET', 'admin/content/faqs'));
+  // English only (older Hindi FAQs stay in the database, unused).
+  const refresh = async () => setFaqs((await api<Faq[]>('GET', 'admin/content/faqs')).filter((faq) => faq.locale === 'en'));
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
@@ -72,7 +73,8 @@ export function FaqsManager({ initial }: { initial: Faq[] }) {
               </div>
               <Button size="sm" variant="ghost" aria-label={t('edit', { question: faq.question })} onClick={() => {
                 setError(null);
-                setForm({ id: faq.id, locale: faq.locale, question: faq.question, answer: faq.answer, position: faq.position, published: faq.published });
+                // English FAQs only (see refresh above).
+                setForm({ id: faq.id, locale: 'en', question: faq.question, answer: faq.answer, position: faq.position, published: faq.published });
               }}>
                 <Pencil aria-hidden className="size-4" />
               </Button>
@@ -89,13 +91,6 @@ export function FaqsManager({ initial }: { initial: Faq[] }) {
         <form onSubmit={save} noValidate className="surface flex flex-col gap-4 p-5">
           <h2 className="text-lg font-semibold">{form.id ? t('editTitle') : t('addTitle')}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <RequiredLabel htmlFor="faq-locale">{t('language')}</RequiredLabel>
-              <Select id="faq-locale" required value={form.locale} onChange={(event) => setForm({ ...form, locale: event.target.value as ContentLocale })}>
-                <option value="en">{t('english')}</option>
-                <option value="hi">{t('hindi')}</option>
-              </Select>
-            </div>
             <div className="flex flex-col gap-1.5">
               <RequiredLabel htmlFor="faq-position">{t('position')}</RequiredLabel>
               <Input id="faq-position" type="number" min={0} max={10000} required value={form.position} onChange={(event) => setForm({ ...form, position: Number(event.target.value) })} />

@@ -20,7 +20,7 @@ body:has(.clinical-home),
   --lp-radius: 28px;
   --lp-shadow: 0 1px 2px #2b20360a, 0 18px 40px -12px #2b203624;
   --lp-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  --lp-display: var(--font-display), var(--font-geist), var(--font-devanagari), system-ui, sans-serif;
+  --lp-display: var(--font-display), var(--font-geist), system-ui, sans-serif;
   /* Text-coloured twins of the brand colours (they flip in dark mode). */
   --lp-ink: var(--lp-plum);
   --lp-violet-ink: var(--lp-violet);
@@ -280,17 +280,23 @@ body:has(.clinical-home),
 }
 .lp-hero h1 {
   margin-top: 24px;
+  max-width: 20ch;
   font-family: var(--lp-display);
-  font-size: clamp(40px, 5.6vw, 92px);
-  line-height: 0.98;
+  font-size: clamp(1.375rem, 3.35vw, 3rem);
+  line-height: 1.04;
   letter-spacing: -0.04em;
   font-weight: 700;
   color: var(--lp-ink);
   text-wrap: balance;
 }
+.lp-heading-line {
+  display: block;
+  text-wrap: balance;
+}
 .lp-highlight {
   position: relative;
-  display: inline;
+  width: fit-content;
+  max-width: 100%;
   background: linear-gradient(100deg, var(--lp-violet) 10%, #b26bb0 55%, var(--lp-orange) 95%);
   -webkit-background-clip: text;
   background-clip: text;

@@ -5,7 +5,6 @@ import { AdminMobileNav } from '@/components/admin/admin-mobile-nav';
 import { SidebarNav } from '@/components/instructor/sidebar-nav';
 import { Brand } from '@/components/layout/brand';
 import { UserMenu } from '@/components/layout/user-menu';
-import { LocaleSwitcher } from '@/components/locale-switcher';
 import { NotificationBell } from '@/components/layout/notification-bell';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Link } from '@/i18n/navigation';
@@ -54,7 +53,7 @@ export default async function AdminLayout({
               items={items}
               labels={{ menu: tCommon('menu'), close: tCommon('close'), title: t('sectionTitle'), backToSite: t('backToSite') }}
             />
-            <Brand name={tCommon('appName')} compactOnPhone />
+            <Brand name={tCommon('appName')} />
             <span className="hidden rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-primary sm:inline">
               {t('sectionTitle')}
             </span>
@@ -63,7 +62,6 @@ export default async function AdminLayout({
           <div className="flex shrink-0 items-center gap-1 sm:gap-3">
             <NotificationBell />
             <ThemeToggle />
-            <LocaleSwitcher label={tCommon('language')} />
             <UserMenu
               user={me}
               labels={{

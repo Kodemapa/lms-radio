@@ -188,9 +188,9 @@ describe('MessageOverridesService', () => {
   it('upserts an override and audits the previous value', async () => {
     const { messages, prisma, audit } = setup();
     prisma.messageOverride.findUnique.mockResolvedValue({ value: 'Before' });
-    await messages.save(ADMIN, { locale: 'hi', key: 'Footer.about', value: 'After' });
+    await messages.save(ADMIN, { locale: 'en', key: 'Footer.about', value: 'After' });
     expect(prisma.messageOverride.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { locale_key: { locale: 'hi', key: 'Footer.about' } } }),
+      expect.objectContaining({ where: { locale_key: { locale: 'en', key: 'Footer.about' } } }),
     );
     expect(audit.log).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'admin.message_updated', metadata: { previous: 'Before', value: 'After' } }),
@@ -207,6 +207,8 @@ describe('MessageOverridesService', () => {
   it('rejects invalid keys and PC-PNDT text', async () => {
     const { messages, prisma } = setup();
     await expect(messages.save(ADMIN, { locale: 'en', key: 'bad key', value: 'x' })).rejects.toBeInstanceOf(BadRequestException);
+    // English only: Hindi was removed from the site.
+    await expect(messages.save(ADMIN, { locale: 'hi', key: 'Footer.about', value: 'x' })).rejects.toBeInstanceOf(BadRequestException);
     await expect(messages.save(ADMIN, { locale: 'en', key: 'Home.title', value: SEX_TEXT })).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.messageOverride.upsert).not.toHaveBeenCalled();
   });

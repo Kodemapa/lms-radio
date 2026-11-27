@@ -1,22 +1,19 @@
-import { Search } from 'lucide-react';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getMe } from '@/lib/catalog';
-import { LocaleSwitcher } from '../locale-switcher';
 import { ThemeToggle } from '../theme/theme-toggle';
 import { NotificationBell } from './notification-bell';
 import { Brand } from './brand';
 import { MobileNav } from './mobile-nav';
 import { NavLink } from './nav-link';
-import { SearchForm } from './search-form';
 import { UserMenu } from './user-menu';
 
 /**
- * One sticky, translucent row on every page: brand, pill nav, compact search, account.
- * Categories live in the catalogue's filters; on phones, search moves into the menu drawer.
+ * One sticky, translucent row on every page: brand, pill nav, account.
+ * Search lives on the courses page, with the catalogue's filters.
  */
 export async function SiteHeader() {
-  const [t, locale, me] = await Promise.all([getTranslations('Common'), getLocale(), getMe()]);
+  const [t, me] = await Promise.all([getTranslations('Common'), getMe()]);
 
   const links = [
     { href: '/', label: t('home') },
@@ -26,13 +23,6 @@ export async function SiteHeader() {
     ...(me && me.role !== 'LEARNER' ? [] : [{ href: '/become-instructor', label: t('becomeInstructor') }]),
   ];
 
-  const searchProps = {
-    locale,
-    label: t('searchLabel'),
-    placeholder: t('searchPlaceholder'),
-    submitLabel: t('search'),
-  };
-
   return (
     <header className="site-header">
       <div className="container flex h-[72px] items-center justify-between gap-4">
@@ -41,15 +31,9 @@ export async function SiteHeader() {
             links={links}
             signedIn={!!me}
             labels={{ menu: t('menu'), close: t('close'), signIn: t('signIn'), register: t('register') }}
-            search={<SearchForm {...searchProps} className="my-2" />}
-            settings={
-              <>
-                <ThemeToggle />
-                <LocaleSwitcher label={t('language')} />
-              </>
-            }
+            settings={<ThemeToggle />}
           />
-          <Brand name={t('appName')} compactOnPhone />
+          <Brand name={t('appName')} />
           <nav aria-label={t('mainNav')} className="hidden items-center gap-1 xl:flex">
             {links.map((link) => (
               <NavLink key={link.href} href={link.href}>
@@ -60,25 +44,11 @@ export async function SiteHeader() {
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 md:gap-3">
-          {/* Full search where there's room; an icon to the catalogue when the nav needs the space. */}
-          <SearchForm
-            {...searchProps}
-            size="compact"
-            className="hidden w-[260px] lg:flex xl:hidden 2xl:flex"
-          />
-          <Link
-            href="/courses"
-            aria-label={t('searchLabel')}
-            className="hidden size-10 items-center justify-center rounded-full border border-border bg-card transition-colors hover:border-primary/40 hover:text-primary xl:flex 2xl:hidden"
-          >
-            <Search aria-hidden className="size-4" />
-          </Link>
           {me ? <NotificationBell /> : null}
           {/* Everyone can pick light, dark or device; the choice is remembered in this browser. */}
-          {/* On phones these two are in the menu drawer: the bar has no room for them. */}
-          <div className="hidden items-center gap-2 sm:flex md:gap-3">
+          {/* On phones it is in the menu drawer: the bar has no room for it. */}
+          <div className="hidden items-center sm:flex">
             <ThemeToggle />
-            <LocaleSwitcher label={t('language')} />
           </div>
           {me ? (
             <UserMenu

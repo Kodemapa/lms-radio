@@ -15,6 +15,9 @@ import { CourseThumbnail } from '../../course/course-thumbnail';
 import { FileUpload } from './file-upload';
 import { ListEditor, TagInput } from './list-editor';
 
+/** Course languages an instructor can choose (Hindi removed; English is the site language). */
+const OFFERED_LANGUAGES: readonly string[] = COURSE_LANGUAGES.filter((code) => code !== 'hi');
+
 function flatten(nodes: CategoryNode[], depth = 0): { id: string; label: string }[] {
   return nodes.flatMap((node) => [
     { id: node.id, label: `${'  '.repeat(depth * 2)}${node.name}` },
@@ -124,7 +127,12 @@ export function DetailsTab({
             <div className="flex flex-col gap-2">
               <Label htmlFor="language" required>{t('language')}</Label>
               <Select id="language" aria-required="true" value={form.language} onChange={(e) => set('language', e.target.value)}>
-                {COURSE_LANGUAGES.map((code) => (
+                {/* Hindi is no longer offered. A course still stored as Hindi keeps that value
+                    (nothing is converted behind the instructor's back) until they pick a language. */}
+                {OFFERED_LANGUAGES.includes(form.language) ? null : (
+                  <option value={form.language} disabled hidden>{t('chooseLanguage')}</option>
+                )}
+                {OFFERED_LANGUAGES.map((code) => (
                   <option key={code} value={code}>{tCommon(`languages.${code}`)}</option>
                 ))}
               </Select>

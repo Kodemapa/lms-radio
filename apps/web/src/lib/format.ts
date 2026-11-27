@@ -21,8 +21,8 @@ export function priceLabels(price: Price, locale: string): { current: string; or
   if (price.isFree) return null;
   const current = effectivePricePaise(price);
   return {
-    current: formatInr(current, locale === 'hi' ? 'hi-IN' : 'en-IN'),
+    current: formatInr(current, `${locale}-IN`),
     original:
-      current < price.pricePaise ? formatInr(price.pricePaise, locale === 'hi' ? 'hi-IN' : 'en-IN') : null,
+      current < price.pricePaise ? formatInr(price.pricePaise, `${locale}-IN`) : null,
   };
 }

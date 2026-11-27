@@ -9,15 +9,12 @@ export function MobileNav({
   links,
   labels,
   signedIn,
-  search,
   settings,
 }: {
   links: { href: string; label: string }[];
   labels: { menu: string; close: string; signIn: string; register: string };
   signedIn: boolean;
-  /** Search form shown at the top of the drawer (the header has no room for it on phones). */
-  search?: ReactNode;
-  /** Theme and language controls (in the drawer on phones, where the header has no room). */
+  /** Theme control (in the drawer on phones, where the header has no room). */
   settings?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -28,7 +25,6 @@ export function MobileNav({
       </DialogTrigger>
       <SheetContent closeLabel={labels.close} aria-describedby={undefined}>
         <DialogTitle className="text-lg font-semibold">{labels.menu}</DialogTitle>
-        {search}
         {settings ? <div className="flex items-center gap-2 sm:hidden">{settings}</div> : null}
         <nav className="flex flex-col">
           {links.map((link) => (

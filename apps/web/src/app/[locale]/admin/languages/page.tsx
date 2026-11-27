@@ -1,5 +1,5 @@
-import { ADMIN_DEFAULT_PAGE_SIZE, ContentLocaleSchema, flattenMessages, MessageOverrideSchema, messageArguments } from '@obgyn/types';
-import { Button, Input, Label, Select } from '@obgyn/ui';
+import { ADMIN_DEFAULT_PAGE_SIZE, flattenMessages, MessageOverrideSchema, messageArguments } from '@obgyn/types';
+import { Button, Input, Label } from '@obgyn/ui';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { z } from 'zod';
 import { ListPager } from '@/components/admin/list-pager';
@@ -10,9 +10,9 @@ import { requireAdmin } from '@/lib/admin-server';
 import { rememberedPageSize } from '@/lib/admin-page-size';
 import { apiGet } from '@/lib/server-api';
 import en from '../../../../../messages/en.json';
-import hi from '../../../../../messages/hi.json';
 
-const SHIPPED = { en: flattenMessages(en), hi: flattenMessages(hi) };
+/** The site is English only, so this edits the English text. */
+const SHIPPED = { en: flattenMessages(en) };
 
 export default async function AdminLanguagesPage({
   params,
@@ -25,7 +25,7 @@ export default async function AdminLanguagesPage({
   setRequestLocale(locale);
   await requireAdmin(locale, '/admin/languages');
   const raw = await searchParams;
-  const language = ContentLocaleSchema.catch('hi').parse(raw.lang);
+  const language = 'en' as const;
   const q = typeof raw.q === 'string' ? raw.q.trim().slice(0, 100) : '';
   const editedOnly = raw.edited === '1';
 
@@ -46,10 +46,9 @@ export default async function AdminLanguagesPage({
   const pageSize = await rememberedPageSize(raw.pageSize, ADMIN_DEFAULT_PAGE_SIZE);
   const page = pageWindow(matches.length, readPage(raw.page), pageSize);
   const rows = matches.slice(page.offset, page.offset + pageSize);
-  const keep: Record<string, string> = { lang: language };
+  const keep: Record<string, string> = {};
   if (q) keep.q = q;
   if (editedOnly) keep.edited = '1';
-  const missing = Object.keys(SHIPPED.en).filter((key) => shipped[key] === undefined).length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -58,15 +57,8 @@ export default async function AdminLanguagesPage({
         <p className="text-muted-foreground">{t('intro')}</p>
       </div>
 
-      <form method="get" className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-[10rem_1fr_auto_auto] sm:items-end">
+      <form method="get" className="grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-[1fr_auto_auto] sm:items-end">
         <input type="hidden" name="pageSize" value={pageSize} />
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="lang">{t('language')}</Label>
-          <Select id="lang" name="lang" defaultValue={language}>
-            <option value="en">{t('english')}</option>
-            <option value="hi">{t('hindi')}</option>
-          </Select>
-        </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="q">{t('search')}</Label>
           <Input id="q" name="q" type="search" defaultValue={q} placeholder={t('searchPlaceholder')} />
@@ -83,7 +75,6 @@ export default async function AdminLanguagesPage({
 
       <p className="text-sm text-muted-foreground" role="status">
         {t('summary', { shown: rows.length, total: matches.length, edited: edited.size })}
-        {missing ? ` ${t('missing', { count: missing })}` : ''}
       </p>
       <p className="text-sm text-muted-foreground">{t('rules')}</p>
 

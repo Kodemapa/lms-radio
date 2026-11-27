@@ -70,6 +70,13 @@ export const AdminUserDetailSchema = z.object({
     /** Lessons completed of the course's live lessons. */
     progress: z.object({ completed: z.number().int(), total: z.number().int() }).default({ completed: 0, total: 0 }),
     certificateSerial: z.string().nullable().default(null),
+    /** The course's instructor (the learner is "under" them for this course). */
+    instructorId: z.string().uuid().nullable().default(null),
+    instructorName: z.string().nullable().default(null),
+    /** Last time the learner opened or progressed a lesson of this course. */
+    lastActivityAt: z.string().datetime().nullable().default(null),
+    /** Seconds of video actually watched in this course. */
+    watchedSec: z.number().int().nonnegative().default(0),
   })),
   /**
    * Everything the person did as a learner. Kept whatever their role is now, so
@@ -105,8 +112,71 @@ export const AdminUserDetailSchema = z.object({
         reported: z.boolean(),
         hidden: z.boolean(),
       })),
+      /** Proctored exam sittings (one per exam lesson). */
+      exams: z
+        .array(z.object({
+          courseTitle: z.string(),
+          lessonTitle: z.string(),
+          status: z.enum(['IN_PROGRESS', 'SUBMITTED', 'TERMINATED', 'EXPIRED']),
+          scorePercent: z.number().int().nullable(),
+          passed: z.boolean().nullable(),
+          reviewStatus: z.enum(['PENDING', 'CLEARED', 'FLAGGED']),
+          startedAt: z.string().datetime(),
+          submittedAt: z.string().datetime().nullable(),
+        }))
+        .default([]),
+      /** Image (DICOM) case attempts. */
+      imagingAttempts: z
+        .array(z.object({
+          courseTitle: z.string(),
+          lessonTitle: z.string(),
+          scorePercent: z.number().int(),
+          passed: z.boolean(),
+          createdAt: z.string().datetime(),
+        }))
+        .default([]),
     })
-    .default({ submissions: [], quizAttempts: [], entranceAttempts: [], reviews: [] }),
+    .default({ submissions: [], quizAttempts: [], entranceAttempts: [], reviews: [], exams: [], imagingAttempts: [] }),
+  /**
+   * What the person teaches (as owner or accepted co-instructor). null for learners who
+   * never taught a course.
+   */
+  teaching: z
+    .object({
+      totals: z.object({
+        courses: z.number().int().nonnegative(),
+        published: z.number().int().nonnegative(),
+        /** Distinct learners enrolled across these courses. */
+        students: z.number().int().nonnegative(),
+        reviews: z.number().int().nonnegative(),
+        averageRating: z.number().nullable(),
+        /** Assignments and image-case working waiting for a grader. */
+        pendingGrading: z.number().int().nonnegative(),
+        certificates: z.number().int().nonnegative(),
+      }),
+      courses: z.array(z.object({
+        id: z.string().uuid(),
+        title: z.string(),
+        slug: z.string(),
+        status: z.enum(['DRAFT', 'IN_REVIEW', 'PUBLISHED', 'RETIRED']),
+        role: z.enum(['OWNER', 'EDITOR', 'GRADER']),
+        students: z.number().int().nonnegative(),
+        lessons: z.number().int().nonnegative(),
+        reviews: z.number().int().nonnegative(),
+        averageRating: z.number().nullable(),
+        certificates: z.number().int().nonnegative(),
+      })),
+      /** Most recent enrolments across these courses. */
+      students: z.array(z.object({
+        userId: z.string().uuid(),
+        displayName: z.string(),
+        courseTitle: z.string(),
+        enrolledAt: z.string().datetime(),
+        progress: z.object({ completed: z.number().int(), total: z.number().int() }),
+      })),
+    })
+    .nullable()
+    .default(null),
   /** Role changes and instructor applications, newest first. */
   roleHistory: z
     .array(z.object({

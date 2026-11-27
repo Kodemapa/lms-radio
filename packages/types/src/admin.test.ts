@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   applyMessageOverrides,
   ContactMessageInputSchema,
+  ContentLocaleSchema,
+  FaqInputSchema,
   flattenMessages,
   isSafeOverride,
   messageArguments,
@@ -96,9 +98,16 @@ describe('message overrides', () => {
   });
 
   it('validates override input keys', () => {
-    expect(MessageOverrideInputSchema.safeParse({ locale: 'hi', key: 'Footer.about', value: 'x' }).success).toBe(true);
-    expect(MessageOverrideInputSchema.safeParse({ locale: 'hi', key: '../etc', value: 'x' }).success).toBe(false);
-    expect(MessageOverrideInputSchema.safeParse({ locale: 'hi', key: 'Footer', value: 'x' }).success).toBe(false);
+    expect(MessageOverrideInputSchema.safeParse({ locale: 'en', key: 'Footer.about', value: 'x' }).success).toBe(true);
+    expect(MessageOverrideInputSchema.safeParse({ locale: 'en', key: '../etc', value: 'x' }).success).toBe(false);
+    expect(MessageOverrideInputSchema.safeParse({ locale: 'en', key: 'Footer', value: 'x' }).success).toBe(false);
+  });
+
+  it('accepts new content in English only (Hindi removed), but still reads older Hindi rows', () => {
+    expect(MessageOverrideInputSchema.safeParse({ locale: 'hi', key: 'Footer.about', value: 'x' }).success).toBe(false);
+    expect(FaqInputSchema.safeParse({ locale: 'hi', question: 'Question?', answer: 'Answer' }).success).toBe(false);
+    expect(FaqInputSchema.safeParse({ locale: 'en', question: 'Question?', answer: 'Answer' }).success).toBe(true);
+    expect(ContentLocaleSchema.safeParse('hi').success).toBe(true);
   });
 });
 

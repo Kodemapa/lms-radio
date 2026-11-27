@@ -19,7 +19,8 @@ export default async function AdminContentPage({ params }: { params: Promise<{ l
         <h1 className="text-2xl font-bold md:text-3xl">{t('title')}</h1>
         <p className="text-muted-foreground">{t('intro')}</p>
       </div>
-      <ContentPagesManager initial={pages} />
+      {/* English only: older Hindi page drafts stay in the database but are no longer shown or used. */}
+      <ContentPagesManager initial={pages.filter((page) => page.locale === 'en')} />
     </div>
   );
 }

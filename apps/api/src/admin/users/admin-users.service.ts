@@ -103,13 +103,31 @@ export class AdminUsersService {
 
   async detail(id: string): Promise<AdminUserDetail> {
     const RECENT = 50;
-    const [user, activity, progress, liveLessons, certificates, submissions, quizAttempts, entranceAttempts, reviews, roleChanges, applications] = await Promise.all([
+    const [
+      user,
+      activity,
+      progress,
+      liveLessons,
+      certificates,
+      submissions,
+      quizAttempts,
+      entranceAttempts,
+      reviews,
+      roleChanges,
+      applications,
+      courseActivity,
+      exams,
+      imagingAttempts,
+      teaching,
+    ] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id },
         include: {
           blockedBy: { select: { displayName: true } },
           enrollments: {
-            include: { course: { select: { title: true, slug: true } } },
+            include: {
+              course: { select: { title: true, slug: true, instructor: { select: { id: true, displayName: true } } } },
+            },
             orderBy: { createdAt: 'desc' },
           },
           devices: { orderBy: { createdAt: 'desc' } },
@@ -166,8 +184,45 @@ export class AdminUsersService {
         orderBy: { createdAt: 'desc' },
         select: { status: true, reviewNote: true, createdAt: true, reviewedAt: true },
       }),
+      // Last activity and watch time per course.
+      this.prisma.lessonProgress.groupBy({
+        by: ['courseId'],
+        where: { userId: id },
+        _max: { updatedAt: true },
+        _sum: { watchedSec: true },
+      }),
+      this.prisma.examSession.findMany({
+        where: { userId: id },
+        orderBy: { startedAt: 'desc' },
+        take: RECENT,
+        select: {
+          status: true,
+          reviewStatus: true,
+          startedAt: true,
+          submittedAt: true,
+          quizAttemptId: true,
+          lesson: { select: { title: true, course: { select: { title: true } } } },
+        },
+      }),
+      this.prisma.imagingAttempt.findMany({
+        where: { userId: id },
+        orderBy: { createdAt: 'desc' },
+        take: RECENT,
+        select: { scorePercent: true, passed: true, createdAt: true, lesson: { select: { title: true, course: { select: { title: true } } } } },
+      }),
+      this.teaching(id),
     ]);
     if (!user) throw new NotFoundException();
+    // Exam scores live on the quiz attempt each sitting produced.
+    const examAttemptIds = exams.flatMap((exam) => (exam.quizAttemptId ? [exam.quizAttemptId] : []));
+    const examScores = examAttemptIds.length
+      ? await this.prisma.quizAttempt.findMany({
+          where: { id: { in: examAttemptIds } },
+          select: { id: true, scorePercent: true, passed: true },
+        })
+      : [];
+    const examScoreBy = new Map(examScores.map((row) => [row.id, row]));
+    const activityBy = new Map(courseActivity.map((row) => [row.courseId, row]));
     const doneBy = new Map(progress.map((row) => [row.courseId, row._count._all]));
     const totalBy = new Map(liveLessons.map((row) => [row.courseId, row._count._all]));
     const serialBy = new Map(certificates.map((row) => [row.courseId, row.serial]));
@@ -196,6 +251,10 @@ export class AdminUsersService {
         enrolledAt: enrollment.createdAt.toISOString(),
         progress: { completed: doneBy.get(enrollment.courseId) ?? 0, total: totalBy.get(enrollment.courseId) ?? 0 },
         certificateSerial: serialBy.get(enrollment.courseId) ?? null,
+        instructorId: enrollment.course.instructor?.id ?? null,
+        instructorName: enrollment.course.instructor?.displayName ?? null,
+        lastActivityAt: activityBy.get(enrollment.courseId)?._max.updatedAt?.toISOString() ?? null,
+        watchedSec: activityBy.get(enrollment.courseId)?._sum.watchedSec ?? 0,
       })),
       learning: {
         submissions: submissions.map((row) => ({
@@ -226,7 +285,29 @@ export class AdminUsersService {
           reported: row.reportedAt !== null,
           hidden: row.hiddenAt !== null,
         })),
+        exams: exams.map((row) => {
+          const score = row.quizAttemptId ? examScoreBy.get(row.quizAttemptId) : undefined;
+          return {
+            courseTitle: row.lesson.course.title,
+            lessonTitle: row.lesson.title,
+            status: row.status,
+            scorePercent: score?.scorePercent ?? null,
+            passed: score?.passed ?? null,
+            reviewStatus: row.reviewStatus,
+            startedAt: row.startedAt.toISOString(),
+            submittedAt: row.submittedAt?.toISOString() ?? null,
+          };
+        }),
+        imagingAttempts: imagingAttempts.map((row) => ({
+          courseTitle: row.lesson.course.title,
+          lessonTitle: row.lesson.title,
+          scorePercent: row.scorePercent,
+          passed: row.passed,
+          createdAt: row.createdAt.toISOString(),
+        })),
       },
+      // Someone who never taught (and isn't staff) has no teaching section.
+      teaching: teaching.courses.length || user.role !== 'LEARNER' ? teaching : null,
       roleHistory: [
         ...roleChanges.map((row) => {
           const meta = (row.metadata ?? {}) as Record<string, unknown>;
@@ -253,6 +334,103 @@ export class AdminUsersService {
         resource: entry.resource,
         resourceId: entry.resourceId,
         createdAt: entry.createdAt.toISOString(),
+      })),
+    };
+  }
+
+  /** Courses this user owns or co-teaches (accepted invitations), with their students. */
+  private async teaching(id: string): Promise<NonNullable<AdminUserDetail['teaching']>> {
+    const RECENT_STUDENTS = 50;
+    const courses = await this.prisma.course.findMany({
+      where: { OR: [{ instructorId: id }, { collaborators: { some: { userId: id, status: 'ACCEPTED' } } }] },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        status: true,
+        instructorId: true,
+        collaborators: { where: { userId: id }, select: { role: true } },
+        _count: { select: { enrollments: true, certificates: true } },
+      },
+    });
+    const empty = { courses: 0, published: 0, students: 0, reviews: 0, averageRating: null, pendingGrading: 0, certificates: 0 };
+    if (!courses.length) return { totals: empty, courses: [], students: [] };
+
+    const courseIds = courses.map((course) => course.id);
+    const inCourses = { courseId: { in: courseIds } };
+    const [lessons, ratings, students, pendingAssignments, pendingWorking, recent] = await Promise.all([
+      this.prisma.lesson.groupBy({ by: ['courseId'], where: { ...inCourses, ...LIVE_LESSON }, _count: { _all: true } }),
+      this.prisma.courseReview.groupBy({
+        by: ['courseId'],
+        where: { ...inCourses, hiddenAt: null },
+        _count: { _all: true },
+        _avg: { rating: true },
+      }),
+      this.prisma.enrollment.groupBy({ by: ['userId'], where: inCourses }),
+      this.prisma.assignmentSubmission.count({ where: { ...inCourses, status: 'SUBMITTED' } }),
+      this.prisma.imagingAttempt.count({ where: { workingStatus: 'PENDING', lesson: inCourses } }),
+      this.prisma.enrollment.findMany({
+        where: inCourses,
+        orderBy: { createdAt: 'desc' },
+        take: RECENT_STUDENTS,
+        select: {
+          userId: true,
+          courseId: true,
+          createdAt: true,
+          user: { select: { displayName: true } },
+          course: { select: { title: true } },
+        },
+      }),
+    ]);
+    const recentProgress = recent.length
+      ? await this.prisma.lessonProgress.groupBy({
+          by: ['userId', 'courseId'],
+          where: {
+            ...inCourses,
+            userId: { in: [...new Set(recent.map((row) => row.userId))] },
+            completedAt: { not: null },
+            lesson: LIVE_LESSON,
+          },
+          _count: { _all: true },
+        })
+      : [];
+
+    const lessonsBy = new Map(lessons.map((row) => [row.courseId, row._count._all]));
+    const ratingBy = new Map(ratings.map((row) => [row.courseId, row]));
+    const doneBy = new Map(recentProgress.map((row) => [`${row.userId}:${row.courseId}`, row._count._all]));
+    const round1 = (value: number | null | undefined) => (value == null ? null : Math.round(value * 10) / 10);
+    const reviewCount = ratings.reduce((sum, row) => sum + row._count._all, 0);
+    const ratingSum = ratings.reduce((sum, row) => sum + (row._avg.rating ?? 0) * row._count._all, 0);
+
+    return {
+      totals: {
+        courses: courses.length,
+        published: courses.filter((course) => course.status === 'PUBLISHED').length,
+        students: students.length,
+        reviews: reviewCount,
+        averageRating: reviewCount ? round1(ratingSum / reviewCount) : null,
+        pendingGrading: pendingAssignments + pendingWorking,
+        certificates: courses.reduce((sum, course) => sum + course._count.certificates, 0),
+      },
+      courses: courses.map((course) => ({
+        id: course.id,
+        title: course.title,
+        slug: course.slug,
+        status: course.status,
+        role: course.instructorId === id ? ('OWNER' as const) : (course.collaborators[0]?.role ?? 'EDITOR'),
+        students: course._count.enrollments,
+        lessons: lessonsBy.get(course.id) ?? 0,
+        reviews: ratingBy.get(course.id)?._count._all ?? 0,
+        averageRating: round1(ratingBy.get(course.id)?._avg.rating),
+        certificates: course._count.certificates,
+      })),
+      students: recent.map((row) => ({
+        userId: row.userId,
+        displayName: row.user.displayName,
+        courseTitle: row.course.title,
+        enrolledAt: row.createdAt.toISOString(),
+        progress: { completed: doneBy.get(`${row.userId}:${row.courseId}`) ?? 0, total: lessonsBy.get(row.courseId) ?? 0 },
       })),
     };
   }

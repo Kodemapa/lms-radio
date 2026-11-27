@@ -7,7 +7,7 @@ import {
   type InstructorApplication,
 } from '@obgyn/types';
 import { Button, Input, Label, Select, Textarea, toast } from '@obgyn/ui';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { bffFetch } from '@/lib/client-fetch';
@@ -23,7 +23,6 @@ export function ApplicationForm({
   initial: InstructorApplication | null;
   fields: ApplicationField[];
 }) {
-  const locale = useLocale();
   const t = useTranslations('BecomeInstructor');
   const tCommon = useTranslations('Common');
   const router = useRouter();
@@ -111,8 +110,7 @@ export function ApplicationForm({
         const id = `app-extra-${applicationField.id}`;
         const errorId = `${id}-error`;
         const hintId = `${id}-hint`;
-        const label =
-          locale === 'hi' && applicationField.labelHi ? applicationField.labelHi : applicationField.label;
+        const label = applicationField.label;
         const describedBy = [
           applicationField.helpText ? hintId : '',
           answerErrors[applicationField.key] ? errorId : '',

@@ -94,7 +94,7 @@ export default async function AdminApplicationsPage({
                   <dl className="grid gap-3 sm:grid-cols-2">
                     {Object.entries(application.answers).map(([key, value]) => {
                       const field = fieldsByKey.get(key);
-                      const label = locale === 'hi' && field?.labelHi ? field.labelHi : field?.label ?? key;
+                      const label = field?.label ?? key;
                       return (
                         <div key={key}>
                           <dt className="text-sm text-muted-foreground">{label}</dt>
