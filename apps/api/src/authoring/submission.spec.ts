@@ -1,5 +1,5 @@
 import { slugify } from './authoring.service';
-import { submissionProblems, type SubmittableCourse } from '@obgyn/types';
+import { LESSON_FILES_REQUIRED, submissionProblems, type SubmittableCourse } from '@obgyn/types';
 
 const ready: SubmittableCourse = {
   title: 'Fetal biometry basics',
@@ -41,13 +41,14 @@ describe('submissionProblems', () => {
     expect(problems).toEqual(['SHORT_DESCRIPTION', 'CATEGORY', 'THUMBNAIL', 'LEARNINGS', 'NO_LESSONS']);
   });
 
-  it('requires uploaded, de-identified media for video and PDF lessons', () => {
+  it('allows video and PDF lessons without a file yet, but never a file that is not de-identified', () => {
     const withMedia = (media: { status: string; deidentified: boolean } | null) => ({
       ...ready,
       chapters: [{ ...ready.chapters[0]!, lessons: [{ ...ready.chapters[0]!.lessons[0]!, media }] }],
     });
-    expect(submissionProblems(withMedia(null)).problems).toContain('MEDIA_MISSING');
-    expect(submissionProblems(withMedia({ status: 'PENDING', deidentified: true })).problems).toContain(
+    expect(LESSON_FILES_REQUIRED).toBe(false);
+    expect(submissionProblems(withMedia(null)).problems).not.toContain('MEDIA_MISSING');
+    expect(submissionProblems(withMedia({ status: 'PENDING', deidentified: true })).problems).not.toContain(
       'MEDIA_MISSING',
     );
     expect(submissionProblems(withMedia({ status: 'READY', deidentified: false })).problems).toContain(

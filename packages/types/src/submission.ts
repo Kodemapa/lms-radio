@@ -31,6 +31,14 @@ export interface SubmittableCourse {
   }[];
 }
 
+/**
+ * Whether every video and reading lesson needs its file before a course can be
+ * submitted. Off for now so courses can go live while lectures are still being
+ * recorded; learners see "file not uploaded yet" on those lessons. An uploaded
+ * file that isn't de-identified still blocks review (CLAUDE.md rule 6).
+ */
+export const LESSON_FILES_REQUIRED = false;
+
 /** Everything that blocks review, so the UI can list it all at once. */
 export function submissionProblems(course: SubmittableCourse): {
   problems: SubmissionProblem[];
@@ -46,7 +54,11 @@ export function submissionProblems(course: SubmittableCourse): {
   const lessons = course.chapters.flatMap((chapter) => chapter.lessons);
   if (lessons.length === 0) problems.push('NO_LESSONS');
   const needsMedia = lessons.filter((lesson) => lesson.kind === 'VIDEO' || lesson.kind === 'PDF');
-  if (needsMedia.some((lesson) => lesson.media?.status !== 'READY' || !lesson.media.deidentified)) {
+  const mediaBlocks = (media: { status: string; deidentified: boolean } | null) =>
+    LESSON_FILES_REQUIRED
+      ? media?.status !== 'READY' || !media.deidentified
+      : media?.status === 'READY' && !media.deidentified;
+  if (needsMedia.some((lesson) => mediaBlocks(lesson.media))) {
     problems.push('MEDIA_MISSING');
   }
 
