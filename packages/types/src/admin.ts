@@ -289,6 +289,12 @@ export function validateApplicationAnswers(
 export const CONTENT_LOCALES = ['en', 'hi'] as const;
 export const ContentLocaleSchema = z.enum(CONTENT_LOCALES);
 export type ContentLocale = z.infer<typeof ContentLocaleSchema>;
+/**
+ * Languages new content can be saved in. English only (Hindi removed from the site,
+ * 2026-11-26). `ContentLocaleSchema` still accepts 'hi' so older Hindi rows keep
+ * reading as Hindi (and stay hidden) instead of being mistaken for English.
+ */
+export const WritableContentLocaleSchema = z.enum(['en']);
 
 /** Footer legal links point at these slugs. */
 export const LEGAL_PAGE_SLUGS = ['privacy', 'terms', 'refund'] as const;
@@ -306,7 +312,7 @@ export type ContentPage = z.infer<typeof ContentPageSchema>;
 
 export const ContentPageInputSchema = z.object({
   slug: z.string().trim().min(2).max(80).regex(SLUG, 'Use lowercase letters, numbers and hyphens'),
-  locale: ContentLocaleSchema,
+  locale: WritableContentLocaleSchema,
   title: z.string().trim().min(2).max(150),
   body: z.string().trim().min(1).max(50_000),
   published: z.boolean().default(false),
@@ -324,7 +330,7 @@ export const FaqSchema = z.object({
 export type Faq = z.infer<typeof FaqSchema>;
 
 export const FaqInputSchema = z.object({
-  locale: ContentLocaleSchema,
+  locale: WritableContentLocaleSchema,
   question: z.string().trim().min(3).max(300),
   answer: z.string().trim().min(1).max(5000),
   position: z.number().int().min(0).max(10_000).default(0),
@@ -431,7 +437,7 @@ export type MessageOverride = z.infer<typeof MessageOverrideSchema>;
 
 /** `value: null` removes the override and restores the shipped text. */
 export const MessageOverrideInputSchema = z.object({
-  locale: ContentLocaleSchema,
+  locale: WritableContentLocaleSchema,
   key: z.string().trim().max(200).regex(MESSAGE_KEY, 'Invalid message key'),
   value: z.string().trim().min(1).max(2000).nullable(),
 });

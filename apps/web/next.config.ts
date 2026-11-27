@@ -49,6 +49,13 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
+  // Hindi was removed: old /hi links (bookmarks, search results) open the English page.
+  async redirects() {
+    return [
+      { source: '/hi', destination: '/en', permanent: false },
+      { source: '/hi/:path*', destination: '/en/:path*', permanent: false },
+    ];
+  },
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },

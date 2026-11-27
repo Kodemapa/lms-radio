@@ -16,7 +16,6 @@ import {
   ClipboardCheck,
   Clock,
   FileText,
-  Globe,
   Lock,
   MonitorSmartphone,
   PlayCircle,
@@ -121,10 +120,6 @@ export default async function CoursePage({ params }: Props) {
                 <BarChart3 aria-hidden className="size-4" />
                 {tCommon(`level.${course.level}`)}
               </li>
-              <li className="flex items-center gap-1.5">
-                <Globe aria-hidden className="size-4" />
-                {tCommon(`languages.${course.language}` as 'languages.en')}
-              </li>
               {course.publishedAt ? (
                 <li>{t('lastUpdated', { date: format.dateTime(new Date(course.publishedAt), { dateStyle: 'medium' }) })}</li>
               ) : null}
@@ -210,15 +205,9 @@ export default async function CoursePage({ params }: Props) {
           </div>
         </aside>
 
-        <Tabs defaultValue="overview">
-          <TabsList>
-            <TabsTrigger value="overview">{t('overview')}</TabsTrigger>
-            <TabsTrigger value="curriculum">{t('curriculum')}</TabsTrigger>
-            {course.instructor ? <TabsTrigger value="instructor">{t('instructor')}</TabsTrigger> : null}
-            <TabsTrigger value="reviews">{tReviews('title')}</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="flex flex-col gap-8">
+        {/* Overview first, always visible; the tabs below hold the rest. */}
+        <div className="flex min-w-0 flex-col gap-10">
+          <div className="flex flex-col gap-8">
             {course.learnings.length > 0 ? (
               <section aria-labelledby="learn" className="surface p-6 md:p-8">
                 <h2 id="learn" className="mb-4 text-xl font-semibold">{t('whatYoullLearn')}</h2>
@@ -262,7 +251,14 @@ export default async function CoursePage({ params }: Props) {
                 </ul>
               </section>
             ) : null}
-          </TabsContent>
+          </div>
+
+        <Tabs defaultValue="curriculum">
+          <TabsList>
+            <TabsTrigger value="curriculum">{t('curriculum')}</TabsTrigger>
+            {course.instructor ? <TabsTrigger value="instructor">{t('instructor')}</TabsTrigger> : null}
+            <TabsTrigger value="reviews">{tReviews('title')}</TabsTrigger>
+          </TabsList>
 
           <TabsContent value="curriculum">
             <p className="mb-4 text-sm text-muted-foreground">
@@ -348,6 +344,7 @@ export default async function CoursePage({ params }: Props) {
             {reviews ? <ReviewsSection slug={course.slug} reviews={reviews} canReview={enrolled} /> : null}
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </>
   );

@@ -90,23 +90,55 @@ export async function apiGet<T>(
 const RETRY_DELAYS_MS = [150, 600, 1500];
 
 /**
+ * In development, how long a page render waits for the API to come back before giving up.
+ * `nest start --watch` recompiles the whole API with tsc on every save, so a restart takes
+ * several seconds, far longer than the production retry schedule above. Waiting means the
+ * page renders with real data instead of empty sections and a 503 in the log.
+ */
+const DEV_WAIT_FOR_API_MS = 30_000;
+const DEV_POLL_MS = 500;
+
+/**
+ * Readable reason a fetch never got an HTTP answer. Node reports a refused `localhost`
+ * connection as an AggregateError (one ECONNREFUSED per address tried: ::1 and 127.0.0.1),
+ * which stringifies to just "AggregateError".
+ */
+function describeFetchFailure(error: unknown): string {
+  const cause = (error as { cause?: unknown } | null)?.cause ?? error;
+  if (cause instanceof AggregateError) {
+    const parts = (cause.errors as { code?: string; address?: string; port?: number; message?: string }[]).map((e) =>
+      e.code ? `${e.code} ${e.address ?? ''}:${e.port ?? ''}` : String(e.message ?? e),
+    );
+    return `${[...new Set(parts)].join(', ')} (is the API running?)`;
+  }
+  return String(cause);
+}
+
+/**
  * fetch() for GETs, retried when the request never got an HTTP answer ("fetch failed":
- * connection refused or reset). That happens while the API restarts (every file save under
- * `nest start --watch` in development, a deploy in production) or when an idle keep-alive
- * connection is closed just as it is reused. GETs are safe to repeat. If the API stays
- * unreachable, a normal ApiError(503) is thrown (and logged with the trace ID) instead of
- * a raw TypeError, so pages fail the same way they do for any other API error.
+ * connection refused, reset or timed out). That happens while the API restarts (every file
+ * save under `nest start --watch` in development, a deploy in production) or when an idle
+ * keep-alive connection is closed just as it is reused. GETs are safe to repeat. In
+ * development the render waits up to DEV_WAIT_FOR_API_MS for the API to come back. If the API
+ * stays unreachable, a normal ApiError(503) is thrown (and logged with the trace ID) instead
+ * of a raw TypeError, so pages fail the same way they do for any other API error.
  */
 async function fetchWithRetry(url: string, init: RequestInit, ctx: { path: string; traceId: string; started: number }): Promise<Response> {
+  const isDev = process.env.NODE_ENV !== 'production';
   for (let attempt = 0; ; attempt++) {
     try {
       return await fetch(url, init);
     } catch (error) {
-      if (!(error instanceof TypeError) || attempt >= RETRY_DELAYS_MS.length) {
-        logApiFailure({ method: 'GET', path: ctx.path, status: 503, traceId: ctx.traceId, durationMs: Date.now() - ctx.started });
-        throw new ApiError(503, { message: 'API unreachable', cause: String((error as Error)?.cause ?? error) });
+      const elapsed = Date.now() - ctx.started;
+      let delay: number | undefined;
+      if (isDev) delay = elapsed + DEV_POLL_MS < DEV_WAIT_FOR_API_MS ? DEV_POLL_MS : undefined;
+      else delay = RETRY_DELAYS_MS[attempt];
+      if (!(error instanceof TypeError) || delay === undefined) {
+        const cause = describeFetchFailure(error);
+        logApiFailure({ method: 'GET', path: ctx.path, status: 503, traceId: ctx.traceId, durationMs: elapsed, cause });
+        throw new ApiError(503, { message: 'API unreachable', cause });
       }
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 }

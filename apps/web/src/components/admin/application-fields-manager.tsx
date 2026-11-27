@@ -197,10 +197,6 @@ export function ApplicationFieldsManager({ initial }: { initial: ApplicationFiel
                 <Input id="field-label" required maxLength={120} value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="field-label-hi">{t('labelHi')}</Label>
-                <Input id="field-label-hi" lang="hi" maxLength={120} value={form.labelHi} onChange={(e) => setForm({ ...form, labelHi: e.target.value })} />
-              </div>
-              <div className="flex flex-col gap-1.5">
                 <RequiredLabel htmlFor="field-key">{t('key')}</RequiredLabel>
                 <Input
                   id="field-key"

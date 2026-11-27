@@ -1,7 +1,7 @@
 import { type Metadata } from 'next';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Bricolage_Grotesque, Geist, Noto_Sans_Devanagari } from 'next/font/google';
+import { Bricolage_Grotesque, Geist } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { Toaster } from '@obgyn/ui';
 import { type ReactNode } from 'react';
@@ -19,14 +19,6 @@ const display = Bricolage_Grotesque({
   subsets: ['latin'],
   variable: '--font-display',
   display: 'swap',
-});
-// Not preloaded: Google's CSS for this family has no subset markers for Next to
-// pick a file from, and only Hindi pages need it.
-const devanagari = Noto_Sans_Devanagari({
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-devanagari',
-  display: 'swap',
-  preload: false,
 });
 
 type Props = { children: ReactNode; params: Promise<{ locale: string }> };
@@ -70,7 +62,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     // and browser extensions (e.g. Scribe) add attributes too. Only this element is affected.
     <html
       lang={locale}
-      className={`${geist.variable} ${display.variable} ${devanagari.variable}`}
+      className={`${geist.variable} ${display.variable}`}
       suppressHydrationWarning
     >
       <head>

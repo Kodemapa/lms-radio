@@ -143,8 +143,7 @@ const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 function goToSignIn(): void {
   announceSessionEnded();
-  const locale = window.location.pathname.split('/')[1] === 'hi' ? 'hi' : 'en';
-  const login = new URL(`/${locale}/login`, window.location.origin);
+  const login = new URL('/en/login', window.location.origin);
   login.searchParams.set('next', `${window.location.pathname}${window.location.search}`);
   // Tells the sign-in page to explain why (blocked, role changed, signed out elsewhere).
   login.searchParams.set('reason', 'session-ended');

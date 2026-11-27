@@ -144,63 +144,63 @@
     "updated": "Updated {date}"
   },
   "Home": {
-    "eyebrow": "Fetal ultrasound · Radiology education",
-    "title": "A closer look.",
-    "subtitle": "Fetal ultrasound for radiology PGs and residents: protected video classes, real DICOM cases you measure yourself, instant grading against faculty references, and a progress report that shows exactly where to focus.",
+    "eyebrow": "Fetal ultrasound courses",
+    "title": "Learn fetal ultrasound.",
+    "subtitle": "Learn fetal ultrasound with short video classes and real scans. Practise measurements yourself and get your result straight away.",
     "ctaCourses": "Explore the courses",
     "statCourses": "Courses",
     "statInstructors": "Expert instructors",
     "statStudents": "Learners",
     "topCategories": "Small details. Essential skills.",
-    "topCategoriesSubtitle": "Explore the core areas of fetal ultrasound, from image orientation to measurements and interpretation.",
-    "newestCourses": "Make room for your next discovery.",
-    "newestCoursesSubtitle": "Explore the latest courses in the catalogue and find your next step.",
-    "freeCourses": "A good place to begin.",
-    "freeCoursesSubtitle": "Discover free courses and get to know the learning experience.",
-    "educatorsTitle": "The people behind the perspective.",
-    "educatorsSubtitle": "Meet the faculty guiding your learning journey.",
-    "communityTitle": "Your experience. Their next breakthrough.",
-    "communityBody": "Turn your teaching into cases residents can practise on — and see exactly where each learner needs help.",
+    "topCategoriesSubtitle": "Choose a topic and start learning.",
+    "newestCourses": "New courses",
+    "newestCoursesSubtitle": "The latest courses added to the catalogue.",
+    "freeCourses": "Free courses",
+    "freeCoursesSubtitle": "Start here. No payment needed.",
+    "educatorsTitle": "Meet your teachers",
+    "educatorsSubtitle": "Experienced faculty who guide your learning.",
+    "communityTitle": "Teach with us",
+    "communityBody": "Share your knowledge. Create cases for residents to practise on and see where each learner needs help.",
     "communityCta": "Become faculty",
-    "faqTitle": "A few things you might be wondering.",
+    "faqTitle": "Common questions",
     "faq": {
       "q1": "Who are the courses for?",
-      "a1": "The learning experience is designed specifically for radiology postgraduates and residents studying fetal ultrasound. Check each course page for its level and prerequisites.",
+      "a1": "Radiology postgraduates and residents learning fetal ultrasound. Each course page shows its level.",
       "q2": "Can I download videos?",
-      "a2": "No. To protect faculty content, videos stream only inside the website and our apps, with your details watermarked on screen.",
+      "a2": "No. Videos play only on this website and our apps, to protect the teachers' work.",
       "q3": "Do I get a certificate?",
-      "a3": "Courses with certificates show it on the course page. You receive it after completing every lesson.",
-      "q4": "Can I learn in Hindi?",
-      "a4": "Yes. The site is available in English and Hindi, and some courses are taught in Hindi. More languages are coming.",
-      "q5": "How are image cases graded?",
-      "a5": "Faculty draw the reference measurements on the image and set an allowed deviation. Your calipers and ellipses are recalculated from your own drawing and compared with that range, so you see a pass or a clear reason for each miss.",
+      "a3": "Yes, if the course offers one. You get it after you finish all the lessons.",
+      "q4": "Can I learn on my phone?",
+      "a4": "Yes. You can use the website on your phone, tablet or computer.",
+      "q5": "How are scan cases checked?",
+      "a5": "Faculty mark the correct answer on the scan. Your measurement is compared with it, and you see what was right and what to fix.",
       "q6": "Are the scans from real patients?",
-      "a6": "Cases use real ultrasound images that are de-identified before learners see them: patient details are removed from the DICOM on our server. In line with the PC-PNDT Act, nothing on the platform reveals or teaches fetal sex."
+      "a6": "Yes, but all patient details are removed first. As the law requires, the site never shows or teaches the sex of the baby."
     },
-    "titleAccent": "A deeper understanding.",
-    "ctaApproach": "How you’ll learn",
-    "audience": "Purpose-built for radiology PGs and residents, with faculty-led courses and practical imaging assessments.",
+    "titleAccent": "Practice with confidence.",
+    "ctaApproach": "How it works",
+    "audience": "Made for radiology PGs and residents. Taught by experienced faculty.",
     "previewLabel": "Practice preview",
     "feedbackBody": "Measure. Compare. Understand.",
     "previewCase": "Fetal biometry",
-    "pathwayEyebrow": "Your learning, in focus",
+    "pathwayEyebrow": "What you can learn",
     "exploreTopic": "Find courses",
     "pathways": {
       "foundations": {
-        "title": "Ultrasound foundations",
-        "body": "Build your understanding of imaging principles, orientation and scanning technique."
+        "title": "Ultrasound basics",
+        "body": "How ultrasound works and how to scan."
       },
       "anatomy": {
         "title": "Fetal anatomy",
-        "body": "Explore anatomical landmarks, standard views and structured case interpretation."
+        "body": "Key structures and the standard views."
       },
       "biometry": {
         "title": "Biometry & growth",
-        "body": "Connect measurement technique with fetal biometry and growth assessment."
+        "body": "How to measure the baby and check growth."
       },
       "doppler": {
         "title": "Doppler studies",
-        "body": "Develop your understanding of Doppler principles and waveform interpretation."
+        "body": "How Doppler works and how to read it."
       }
     },
     "heroChipTopic": "Mid-trimester anomaly scan",
@@ -215,46 +215,46 @@
       "t7": "Placenta & amniotic fluid",
       "t8": "Growth assessment"
     },
-    "journeyEyebrow": "How you’ll learn",
+    "journeyEyebrow": "How it works",
     "week": {
       "anatomy": "Anatomy",
       "biometry": "Biometry",
       "doppler": "Doppler"
     },
     "practice": {
-      "eyebrow": "Inside every imaging case",
-      "title": "A real viewer, real tools, real feedback.",
-      "body": "Image cases run in your browser on de-identified DICOM. No install, no hardware — and every submission is scored automatically.",
+      "eyebrow": "Practise on real scans",
+      "title": "Real scans. Real tools. Instant results.",
+      "body": "Open scans in your browser. Nothing to install. Every answer is checked automatically.",
       "cta": "Browse courses",
       "tools": {
         "measure": {
-          "title": "Calipers & ellipses",
-          "body": "Measure lengths and circumferences with editable, rotatable handles; pan, zoom and adjust contrast."
+          "title": "Measure",
+          "body": "Measure lengths and circles on the scan. Zoom and adjust the image."
         },
         "mark": {
-          "title": "Landmarks & outlines",
-          "body": "Pin structures and outline regions; scored by position and overlap with partial credit."
+          "title": "Mark",
+          "body": "Point to structures and outline areas on the scan."
         },
         "report": {
-          "title": "Findings & report values",
-          "body": "Answer findings and enter report values; your structured report downloads as a DICOM SR."
+          "title": "Report",
+          "body": "Write your findings and download your report."
         },
         "working": {
-          "title": "Calculators & working",
-          "body": "Open the case’s calculator beside the image and attach your working for faculty review."
+          "title": "Show your working",
+          "body": "Use the calculator and send your working to faculty."
         }
       },
-      "soonLabel": "On the way",
+      "soonLabel": "Coming soon",
       "soon": {
-        "live": "Live classes in the app",
-        "qa": "Course Q&A",
-        "ownScan": "Own-scan review by faculty",
-        "osce": "Timed OSCE exam mode",
-        "cine": "Cine clip cases"
+        "live": "Live classes",
+        "qa": "Course questions and answers",
+        "ownScan": "Faculty review of your own scans",
+        "osce": "Timed exam mode",
+        "cine": "Video clip cases"
       }
     },
     "communityEyebrow": "For faculty",
-    "faqEyebrow": "Good questions",
+    "faqEyebrow": "Questions",
     "credits": {
       "title": "Image credits",
       "note": "Photographs from Wikimedia Commons, cropped to remove exam identifiers. Used under the licences shown."
@@ -269,26 +269,26 @@
       "skillsLab": "Students practising scans in a shared skills lab"
     },
     "previewBadge": "Interactive",
-    "heroChipGraded": "Graded against faculty references",
-    "mockNote": "Illustrative example",
+    "heroChipGraded": "Checked against faculty answers",
+    "mockNote": "Example",
     "journey": {
-      "title": "From the lecture to the scan, one case at a time.",
-      "subtitle": "Every module follows the same rhythm: learn the concept, measure it on a real image, get graded, and know what to revise next.",
+      "title": "Learn, practise, check, improve.",
+      "subtitle": "Every lesson follows four simple steps.",
       "watch": {
-        "title": "Watch, and answer as you go",
-        "body": "Faculty video classes pause for quick in-video questions, so you check the concept before moving on. Videos stream protected and watermarked — never downloaded."
+        "title": "Watch",
+        "body": "Watch a short class. Answer quick questions as you go."
       },
       "measure": {
-        "title": "Measure on real DICOM",
-        "body": "Open de-identified scans in the browser viewer. Place calipers and ellipses, pin landmarks and outline structures with the same tools you use at the machine."
+        "title": "Practise",
+        "body": "Measure and mark on a real scan, just like at the machine."
       },
       "graded": {
-        "title": "Get graded instantly",
-        "body": "Each measurement is checked against the faculty reference and its allowed deviation, with the reason for every miss. Show your working with built-in calculator links, and faculty verify it."
+        "title": "Check",
+        "body": "See your result straight away, with the reason for any mistake."
       },
       "report": {
-        "title": "See where you stand",
-        "body": "Your progress report tracks lessons, watch time and every attempt, then sorts your topics into strengths and the ones that need work."
+        "title": "Improve",
+        "body": "Your progress report shows what you know well and what to revise."
       },
       "result": {
         "title": "Case result",
@@ -308,89 +308,89 @@
       }
     },
     "trust": {
-      "label": "Built in from day one",
+      "label": "Safe and secure",
       "protected": {
-        "title": "Protected content",
-        "body": "Encrypted streaming, a moving watermark, no downloads."
+        "title": "Protected videos",
+        "body": "Videos can't be downloaded or copied."
       },
       "deidentified": {
-        "title": "De-identified scans",
-        "body": "Patient details stripped on upload, server-side."
+        "title": "Private scans",
+        "body": "Patient details are removed from every scan."
       },
       "pcpndt": {
         "title": "PC-PNDT compliant",
-        "body": "Fetal sex is never shown, taught or predicted."
+        "body": "The sex of the baby is never shown or taught."
       },
       "languages": {
-        "title": "English & हिन्दी",
-        "body": "Switch language anytime; more Indian languages coming."
+        "title": "Any device",
+        "body": "Learn on your phone, tablet or computer."
       }
     },
     "faculty": {
-      "cases": "Build DICOM cases with reference measurements and allowed deviation",
-      "bank": "A question bank organised by topic, for quizzes and in-video questions",
-      "reports": "Per-student progress reports, item analysis and course analytics",
-      "team": "Co-instructors and graders, with working you can verify or return"
+      "cases": "Create scan cases with the correct answers",
+      "bank": "Build a question bank for quizzes",
+      "reports": "See each student's progress",
+      "team": "Teach and grade with other faculty"
     },
     "diff": {
-      "eyebrow": "Why it’s different",
-      "title": "Most LMSs stop at the video.",
-      "titleAccent": "Understanding starts after it.",
-      "lede": "Fetal ultrasound is a hands-on skill. Watching someone place a caliper doesn’t teach you where to place it. So every lesson here ends with you doing it yourself — and finding out exactly why you got it right or wrong.",
-      "tableLabel": "A typical LMS compared with this platform",
-      "them": "Typical LMS",
+      "eyebrow": "Why learn here",
+      "title": "Watching is not enough.",
+      "titleAccent": "You learn by doing.",
+      "lede": "Ultrasound is a hands-on skill. Here, you don't just watch. You measure on real scans yourself and find out what you got right.",
+      "tableLabel": "Other courses compared with this platform",
+      "them": "Other courses",
       "us": "Here",
       "rows": {
         "images": {
           "topic": "Images",
-          "them": "Screenshots and slides you look at.",
-          "us": "Real, de-identified DICOM scans you scroll, zoom and adjust in a proper viewer."
+          "them": "Pictures and slides.",
+          "us": "Real scans you can zoom and adjust."
         },
         "practice": {
           "topic": "Practice",
-          "them": "Watch the video, tick it as complete.",
-          "us": "Measure the same structure yourself with calipers, ellipses, pins and outlines."
+          "them": "Watch the video and move on.",
+          "us": "Measure and mark the scan yourself."
         },
         "assessment": {
-          "topic": "Assessment",
-          "them": "A multiple-choice quiz at the end.",
-          "us": "Your own measurements are graded against a faculty reference and its allowed deviation."
+          "topic": "Tests",
+          "them": "A multiple-choice quiz.",
+          "us": "Your own measurements are checked."
         },
         "feedback": {
           "topic": "Feedback",
-          "them": "A score, and nothing else.",
-          "us": "The reason for every miss — value, placement or wrong structure — then the reference overlay to compare with your attempt."
+          "them": "Just a score.",
+          "us": "The reason for every mistake, and the correct answer to compare."
         },
         "reasoning": {
-          "topic": "Reasoning",
-          "them": "Your thinking stays invisible.",
-          "us": "Show your working with the case calculators; faculty verify it or return it with comments."
+          "topic": "Your thinking",
+          "them": "No one sees how you worked it out.",
+          "us": "Show your working. Faculty check it."
         },
         "progress": {
           "topic": "Progress",
           "them": "“60% complete.”",
-          "us": "Strengths and gaps by topic, attempt history and watch time — so you know what to revise."
+          "us": "Your strong and weak topics, so you know what to revise."
         }
       },
       "loop": {
-        "eyebrow": "The understanding loop",
-        "title": "Learn it, do it, see why — then do it better.",
-        "body": "Understanding comes from attempts and honest feedback, not from re-watching. Every case closes the loop.",
+        "eyebrow": "How you improve",
+        "title": "Learn it. Do it. Check it. Do it better.",
+        "body": "You improve by trying and getting clear feedback.",
         "see": {
-          "title": "See it",
-          "body": "A short faculty class, with questions that check the concept as you watch."
+          "title": "Learn",
+          "body": "Watch a short class."
         },
         "do": {
-          "title": "Do it",
-          "body": "Measure and mark the structure on a real scan."
+          "title": "Do",
+          "body": "Measure on a real scan."
         },
         "why": {
-          "title": "Find out why",
-          "body": "Instant grading with a reason for each miss, plus the reference overlay."
+          "title": "Check",
+          "body": "See your result and the correct answer."
         },
         "again": {
           "title": "Try again",
-          "body": "Re-attempt the case or revise the weak topic your report points to."
+          "body": "Repeat the case or revise the topic."
         }
       }
     }
@@ -489,7 +489,9 @@
     "empty": "No instructors yet.",
     "viewProfile": "View profile",
     "coursesBy": "Courses by {name}",
-    "kicker": "Faculty"
+    "kicker": "Faculty",
+    "about": "About",
+    "noCourses": "No published courses yet."
   },
   "Simulators": {
     "title": "Simulators",
@@ -620,7 +622,7 @@
     "benefits": {
       "reach": {
         "title": "Reach learners nationwide",
-        "body": "Teach thousands of learners in English, Hindi and regional languages."
+        "body": "Teach learners across India, wherever they study."
       },
       "tools": {
         "title": "Easy course builder",
@@ -1015,7 +1017,8 @@
         "autoWarnHint": "Switching tabs, another person, a phone or book, no face or a second screen count as a warning without you sending one (at most one a minute for each).",
         "maxWarnings": "Warnings that end the exam",
         "maxWarningsHint": "When a learner gets this many warnings, their exam ends and is submitted. 0 = no limit."
-      }
+      },
+      "chooseLanguage": "Choose a language"
     },
     "upload": {
       "choose": "Choose file",
@@ -1178,7 +1181,7 @@
       "faqs": "FAQs",
       "settings": "Site settings",
       "inbox": "Contact messages",
-      "languages": "Language editor"
+      "languages": "Site text"
     },
     "dashboard": {
       "title": "Admin dashboard",
@@ -1404,7 +1407,6 @@
       "addTitle": "Add application question",
       "formHint": "The stable key is used to keep existing answers attached to this question.",
       "label": "Question label (English)",
-      "labelHi": "Question label (Hindi)",
       "key": "Stable answer key",
       "keyHint": "2–40 lowercase letters, numbers or underscores; starts with a letter. Can't be changed after creation.",
       "type": "Answer type",
@@ -1433,7 +1435,7 @@
     },
     "contentPages": {
       "title": "Content pages",
-      "intro": "Create English and Hindi policy or information pages. Only published pages are visible publicly.",
+      "intro": "Create policy or information pages. Only published pages are visible publicly.",
       "add": "Add page",
       "empty": "No content pages yet.",
       "published": "Published",
@@ -1445,7 +1447,6 @@
       "slug": "URL slug",
       "language": "Language",
       "english": "English",
-      "hindi": "Hindi",
       "titleLabel": "Page title",
       "body": "Page body",
       "bodyHint": "Plain text with light Markdown: # / ## headings, - lists, and blank lines between paragraphs. HTML isn't supported.",
@@ -1476,7 +1477,6 @@
       "editTitle": "Edit FAQ",
       "language": "Language",
       "english": "English",
-      "hindi": "Hindi",
       "position": "Display order",
       "question": "Question",
       "answer": "Answer",
@@ -1648,18 +1648,14 @@
       }
     },
     "languages": {
-      "title": "Language editor",
-      "intro": "Change the wording of the site’s built-in text for each language. The shipped translation stays as the fallback; restore it at any time.",
-      "language": "Language",
-      "english": "English",
-      "hindi": "Hindi",
+      "title": "Site text editor",
+      "intro": "Change the wording of the site’s built-in text. The shipped text stays as the fallback; restore it at any time.",
       "search": "Search",
       "searchPlaceholder": "Key or text, e.g. Footer.about",
       "editedOnly": "Edited only",
       "apply": "Show",
       "clear": "Clear",
-      "summary": "Showing {shown} of {total} matching texts · {edited} edited in this language.",
-      "missing": "{count} texts have no translation yet and show English.",
+      "summary": "Showing {shown} of {total} matching texts · {edited} edited.",
       "rules": "Keep every '{…}' placeholder exactly as it is: they are filled in automatically. Changes appear on the site within about a minute.",
       "empty": "No texts match.",
       "edited": "Edited",
@@ -1742,7 +1738,67 @@
       "inProgress": "Not finished",
       "hidden": "Hidden",
       "reported": "Reported",
-      "stars": "{rating}/5"
+      "stars": "{rating}/5",
+      "summaryTitle": "At a glance",
+      "stats": {
+        "enrolled": "Courses enrolled",
+        "completed": "Courses completed",
+        "avgProgress": "Average progress",
+        "certificates": "Certificates",
+        "exams": "Exams taken",
+        "quizzes": "Quizzes taken"
+      },
+      "percent": "{percent}%",
+      "instructor": "Instructor: {name}",
+      "noInstructor": "No instructor",
+      "lastActive": "Last active {date}",
+      "notStarted": "Not started yet",
+      "watched": "{time} watched",
+      "enrolledOn": "Enrolled {date}",
+      "exams": "Exams",
+      "examStatus": {
+        "IN_PROGRESS": "In progress",
+        "SUBMITTED": "Submitted",
+        "TERMINATED": "Ended by proctor",
+        "EXPIRED": "Time ran out"
+      },
+      "examReview": {
+        "PENDING": "Review pending",
+        "CLEARED": "Cleared",
+        "FLAGGED": "Flagged"
+      },
+      "imaging": "Image cases",
+      "teachingTitle": "Teaching",
+      "teachingIntro": "Courses this person owns or co-teaches, and the learners in them.",
+      "teachingStats": {
+        "courses": "Courses",
+        "published": "Published",
+        "students": "Students",
+        "rating": "Average rating",
+        "reviews": "Reviews",
+        "pending": "Waiting to grade",
+        "certificates": "Certificates issued"
+      },
+      "coursesTaught": "Courses",
+      "noCourses": "Not teaching any course yet.",
+      "courseRole": {
+        "OWNER": "Owner",
+        "EDITOR": "Co-instructor",
+        "GRADER": "Grader"
+      },
+      "courseStatus": {
+        "DRAFT": "Draft",
+        "IN_REVIEW": "In review",
+        "PUBLISHED": "Published",
+        "RETIRED": "Retired"
+      },
+      "courseCounts": "{students, plural, one {# student} other {# students}} · {lessons, plural, one {# lesson} other {# lessons}} · {certificates, plural, one {# certificate} other {# certificates}}",
+      "rating": "★ {rating} ({count, plural, one {# review} other {# reviews}})",
+      "noRatings": "No ratings yet",
+      "recentStudents": "Recent students",
+      "recentStudentsIntro": "The latest enrolments across these courses (up to 50).",
+      "noStudents": "No students yet.",
+      "noValue": "—"
     },
     "toast": {
       "deleted": "User deleted.",
@@ -1902,7 +1958,6 @@
       "FACULTY": "Faculty",
       "OTHER": "Other"
     },
-    "preferredLanguage": "Preferred language",
     "signedInWith": "Signed in with {contact}",
     "headline": "Professional headline",
     "bio": "About you",

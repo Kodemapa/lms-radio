@@ -50,7 +50,7 @@
   --shadow-soft: 0 1px 2px #2b20360a, 0 18px 40px -16px #2b203626;
   --shadow-lift: 0 2px 4px #2b20360d, 0 28px 50px -20px #2b203640;
   /* next/font sets --font-display on <html>; this is the full fallback stack. */
-  --display-stack: var(--font-display), var(--font-geist), var(--font-devanagari), system-ui, sans-serif;
+  --display-stack: var(--font-display), var(--font-geist), system-ui, sans-serif;
 }
 
 /* Warm plum night palette; same hues, lowered lightness. */
@@ -88,7 +88,7 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-geist), var(--font-devanagari), system-ui, sans-serif;
+  --font-sans: var(--font-geist), system-ui, sans-serif;
   --font-heading: var(--display-stack);
   --color-background: var(--background);
   --color-foreground: var(--foreground);

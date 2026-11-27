@@ -4,13 +4,13 @@ import { isProtectedPath, localeFromPath, postLoginPath, roleHome, safeNextPath 
 describe('isProtectedPath', () => {
   it.each([
     '/en/learn/abc',
-    '/hi/learn',
+    '/en/learn',
     '/en/learn/',
     '/en/instructor',
-    '/hi/instructor/courses/x',
+    '/en/instructor/courses/x',
     '/en/account/learning',
     '/en/admin',
-    '/hi/admin/categories',
+    '/en/admin/categories',
   ])('protects %s', (p) =>
     expect(isProtectedPath(p)).toBe(true),
   );
@@ -20,7 +20,9 @@ describe('isProtectedPath', () => {
 });
 
 describe('localeFromPath', () => {
-  it('reads a known locale', () => expect(localeFromPath('/hi/learn/x')).toBe('hi'));
+  it('reads a known locale', () => expect(localeFromPath('/en/learn/x')).toBe('en'));
+  // Hindi was removed: /hi/* is redirected to /en/* (next.config.ts) before middleware runs.
+  it('treats the removed Hindi prefix as unknown', () => expect(localeFromPath('/hi/learn/x')).toBe('en'));
   it('falls back for unknown locales', () => expect(localeFromPath('/fr/x')).toBe('en'));
 });
 
@@ -42,7 +44,7 @@ describe('role-based sign-in landing', () => {
   });
 
   it('keeps destinations that are valid for the signed-in role', () => {
-    expect(postLoginPath('/hi/courses?sort=popular', 'LEARNER', 'hi')).toBe('/hi/courses?sort=popular');
+    expect(postLoginPath('/en/courses?sort=popular', 'LEARNER', 'en')).toBe('/en/courses?sort=popular');
     expect(postLoginPath('/en/instructor/courses', 'FACULTY', 'en')).toBe('/en/instructor/courses');
   });
 

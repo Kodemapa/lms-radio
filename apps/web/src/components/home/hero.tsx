@@ -29,8 +29,8 @@ export async function Hero({
             {t('eyebrow')}
           </p>
           <h1 id="hero-title" className="lp-enter" style={{ '--i': 1 } as CSSProperties}>
-            {t('title')}{' '}
-            <span className="lp-highlight">
+            <span className="lp-heading-line">{t('title')}</span>
+            <span className="lp-heading-line lp-highlight">
               {t('titleAccent')}
               <svg viewBox="0 0 300 18" preserveAspectRatio="none" aria-hidden>
                 <path d="M3 13C60 4 130 2 297 9" />

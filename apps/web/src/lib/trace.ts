@@ -59,7 +59,15 @@ export function logWeb(level: Level, context: string, msg: string, fields: Recor
 }
 
 /** One structured line for a server-side API call that failed. */
-export function logApiFailure(fields: { method: string; path: string; status: number; traceId: string; durationMs: number }): void {
+export function logApiFailure(fields: {
+  method: string;
+  path: string;
+  status: number;
+  traceId: string;
+  durationMs: number;
+  /** Why no HTTP answer came back (connection refused, timeout), when that is the failure. */
+  cause?: string;
+}): void {
   const path = fields.path.split('?')[0]!;
   logWeb(fields.status >= 500 ? 'error' : 'warn', 'web→api', `${fields.method} ${path} ${fields.status}`, { ...fields, path });
 }

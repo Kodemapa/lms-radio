@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { LearnerTypeSchema, RoleSchema } from './roles.js';
 
-export const SUPPORTED_LOCALES = ['en', 'hi'] as const;
+/** Site languages a user can choose. English only (Hindi removed, 2026-11-26). */
+export const SUPPORTED_LOCALES = ['en'] as const;
 export const LocaleSchema = z.enum(SUPPORTED_LOCALES);
 
 export const UserProfileSchema = z.object({

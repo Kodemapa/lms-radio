@@ -114,7 +114,7 @@ const PAGE_BODY = {
     required: ['slug', 'locale', 'title', 'body'],
     properties: {
       slug: { type: 'string', example: 'privacy' },
-      locale: { type: 'string', enum: ['en', 'hi'] },
+      locale: { type: 'string', enum: ['en'] },
       title: { type: 'string' },
       body: { type: 'string', description: 'Light Markdown: #/## headings, - lists, blank-line paragraphs' },
       published: { type: 'boolean' },
@@ -126,7 +126,7 @@ const FAQ_BODY = {
     type: 'object',
     required: ['locale', 'question', 'answer'],
     properties: {
-      locale: { type: 'string', enum: ['en', 'hi'] },
+      locale: { type: 'string', enum: ['en'] },
       question: { type: 'string' },
       answer: { type: 'string' },
       position: { type: 'integer' },
@@ -240,7 +240,7 @@ export class AdminContentController {
     schema: {
       type: 'object',
       required: ['locale', 'key', 'value'],
-      properties: { locale: { type: 'string', enum: ['en', 'hi'] }, key: { type: 'string', example: 'Footer.about' }, value: { type: 'string', nullable: true } },
+      properties: { locale: { type: 'string', enum: ['en'] }, key: { type: 'string', example: 'Footer.about' }, value: { type: 'string', nullable: true } },
     },
   })
   @ApiNoContentResponse()

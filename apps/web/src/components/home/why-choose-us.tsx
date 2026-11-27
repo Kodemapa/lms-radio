@@ -1,4 +1,4 @@
-import { Languages, ScanFace, ShieldCheck, ShieldPlus } from 'lucide-react';
+import { MonitorSmartphone, ScanFace, ShieldCheck, ShieldPlus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import facultyTeaching from './images/faculty-teaching.webp';
 import profileScan from './images/fetal-profile-scan.webp';
@@ -9,7 +9,8 @@ const TRUST = [
   { key: 'protected', Icon: ShieldCheck },
   { key: 'deidentified', Icon: ScanFace },
   { key: 'pcpndt', Icon: ShieldPlus },
-  { key: 'languages', Icon: Languages },
+  // Key kept so admin wording overrides still apply; the card is now about any device.
+  { key: 'languages', Icon: MonitorSmartphone },
 ] as const;
 
 /**

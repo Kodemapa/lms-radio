@@ -3,7 +3,6 @@ import { type ReactNode } from 'react';
 import { Brand } from '@/components/layout/brand';
 import { NotificationBell } from '@/components/layout/notification-bell';
 import { UserMenu } from '@/components/layout/user-menu';
-import { LocaleSwitcher } from '@/components/locale-switcher';
 import { PlayerShell } from '@/components/player/player-shell';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { getMe } from '@/lib/catalog';
@@ -29,9 +28,6 @@ export default async function PlayerLayout({
     <>
       {me ? <NotificationBell /> : null}
       <ThemeToggle />
-      <span className="hidden md:block">
-        <LocaleSwitcher label={t('language')} />
-      </span>
       {me ? (
         <UserMenu
           user={me}

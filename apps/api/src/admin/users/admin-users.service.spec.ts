@@ -167,3 +167,99 @@ describe('AdminUsersService', () => {
     expect(tx.user.update).not.toHaveBeenCalled();
   });
 });
+
+describe('AdminUsersService.detail', () => {
+  const FACULTY_ID = '6f1c2a3b-0000-4000-8000-000000000010';
+  const COURSE_A = '6f1c2a3b-0000-4000-8000-0000000000a1';
+  const COURSE_B = '6f1c2a3b-0000-4000-8000-0000000000b1';
+  const STUDENT = '6f1c2a3b-0000-4000-8000-000000000020';
+  const at = new Date('2026-03-01T10:00:00.000Z');
+
+  function detailSetup(role: 'LEARNER' | 'FACULTY', taught: unknown[]) {
+    const lessonGroupBy = jest.fn(async (args: { by: string[] }) =>
+      args.by.includes('userId') ? [] : [{ courseId: COURSE_A, _count: { _all: 4 } }, { courseId: COURSE_B, _count: { _all: 2 } }],
+    );
+    const prisma = {
+      user: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: FACULTY_ID, displayName: 'Dr Rao', email: null, phone: null, headline: null, bio: null, learnerType: null,
+          role, createdAt: at, blockedAt: null, blockedReason: null, blockedBy: null, deletedAt: null, devices: [],
+          enrollments: [{ courseId: COURSE_B, createdAt: at, course: { title: 'Doppler', slug: 'doppler', instructor: { id: STUDENT, displayName: 'Dr Sen' } } }],
+        }),
+      },
+      auditLog: { findMany: jest.fn().mockResolvedValue([]) },
+      lessonProgress: {
+        groupBy: jest.fn(async (args: { by: string[]; _max?: unknown }) => {
+          if (args._max) return [{ courseId: COURSE_B, _max: { updatedAt: at }, _sum: { watchedSec: 600 } }];
+          if (args.by.includes('userId')) return [{ userId: STUDENT, courseId: COURSE_A, _count: { _all: 3 } }];
+          return [{ courseId: COURSE_B, _count: { _all: 1 } }];
+        }),
+      },
+      lesson: { groupBy: lessonGroupBy },
+      certificate: { findMany: jest.fn().mockResolvedValue([]) },
+      assignmentSubmission: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(2) },
+      quizAttempt: {
+        // The history list (no id filter) is empty; the exam's own attempt carries the score.
+        findMany: jest.fn(async (args: { where: { id?: unknown } }) => (args.where.id ? [{ id: 'qa1', scorePercent: 80, passed: true }] : [])),
+      },
+      entranceAttempt: { findMany: jest.fn().mockResolvedValue([]) },
+      courseReview: {
+        findMany: jest.fn().mockResolvedValue([]),
+        groupBy: jest.fn().mockResolvedValue([
+          { courseId: COURSE_A, _count: { _all: 3 }, _avg: { rating: 4 } },
+          { courseId: COURSE_B, _count: { _all: 1 }, _avg: { rating: 5 } },
+        ]),
+      },
+      instructorApplication: { findMany: jest.fn().mockResolvedValue([]) },
+      examSession: {
+        findMany: jest.fn().mockResolvedValue([
+          { status: 'SUBMITTED', reviewStatus: 'CLEARED', startedAt: at, submittedAt: at, quizAttemptId: 'qa1', lesson: { title: 'Final exam', course: { title: 'Doppler' } } },
+        ]),
+      },
+      imagingAttempt: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(1) },
+      course: { findMany: jest.fn().mockResolvedValue(taught) },
+      enrollment: {
+        groupBy: jest.fn().mockResolvedValue([{ userId: STUDENT }, { userId: FACULTY_ID }]),
+        findMany: jest.fn().mockResolvedValue([
+          { userId: STUDENT, courseId: COURSE_A, createdAt: at, user: { displayName: 'Asha' }, course: { title: 'Biometry' } },
+        ]),
+      },
+    };
+    const service = new AdminUsersService(prisma as unknown as PrismaService, {} as UsersService, {} as AuditService, fakeMail());
+    return { service, prisma };
+  }
+
+  const taught = [
+    { id: COURSE_A, title: 'Biometry', slug: 'biometry', status: 'PUBLISHED', instructorId: FACULTY_ID, collaborators: [], _count: { enrollments: 5, certificates: 2 } },
+    { id: COURSE_B, title: 'Doppler', slug: 'doppler', status: 'DRAFT', instructorId: STUDENT, collaborators: [{ role: 'GRADER' }], _count: { enrollments: 1, certificates: 0 } },
+  ];
+
+  it('shows each enrolment with its instructor, activity and watch time, and exams with their score', async () => {
+    const { service } = detailSetup('LEARNER', []);
+    const detail = await service.detail(FACULTY_ID);
+    expect(detail.enrollments[0]).toMatchObject({
+      instructorName: 'Dr Sen',
+      progress: { completed: 1, total: 2 },
+      lastActivityAt: at.toISOString(),
+      watchedSec: 600,
+    });
+    expect(detail.learning.exams[0]).toMatchObject({ lessonTitle: 'Final exam', scorePercent: 80, passed: true, reviewStatus: 'CLEARED' });
+    expect(detail.teaching).toBeNull();
+  });
+
+  it('summarises what an instructor teaches: courses, distinct students, ratings, grading queue, recent students', async () => {
+    const { service } = detailSetup('FACULTY', taught);
+    const teaching = (await service.detail(FACULTY_ID)).teaching!;
+    expect(teaching.totals).toEqual({
+      courses: 2, published: 1, students: 2, reviews: 4, averageRating: 4.3, pendingGrading: 3, certificates: 2,
+    });
+    expect(teaching.courses.map((course) => course.role)).toEqual(['OWNER', 'GRADER']);
+    expect(teaching.courses[0]).toMatchObject({ students: 5, lessons: 4, averageRating: 4 });
+    expect(teaching.students[0]).toMatchObject({ displayName: 'Asha', progress: { completed: 3, total: 4 } });
+  });
+
+  it('gives staff an empty teaching section rather than none', async () => {
+    const { service } = detailSetup('FACULTY', []);
+    expect((await service.detail(FACULTY_ID)).teaching).toMatchObject({ totals: { courses: 0, students: 0 }, courses: [] });
+  });
+});

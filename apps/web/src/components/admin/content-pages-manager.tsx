@@ -4,9 +4,8 @@ import {
   ContentPageInputSchema,
   type ContentPage,
   type ContentPageInput,
-  type ContentLocale,
 } from '@obgyn/types';
-import { Button, Input, Select, Textarea, toast } from '@obgyn/ui';
+import { Button, Input, Textarea, toast } from '@obgyn/ui';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
@@ -35,7 +34,8 @@ export function ContentPagesManager({ initial }: { initial: ContentPage[] }) {
   const [pending, setPending] = useState(false);
   const [bodyMode, setBodyMode] = useState<'write' | 'preview'>('write');
 
-  const refresh = async () => setPages(await api<ContentPage[]>('GET', 'admin/content/pages'));
+  // English only (older Hindi drafts stay in the database, unused).
+  const refresh = async () => setPages((await api<ContentPage[]>('GET', 'admin/content/pages')).filter((page) => page.locale === 'en'));
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
@@ -77,7 +77,8 @@ export function ContentPagesManager({ initial }: { initial: ContentPage[] }) {
   const edit = (page: ContentPage) => {
     setError(null);
     setBodyMode('write');
-    setForm({ id: page.id, slug: page.slug, locale: page.locale, title: page.title, body: page.body, published: page.published });
+    // The list shows English pages only, and new content is saved in English.
+    setForm({ id: page.id, slug: page.slug, locale: 'en', title: page.title, body: page.body, published: page.published });
   };
 
   return (
@@ -118,18 +119,6 @@ export function ContentPagesManager({ initial }: { initial: ContentPage[] }) {
             <div className="flex flex-col gap-1.5">
               <RequiredLabel htmlFor="content-page-slug">{t('slug')}</RequiredLabel>
               <Input id="content-page-slug" required maxLength={80} value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <RequiredLabel htmlFor="content-page-locale">{t('language')}</RequiredLabel>
-              <Select
-                id="content-page-locale"
-                required
-                value={form.locale}
-                onChange={(event) => setForm({ ...form, locale: event.target.value as ContentLocale })}
-              >
-                <option value="en">{t('english')}</option>
-                <option value="hi">{t('hindi')}</option>
-              </Select>
             </div>
           </div>
           <div className="flex flex-col gap-1.5">

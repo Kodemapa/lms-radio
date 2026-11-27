@@ -17,7 +17,8 @@ export function ProfileForm({ me, bio }: { me: UserProfile; bio: string | null }
   const [form, setForm] = useState({
     displayName: me.displayName,
     learnerType: me.learnerType ?? '',
-    locale: me.locale,
+    // The site is English only; saving the profile sets English for everyone.
+    locale: 'en',
     headline: me.headline ?? '',
     bio: bio ?? '',
   });
@@ -61,13 +62,6 @@ export function ProfileForm({ me, bio }: { me: UserProfile; bio: string | null }
           <Select id="learnerType" value={form.learnerType} onChange={(e) => setForm({ ...form, learnerType: e.target.value })}>
             <option value="">{t('learnerTypeNone')}</option>
             {LEARNER_TYPES.map((type) => <option key={type} value={type}>{t(`learnerTypes.${type}`)}</option>)}
-          </Select>
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="locale">{t('preferredLanguage')}</Label>
-          <Select id="locale" value={form.locale} onChange={(e) => setForm({ ...form, locale: e.target.value })}>
-            <option value="en">English</option>
-            <option value="hi">हिन्दी</option>
           </Select>
         </div>
       </div>

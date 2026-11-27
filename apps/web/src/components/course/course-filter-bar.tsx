@@ -11,16 +11,15 @@ export type FilterField = {
 };
 
 /**
- * Search box + filter pills in one bar (replaces the old filter sidebar).
- * Filters are native <select>s styled as pills: keyboard/screen-reader friendly,
- * auto-applied on change, and they still submit without JavaScript.
+ * Search box + filter pills in one bar. Results update as the user types (after a short
+ * pause) or picks a filter, so there is no Search button (Enter still searches at once).
+ * Filters are native <select>s styled as pills: keyboard/screen-reader friendly.
  */
 export function CourseFilterBar({
   action,
   query,
   searchLabel,
   placeholder,
-  submitLabel,
   filters,
   sort,
 }: {
@@ -28,7 +27,6 @@ export function CourseFilterBar({
   query?: string;
   searchLabel: string;
   placeholder: string;
-  submitLabel: string;
   filters: FilterField[];
   sort: { name: string; label: string; value: string; options: FilterOption[] };
 }) {
@@ -39,7 +37,8 @@ export function CourseFilterBar({
       className="surface flex flex-col gap-2 rounded-[28px] p-2 lg:flex-row lg:items-center"
     >
       <label className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-full px-4 transition-[box-shadow,background-color] focus-within:bg-muted/60 focus-within:ring-4 focus-within:ring-primary/15 lg:min-w-[240px]">
-        <Search aria-hidden className="size-5 shrink-0 text-muted-foreground" />
+        {/* Pulses while new results load. */}
+        <Search aria-hidden className="size-5 shrink-0 text-muted-foreground group-data-[pending=true]:animate-pulse group-data-[pending=true]:text-primary" />
         <span className="sr-only">{searchLabel}</span>
         <input
           type="search"
@@ -59,14 +58,6 @@ export function CourseFilterBar({
         ))}
         <SortPill sort={sort} />
       </div>
-
-      <button
-        type="submit"
-        className="flex h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-secondary px-6 font-semibold text-secondary-foreground shadow-[0_10px_22px_-12px_var(--secondary)] transition-transform hover:-translate-y-px"
-      >
-        <Search aria-hidden className="size-4" />
-        {submitLabel}
-      </button>
     </AutoSubmitForm>
   );
 }
