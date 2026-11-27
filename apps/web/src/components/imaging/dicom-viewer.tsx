@@ -2,7 +2,7 @@
 
 import { ellipseCoords, ellipseShape, regionPolygon } from '@obgyn/dicom';
 import { type AnnotationTool, type Point } from '@obgyn/types';
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { loadCornerstone, type Cornerstone } from './cornerstone';
 
 export type ViewerMode = 'pan' | 'zoom' | 'contrast' | AnnotationTool;
@@ -127,6 +127,46 @@ export function DicomViewer(props: Props) {
       }
     };
   }, [uid]);
+
+  /**
+   * Cornerstone sizes its canvas once, when the viewport is enabled. If our box later changes
+   * size (window resize, layout reflow, browser zoom / device pixel ratio), CSS stretches the
+   * image while pointer → image-pixel conversion still uses the old size, so drawings that look
+   * inside the image are stored outside it. Re-measure whenever the two disagree.
+   */
+  const syncCanvasSize = useCallback((): void => {
+    const current = engine.current;
+    const canvas = current?.viewport.canvas;
+    if (!current || !canvas || canvas.clientWidth === 0 || canvas.clientHeight === 0) return;
+    const dpr = window.devicePixelRatio || 1;
+    const stale = Math.abs(canvas.width - canvas.clientWidth * dpr) > 1 || Math.abs(canvas.height - canvas.clientHeight * dpr) > 1;
+    if (!stale) return;
+    current.engine.resize(true, true);
+    setTick((t) => t + 1);
+  }, []);
+
+  useEffect(() => {
+    const box = element.current;
+    if (!ready || !box) return;
+    const observer = new ResizeObserver(() => syncCanvasSize());
+    observer.observe(box);
+    // Browser zoom and moving between screens change the pixel ratio, not always our CSS size.
+    let media: MediaQueryList | null = null;
+    const onRatioChange = () => {
+      syncCanvasSize();
+      watchRatio();
+    };
+    const watchRatio = () => {
+      media?.removeEventListener('change', onRatioChange);
+      media = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+      media.addEventListener('change', onRatioChange);
+    };
+    watchRatio();
+    return () => {
+      observer.disconnect();
+      media?.removeEventListener('change', onRatioChange);
+    };
+  }, [ready, syncCanvasSize]);
 
   // Load the image (all frames as a stack).
   useEffect(() => {
@@ -267,6 +307,7 @@ export function DicomViewer(props: Props) {
 
   const onPointerDown = (event: PointerEvent<SVGSVGElement>) => {
     if (event.button !== 0 || !isAnnotating(mode) || !props.onCreate) return;
+    syncCanvasSize();
     const at = toImage(event);
     if (!at) return;
     props.onSelect(null);
@@ -289,6 +330,7 @@ export function DicomViewer(props: Props) {
   const startHandleDrag = (event: PointerEvent, shape: OverlayShape, handle: number | 'move') => {
     if (event.button !== 0 || !shape.editable || outline) return;
     event.stopPropagation();
+    syncCanvasSize();
     const at = toImage(event);
     if (!at) return;
     svg.current?.setPointerCapture(event.pointerId);
