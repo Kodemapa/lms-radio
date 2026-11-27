@@ -135,7 +135,19 @@ async function fetchWithRetry(url: string, init: RequestInit, ctx: { path: strin
       else delay = RETRY_DELAYS_MS[attempt];
       if (!(error instanceof TypeError) || delay === undefined) {
         const cause = describeFetchFailure(error);
-        logApiFailure({ method: 'GET', path: ctx.path, status: 503, traceId: ctx.traceId, durationMs: elapsed, cause });
+        logApiFailure({
+          method: 'GET',
+          path: ctx.path,
+          status: 503,
+          traceId: ctx.traceId,
+          durationMs: elapsed,
+          cause,
+          // In development the API is a separate local process that is often stopped or
+          // restarting, and every page that calls it already falls back (empty lists, signed-out
+          // view). A warning keeps the terminal message without the Next.js dev overlay
+          // reporting it as an app error. In production an unreachable API is an error.
+          level: isDev ? 'warn' : 'error',
+        });
         throw new ApiError(503, { message: 'API unreachable', cause });
       }
       await new Promise((resolve) => setTimeout(resolve, delay));

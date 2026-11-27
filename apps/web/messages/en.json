@@ -215,7 +215,7 @@
       "t7": "Placenta & amniotic fluid",
       "t8": "Growth assessment"
     },
-    "journeyEyebrow": "How it works",
+    "journeyEyebrow": "How you’ll learn",
     "week": {
       "anatomy": "Anatomy",
       "biometry": "Biometry",
@@ -272,23 +272,23 @@
     "heroChipGraded": "Checked against faculty answers",
     "mockNote": "Example",
     "journey": {
-      "title": "Learn, practise, check, improve.",
-      "subtitle": "Every lesson follows four simple steps.",
-      "watch": {
-        "title": "Watch",
-        "body": "Watch a short class. Answer quick questions as you go."
+      "title": "Learn the concept, then prove it on a real scan.",
+      "subtitle": "Every module moves from faculty teaching to hands-on measurement, instant grading and a clear plan for what to revise next.",
+      "watch": {
+        "title": "Learn from faculty",
+        "body": "Short video classes with built-in questions confirm each concept before you move on. Every video streams protected and watermarked, and is never downloadable."
       },
-      "measure": {
-        "title": "Practise",
-        "body": "Measure and mark on a real scan, just like at the machine."
+      "measure": {
+        "title": "Measure on real scans",
+        "body": "Open de-identified ultrasound cases in the browser viewer. Place calipers and ellipses, mark landmarks and outline structures with the same tools you use at the machine."
       },
-      "graded": {
-        "title": "Check",
-        "body": "See your result straight away, with the reason for any mistake."
+      "graded": {
+        "title": "Get instant, reasoned feedback",
+        "body": "Each measurement is checked against the faculty reference and its accepted tolerance, with a clear reason for every miss. Show your working, and faculty review it."
       },
-      "report": {
-        "title": "Improve",
-        "body": "Your progress report shows what you know well and what to revise."
+      "report": {
+        "title": "Track your progress",
+        "body": "Your progress report records lessons, watch time and every attempt, then highlights your strong topics and the ones that need revision."
       },
       "result": {
         "title": "Case result",
@@ -373,24 +373,24 @@
         }
       },
       "loop": {
-        "eyebrow": "How you improve",
-        "title": "Learn it. Do it. Check it. Do it better.",
-        "body": "You improve by trying and getting clear feedback.",
+        "eyebrow": "The practice loop",
+        "title": "Every attempt makes the next one better.",
+        "body": "Scanning skill grows through repeated attempts and expert feedback, not by re-watching lectures. Each case closes the loop.",
         "see": {
-          "title": "Learn",
-          "body": "Watch a short class."
+          "title": "Understand",
+          "body": "Grasp the concept in a short faculty class."
         },
         "do": {
-          "title": "Do",
-          "body": "Measure on a real scan."
+          "title": "Attempt",
+          "body": "Measure and mark the structure on a real scan."
         },
         "why": {
-          "title": "Check",
-          "body": "See your result and the correct answer."
+          "title": "Review",
+          "body": "Compare with the faculty reference and see the reason for each miss."
         },
         "again": {
-          "title": "Try again",
-          "body": "Repeat the case or revise the topic."
+          "title": "Refine",
+          "body": "Repeat the case or revise the topic your report flags."
         }
       }
     }

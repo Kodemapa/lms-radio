@@ -1,8 +1,9 @@
 'use client';
 
-import { BarChart3, CheckCircle2, PlayCircle, Ruler, XCircle } from 'lucide-react';
+import { CheckCircle2, PlayCircle, XCircle } from 'lucide-react';
 import Image, { type StaticImageData } from 'next/image';
 import { useEffect, useRef, useState } from 'react';
+import { JOURNEY_ICONS } from './journey-icons';
 
 /** What the pinned media frame shows for a step. */
 export type JourneyVisual =
@@ -32,7 +33,6 @@ export type JourneyVisual =
 
 export type JourneyStep = { key: string; title: string; body: string; visual: JourneyVisual };
 
-const ICONS = [PlayCircle, Ruler, CheckCircle2, BarChart3];
 
 /**
  * Scroll-told section: steps scroll past on the right while the media
@@ -123,7 +123,7 @@ export function LearningJourney({ steps }: { steps: JourneyStep[] }) {
       </div>
       <ol className="lp-journey-steps">
         {steps.map((step, i) => {
-          const Icon = ICONS[i % ICONS.length]!;
+          const Icon = JOURNEY_ICONS[step.key] ?? PlayCircle;
           return (
             <li
               key={step.key}

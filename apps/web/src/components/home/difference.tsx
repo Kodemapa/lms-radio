@@ -1,5 +1,5 @@
 import { type CSSProperties } from 'react';
-import { Check, Eye, Hand, Lightbulb, RefreshCw, X } from 'lucide-react';
+import { BookOpen, Check, ClipboardCheck, Crosshair, TrendingUp, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { Reveal } from './reveal';
 
@@ -7,10 +7,11 @@ import { Reveal } from './reveal';
 const ROWS = ['images', 'practice', 'assessment', 'feedback', 'reasoning', 'progress'] as const;
 
 const LOOP = [
-  { key: 'see', Icon: Eye },
-  { key: 'do', Icon: Hand },
-  { key: 'why', Icon: Lightbulb },
-  { key: 'again', Icon: RefreshCw },
+  // Understand → Attempt → Review → Refine
+  { key: 'see', Icon: BookOpen },
+  { key: 'do', Icon: Crosshair },
+  { key: 'why', Icon: ClipboardCheck },
+  { key: 'again', Icon: TrendingUp },
 ] as const;
 
 /** "Why it's different": typical LMS vs. this platform, then the understanding loop. */
